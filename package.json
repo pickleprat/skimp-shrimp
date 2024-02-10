@@ -10,7 +10,8 @@
   },
   "scripts": {
     "dev": "go run main.go",
-    "tailwind": "bunx tailwindcss -i ./static/css/input.css -o ./static/css/output.css"
+    "air": "./bin/air",
+    "tailwind": "bunx tailwindcss -i ./static/css/input.css -o ./static/css/output.css --watch"
   },
   "dependencies": {
     "tailwindcss": "^3.4.1"
