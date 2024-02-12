@@ -222,7 +222,7 @@ func ManufacturerDetails(manufacturer _model.Manufacturer, update string, delete
 		manufacturer.Email, 
 		deleteAction, 
 		FormError(deleteErr), 
-		FormInputLabel("Type Name To Delete", "name", "", ""), 
+		FormInputLabel("Type '" + manufacturer.Name + "' to delete", "name", "", ""), 
 		FormDeleteButton(), 
 		FormLoader(), 
 		updateActon,
@@ -230,6 +230,28 @@ func ManufacturerDetails(manufacturer _model.Manufacturer, update string, delete
 		FormInputLabel("Name", "name", "", manufacturer.Name),
 		FormInputLabel("Phone", "phone", "", manufacturer.Phone), 
 		FormInputLabel("Email", "email", "", manufacturer.Email),
+		FormLoader(),
+		FormSubmitButton(),
+	)
+}
+
+func CreateEquipmentForm(err string, xclass string) string {
+	return fmt.Sprintf(`
+		<form x-data="{ loading: false }" method='POST' class='flex flex-col p-6 gap-4 w-full max-w-[500px] %s'>
+			%s%s%s%s
+			<div class='flex flex-col text-xs w-fit rounded gap-2'>
+				<label>Photo</label>
+				<button type='button' x-on:click="$refs.uploadInput.click(); console.log('yo')" class='text-left border border-white p-2 rounded'>Upload Photo</button>
+				<input x-ref='uploadInput' x-on:change='console.log("changed")' type='file' class='hidden'/>
+			</div>
+			%s%s
+		</form>
+	`, 
+		xclass, 
+		FormTitle("Create Equipment"), 
+		FormError(err), 
+		FormInputLabel("Nickname", "nickname", "", ""), 
+		FormInputLabel("Serial Number", "number", "", ""), 
 		FormLoader(),
 		FormSubmitButton(),
 	)

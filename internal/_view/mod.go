@@ -184,7 +184,7 @@ func Manufacturer(mux *http.ServeMux, db *gorm.DB) {
 					_components.Banner(true, _components.AppNavMenu(r.URL.Path)),
 					_components.MqGridTwoColEvenSplit(
 						_components.ManufacturerDetails(manufacturer, r.URL.Query().Get("update"), r.URL.Query().Get("deleteErr"), r.URL.Query().Get("updateErr"), "place-self-center sm:place-self-end"),
-						"",
+						_components.CreateEquipmentForm(r.URL.Query().Get("equipmentErr"), "place-self-center sm:place-self-start"),
 					),
 				})
 				w.Write(b.Build())
