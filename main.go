@@ -27,6 +27,11 @@ func main() {
 	_view.Home(mux, db)
 	_view.Login(mux, db)
 	_view.App(mux, db)
+	_view.Logout(mux, db)
+	_view.CreateManufacturer(mux, db)
+	_view.Manufacturer(mux, db)
+	_view.DeleteManufacturer(mux, db)
+	_view.UpdateManufacturer(mux, db)
 
 
 	fmt.Println("Server is running on port 8080")

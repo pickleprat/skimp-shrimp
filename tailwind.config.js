@@ -12,6 +12,7 @@ module.exports = {
 		  "blue": "#0000ff",
 		  "gray": "#999999",
 		  "lightgray": "#eeeeee",
+		  "darkgray": "#555555",
 		},
 		fontFamily: {
 		  'playful': ['Chelsea Market', 'cursive'],

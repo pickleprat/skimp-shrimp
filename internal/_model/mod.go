@@ -4,7 +4,7 @@ import "gorm.io/gorm"
 
 type Manufacturer struct {
 	gorm.Model
-	Name string `gorm:"unique;not null"`
+	Name string
 	Email string
 	Phone string
 }

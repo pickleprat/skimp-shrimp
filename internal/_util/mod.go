@@ -6,7 +6,9 @@ import (
 	"html/template"
 	"net/http"
 	"path/filepath"
+	"regexp"
 	"strconv"
+	"strings"
 )
 
 func RenderTemplate(w http.ResponseWriter, tmplFile string, data map[string]interface{}) {
@@ -58,23 +60,38 @@ func BytesToBase64String(input []byte) string {
 	return encodedString
 }
 
-func URLBuilder(baseURL string, queryParams ...string) string {
-	if len(queryParams)%2 != 0 {
-		return baseURL
-	}
-	urlParams := make(map[string]string)
-	for i := 0; i < len(queryParams); i += 2 {
-		key := queryParams[i]
-		value := queryParams[i+1]
-		urlParams[key] = value
-	}
-	url := baseURL
-	if len(urlParams) > 0 {
-		url += "?"
-		for key, value := range urlParams {
-			url += key + "=" + value + "&"
-		}
-		url = url[:len(url)-1]
-	}
-	return url
+func URLBuilder(basePath string, params ...string) string {
+    if len(params)%2 != 0 {
+        panic("Invalid number of parameters. Must be even.")
+    }
+
+    if len(params) == 0 {
+        return basePath
+    }
+
+    var sb strings.Builder
+    sb.WriteString(basePath)
+    sb.WriteString("?")
+
+    for i := 0; i < len(params); i += 2 {
+        if i > 0 {
+            sb.WriteString("&")
+        }
+        sb.WriteString(params[i])
+        sb.WriteString("=")
+        sb.WriteString(params[i+1])
+    }
+    return sb.String()
+}
+
+func IsValidPhoneNumber(phone string) bool {
+    pattern := `^\d{3}-\d{3}-\d{4}$`
+    regex := regexp.MustCompile(pattern)
+    return regex.MatchString(phone)
+}
+
+func IsValidEmail(email string) bool {
+	pattern := `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
+	regex := regexp.MustCompile(pattern)
+	return regex.MatchString(email)
 }
