@@ -25,9 +25,9 @@ func RenderErrorPage(w http.ResponseWriter, r *http.Request, err string) {
 	http.Redirect(w, r, "/500?Err="+err, http.StatusSeeOther)
 }
 
-func ServeStaticFilesAndFavicon() {
-	http.HandleFunc("/static/", ServeStaticFiles)
-	http.HandleFunc("/favicon.ico", ServeFavicon)
+func ServeStaticFilesAndFavicon(mux *http.ServeMux) {
+	mux.HandleFunc("GET /static/", ServeStaticFiles)
+	mux.HandleFunc("GET /favicon.ico", ServeFavicon)
 }
 
 func ServeFavicon(w http.ResponseWriter, r *http.Request) {

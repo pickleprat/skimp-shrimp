@@ -15,6 +15,7 @@ import (
 func main() {
 	
 	_ = godotenv.Load()
+	mux := http.NewServeMux()
 
 	db, err := gorm.Open(sqlite.Open("main.db"), &gorm.Config{})
 	if err != nil {
@@ -22,11 +23,13 @@ func main() {
 	}
 	db.AutoMigrate(&_model.Manufacturer{})
 
-	_util.ServeStaticFilesAndFavicon()
-	_view.Home(db)
+	_util.ServeStaticFilesAndFavicon(mux)
+	_view.Home(mux, db)
+	_view.Login(mux, db)
+	_view.App(mux, db)
 
 
 	fmt.Println("Server is running on port 8080")
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(":8080", mux)
 
 }

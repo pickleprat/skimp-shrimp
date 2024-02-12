@@ -46,7 +46,7 @@ func MwRandomTruett(ctx map[string]interface{}, w http.ResponseWriter, r *http.R
 	ctx["RandomTruett"] = randomQuote
 }
 
-func MwParseForm(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+func ParseForm(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 }
 
@@ -60,14 +60,14 @@ func MwGenMultipartString(ctx map[string]interface{}, w http.ResponseWriter, r *
 	ctx["MultipartString"] = randString
 }
 
-func MwAdminAuth(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+func Auth(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("SessionToken")
 	if err != nil {
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 	if cookie.Value != os.Getenv("ADMIN_SESSION_TOKEN") {
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 }
