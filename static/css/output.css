@@ -632,6 +632,10 @@ video {
   height: 100%;
 }
 
+.h-20 {
+  height: 5rem;
+}
+
 .w-10 {
   width: 2.5rem;
 }
@@ -655,6 +659,10 @@ video {
 .w-fit {
   width: -moz-fit-content;
   width: fit-content;
+}
+
+.w-20 {
+  width: 5rem;
 }
 
 .max-w-\[300px\] {
@@ -707,6 +715,14 @@ video {
 
 .items-center {
   align-items: center;
+}
+
+.justify-start {
+  justify-content: flex-start;
+}
+
+.justify-end {
+  justify-content: flex-end;
 }
 
 .justify-center {
@@ -940,6 +956,14 @@ video {
     flex-direction: row;
   }
 
+  .sm\:justify-start {
+    justify-content: flex-start;
+  }
+
+  .sm\:justify-end {
+    justify-content: flex-end;
+  }
+
   .sm\:gap-4 {
     gap: 1rem;
   }
@@ -950,5 +974,9 @@ video {
 
   .sm\:place-self-end {
     place-self: end;
+  }
+
+  .sm\:justify-self-start {
+    justify-self: start;
   }
 }

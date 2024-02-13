@@ -11,7 +11,8 @@
   "scripts": {
     "dev": "go run main.go",
     "air": "./bin/air",
-    "tailwind": "bunx tailwindcss -i ./static/css/input.css -o ./static/css/output.css --watch"
+    "tailwind": "bunx tailwindcss -i ./static/css/input.css -o ./static/css/output.css --watch",
+    "bundle": "bun build ./index.ts --outdir ./static/js --watch"
   },
   "dependencies": {
     "tailwindcss": "^3.4.1"

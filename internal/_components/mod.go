@@ -73,10 +73,10 @@ func MqWrapperCentered(content string) string {
 func MqGridTwoColEvenSplit(content1 string, content2 string) string {
 	return fmt.Sprintf(`
 		<div class='grid sm:grid-cols-2 sm:gap-4'>
-			%s%s
+			<div class='flex justify-center sm:justify-end'>%s</div>
+			<div class='flex justify-center sm:justify-start'>%s</div>
 		</div>
 	`, content1, content2)
-
 }
 
 func FormInputLabel(name string, serverName string, inputType string, value string) string {
@@ -241,11 +241,29 @@ func CreateEquipmentForm(err string, xclass string) string {
 			%s%s%s%s
 			<div class='flex flex-col text-xs w-fit rounded gap-2'>
 				<label>Photo</label>
-				<button type='button' x-on:click="$refs.uploadInput.click(); console.log('yo')" class='text-left border border-white p-2 rounded'>Upload Photo</button>
-				<input x-ref='uploadInput' x-on:change='console.log("changed")' type='file' class='hidden'/>
+				<button type='button' x-on:click="$refs.uploadInput.click()" class='text-left border border-white p-2 rounded'>Upload Photo</button>
+				<input id='upload-input' x-ref='uploadInput' type='file' class='hidden'/>
+				<div id='image-preview'></div>
 			</div>
 			%s%s
 		</form>
+		<script>
+			document.getElementById('upload-input').addEventListener('change', (e) => {
+				const file = e.target.files[0];
+				if (file) {
+					const reader = new FileReader();
+					const imgElement = document.createElement('img');
+					imgElement.alt = 'Image Preview';
+					reader.onload = () => {
+						imgElement.src = reader.result;
+						document.getElementById('image-preview').innerHTML = ''; // Clear previous content
+						document.getElementById('image-preview').appendChild(imgElement);
+					};
+		
+					reader.readAsDataURL(file);
+				}
+			});
+		</script>
 	`, 
 		xclass, 
 		FormTitle("Create Equipment"), 

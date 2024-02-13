@@ -36,6 +36,7 @@ func (v *ViewBuilder) Build() []byte {
 			<meta charset="UTF-8">
 			<script src="https://unpkg.com/htmx.org@1.9.10"></script>
 			<script src="//unpkg.com/alpinejs" defer></script>
+			<script src="/static/js/index.js" defer></script>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
 			<link rel="stylesheet" href="/static/css/output.css">
 			<style>
@@ -109,8 +110,8 @@ func App(mux *http.ServeMux, db *gorm.DB) {
 				b := NewViewBuilder("Repairs Log - App", []string{
 					_components.Banner(true, _components.AppNavMenu(r.URL.Path)),
 					_components.MqGridTwoColEvenSplit(
-						_components.CreateManufacturerForm(r.URL.Query().Get("err"), r.URL.Query().Get("name"), r.URL.Query().Get("phone"), r.URL.Query().Get("email"), "place-self-center sm:place-self-end"),
-						_components.ManufacturerList(manufacturers, "place-self-center sm:place-self-start"),
+						_components.CreateManufacturerForm(r.URL.Query().Get("err"), r.URL.Query().Get("name"), r.URL.Query().Get("phone"), r.URL.Query().Get("email"), ""),
+						_components.ManufacturerList(manufacturers, ""),
 					),
 				})
 				w.Write(b.Build())
@@ -183,8 +184,8 @@ func Manufacturer(mux *http.ServeMux, db *gorm.DB) {
 				b := NewViewBuilder("Repairs Log - App", []string{
 					_components.Banner(true, _components.AppNavMenu(r.URL.Path)),
 					_components.MqGridTwoColEvenSplit(
-						_components.ManufacturerDetails(manufacturer, r.URL.Query().Get("update"), r.URL.Query().Get("deleteErr"), r.URL.Query().Get("updateErr"), "place-self-center sm:place-self-end"),
-						_components.CreateEquipmentForm(r.URL.Query().Get("equipmentErr"), "place-self-center sm:place-self-start"),
+						_components.ManufacturerDetails(manufacturer, r.URL.Query().Get("update"), r.URL.Query().Get("deleteErr"), r.URL.Query().Get("updateErr"), ""),
+						_components.CreateEquipmentForm(r.URL.Query().Get("equipmentErr"), ""),
 					),
 				})
 				w.Write(b.Build())
