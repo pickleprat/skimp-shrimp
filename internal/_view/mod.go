@@ -251,6 +251,28 @@ func UpdateManufacturer(mux *http.ServeMux, db *gorm.DB) {
 	})
 }
 
+func CreateEquipment(mux *http.ServeMux, db *gorm.DB) {
+	mux.HandleFunc("POST /app/manufacturer/{id}", func(w http.ResponseWriter, r *http.Request) {
+		ctx := map[string]interface{}{}
+		_middleware.MiddlewareChain(ctx, w, r, _middleware.Init, _middleware.ParseMultipartForm, _middleware.Auth,
+			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+				id := r.PathValue("id")
+				name := r.Form.Get("nickname")
+				number := r.Form.Get("number")
+				photo, _, err := r.FormFile("photo")
+                if err != nil {
+                    http.Error(w, "Failed to retrieve file", http.StatusBadRequest)
+                    return
+                }
+                defer photo.Close()
+				fmt.Println(id, name, number, photo)
+				http.Redirect(w, r, "/app/manufacturer/"+id, http.StatusSeeOther)
+			},
+			_middleware.Log,
+		)
+	})
+}
+
 
 
 

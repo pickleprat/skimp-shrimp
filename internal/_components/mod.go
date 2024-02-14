@@ -237,14 +237,14 @@ func ManufacturerDetails(manufacturer _model.Manufacturer, update string, delete
 
 func CreateEquipmentForm(err string, xclass string) string {
 	return fmt.Sprintf(`
-		<form x-data="{ loading: false }" method='POST' class='flex flex-col p-6 gap-4 w-full max-w-[500px] %s'>
+		<form enctype='multipart/form-data' x-data="{ loading: false }" method='POST' class='flex flex-col p-6 gap-4 w-full max-w-[500px] %s'>
 			%s%s%s%s
 			<div class='flex flex-col text-xs w-fit rounded gap-2'>
 				<label>Photo</label>
 				<button type='button' x-on:click="$refs.uploadInput.click()" class='text-left border border-white p-2 rounded'>Upload Photo</button>
-				<input id='upload-input' x-ref='uploadInput' type='file' class='hidden'/>
-				<div id='image-preview'></div>
+				<input name='photo' id='upload-input' x-ref='uploadInput' type='file' class='hidden'/>
 			</div>
+			<div id='image-preview'></div>
 			%s%s
 		</form>
 		<script>
@@ -256,7 +256,7 @@ func CreateEquipmentForm(err string, xclass string) string {
 					imgElement.alt = 'Image Preview';
 					reader.onload = () => {
 						imgElement.src = reader.result;
-						document.getElementById('image-preview').innerHTML = ''; // Clear previous content
+						document.getElementById('image-preview').innerHTML = '';
 						document.getElementById('image-preview').appendChild(imgElement);
 					};
 		

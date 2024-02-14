@@ -50,7 +50,7 @@ func ParseForm(ctx map[string]interface{}, w http.ResponseWriter, r *http.Reques
 	r.ParseForm()
 }
 
-func MwParseMultipartForm(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+func ParseMultipartForm(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
 	r.ParseMultipartForm(10 << 20)
 }
 

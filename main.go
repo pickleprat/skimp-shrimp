@@ -22,6 +22,7 @@ func main() {
 		panic("failed to connect database")
 	}
 	db.AutoMigrate(&_model.Manufacturer{})
+	db.AutoMigrate(&_model.Equipment{})
 
 	_util.ServeStaticFilesAndFavicon(mux)
 	_view.Home(mux, db)
@@ -32,6 +33,7 @@ func main() {
 	_view.Manufacturer(mux, db)
 	_view.DeleteManufacturer(mux, db)
 	_view.UpdateManufacturer(mux, db)
+	_view.CreateEquipment(mux, db)
 
 
 	fmt.Println("Server is running on port 8080")
