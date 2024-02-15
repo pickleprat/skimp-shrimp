@@ -2,7 +2,9 @@ package _components
 
 import (
 	"cfasuite/internal/_model"
+	"encoding/base64"
 	"fmt"
+	"strings"
 )
 
 func Banner(hasIcon bool, menu string) string {
@@ -20,8 +22,13 @@ func Banner(hasIcon bool, menu string) string {
 			</div>
 			%s
 		</header>
-		<div class='h-[75px]'></div>
+		<div class='h-[75px] sm:mb-8'></div>
 	`, bars, x, menu)
+}
+
+func Root(components ...string) string {
+    content := strings.Join(components, "")
+    return fmt.Sprintf("<main>%s</main>", content)
 }
 
 func NavMenuLink(name string, href string, currentPath string) string {
@@ -73,10 +80,27 @@ func MqWrapperCentered(content string) string {
 func MqGridTwoColEvenSplit(content1 string, content2 string) string {
 	return fmt.Sprintf(`
 		<div class='grid sm:grid-cols-2 sm:gap-4'>
-			<div class='flex justify-center sm:justify-end'>%s</div>
-			<div class='flex justify-center sm:justify-start'>%s</div>
+			<div class='flex justify-center'>%s</div>
+			<div class='flex justify-center'>%s</div>
 		</div>
 	`, content1, content2)
+}
+
+func MqGridTwoRowsStacked(content1 string, content2 string) string {
+	return fmt.Sprintf(`
+		<div class='grid sm:grid-rows-2 sm:gap-4 w-full'>
+			<div class='flex justify-center sm:justify-normal'>%s</div>
+			<div class='flex justify-center sm:justify-normal'>%s</div>
+		</div>
+	`, content1, content2)
+}
+
+func MqGridOneRowCentered(content string) string {
+	return fmt.Sprintf(`
+		<div class='grid sm:grid-cols-1 sm:gap-4 items-center'>
+			%s
+		</div>
+	`, content)
 }
 
 func FormInputLabel(name string, serverName string, inputType string, value string) string {
@@ -274,4 +298,39 @@ func CreateEquipmentForm(err string, xclass string) string {
 		FormSubmitButton(),
 	)
 }
+
+
+func EquipmentList(equipment []_model.Equipment, xclass string) string {
+    equipmentList := ""
+    for _, eq := range equipment {
+        photo := ""
+        if len(eq.Photo) > 0 {
+            photo = fmt.Sprintf("data:image/jpeg;base64,%s", base64.StdEncoding.EncodeToString(eq.Photo))
+        }
+        equipmentList += fmt.Sprintf(`
+            <div class="max-w-xs rounded overflow-hidden shadow-lg">
+                <img class="w-full" src="%s" alt="%s">
+                <div class="px-6 py-4">
+                    <div class="font-bold text-xl mb-2">%s</div>
+                    <p class="text-gray-700 text-base">Serial Number: %s</p>
+                </div>
+            </div>
+        `, photo, eq.Nickname, eq.Nickname, eq.SerialNumber)
+    }
+    if len(equipment) == 0 {
+        return fmt.Sprintf(`
+            <div class='p-6 w-full %s'>
+                <p>Oh, so empty!</p>
+            </div>
+        `, xclass)
+    } else {
+        return fmt.Sprintf(`
+            <div class='p-6 w-full flex flex-wrap %s'>
+                %s
+            </div>
+        `, xclass, equipmentList)
+    }
+}
+
+
 

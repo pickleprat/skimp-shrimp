@@ -6,6 +6,7 @@ import (
 	"cfasuite/internal/_model"
 	"cfasuite/internal/_util"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -180,12 +181,17 @@ func Manufacturer(mux *http.ServeMux, db *gorm.DB) {
 			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
 				id := r.PathValue("id")
 				var manufacturer _model.Manufacturer
-				db.First(&manufacturer, id)
+				db.Preload("Equipment").First(&manufacturer, id)
 				b := NewViewBuilder("Repairs Log - App", []string{
 					_components.Banner(true, _components.AppNavMenu(r.URL.Path)),
-					_components.MqGridTwoColEvenSplit(
-						_components.ManufacturerDetails(manufacturer, r.URL.Query().Get("update"), r.URL.Query().Get("deleteErr"), r.URL.Query().Get("updateErr"), ""),
-						_components.CreateEquipmentForm(r.URL.Query().Get("equipmentErr"), ""),
+					_components.Root(
+						_components.MqGridTwoColEvenSplit(
+							_components.ManufacturerDetails(manufacturer, r.URL.Query().Get("update"), r.URL.Query().Get("deleteErr"), r.URL.Query().Get("updateErr"), ""),
+							_components.CreateEquipmentForm(r.URL.Query().Get("equipmentErr"), ""),
+						),
+						_components.MqGridOneRowCentered(
+							_components.EquipmentList(manufacturer.Equipment, ""),
+						),
 					),
 				})
 				w.Write(b.Build())
@@ -265,7 +271,20 @@ func CreateEquipment(mux *http.ServeMux, db *gorm.DB) {
                     return
                 }
                 defer photo.Close()
-				fmt.Println(id, name, number, photo)
+				photoBytes, err := io.ReadAll(photo)
+				if err != nil {
+					http.Error(w, "Failed to read file", http.StatusBadRequest)
+					return
+				}
+				var manufacturer _model.Manufacturer
+				db.First(&manufacturer, id)
+				equipment := _model.Equipment{
+					Nickname: name,
+					SerialNumber: number,
+					Photo: photoBytes,
+					ManufacturerID: manufacturer.ID,
+				}
+				db.Create(&equipment)
 				http.Redirect(w, r, "/app/manufacturer/"+id, http.StatusSeeOther)
 			},
 			_middleware.Log,
