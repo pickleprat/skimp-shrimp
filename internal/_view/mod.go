@@ -51,6 +51,11 @@ func (v *ViewBuilder) Build() []byte {
 	`, v.Title, viewString))
 }
 
+func (v *ViewBuilder) BuildComponent() []byte {
+	viewString := strings.Join(v.ViewComponents, "");
+	return []byte(fmt.Sprintf(`%s`, viewString))
+}
+
 
 func Home(mux *http.ServeMux, db *gorm.DB) {
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
@@ -316,6 +321,50 @@ func Equipment(mux *http.ServeMux, db *gorm.DB) {
 					_components.Footer(),
 				})
 				w.Write(b.Build())
+			},
+			_middleware.Log,
+		)
+	})
+}
+
+func EquipmentSettingsForm(mux *http.ServeMux, db *gorm.DB) {
+	mux.HandleFunc("GET /app/equipment/{id}/settings", func(w http.ResponseWriter, r *http.Request) {
+		ctx := map[string]interface{}{}
+		_middleware.MiddlewareChain(ctx, w, r, _middleware.Init, _middleware.Auth,
+			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+				id := r.PathValue("id")
+				var equipment _model.Equipment
+				db.First(&equipment, id)
+				b := NewViewBuilder("Repairs Log - App", []string{
+					fmt.Sprintf(`
+						<span id='equipment-settings-form'>
+							<div class='bg-black opacity-70 fixed h-full w-full top-0 z-40'></div>					
+							<div class='fixed h-full w-full z-50 grid top-0 mt-4 sm:mt-8 px-4'>
+								<form class='md:place-self-center mt-[75px] md:mt-0 mb-[500px] grid w-full p-6 md:max-w-[500px] border border-gray rounded bg-black'>
+									<div class='flex justify-between'>
+										<h2>Equipment Settings</h2>
+										%s
+									</div>
+								</form>
+							</div>
+						</span>
+					`, _components.SvgIcon("/static/svg/x-dark.svg", "sm", "hx-get='/app/component/clear' hx-trigger='click' hx-swap='outerHTML' hx-target='#equipment-settings-form'")),
+				})
+				w.Write(b.BuildComponent())
+			},
+			_middleware.Log,
+		)
+	})
+}
+
+
+func ClearComponent(mux *http.ServeMux, db *gorm.DB) {
+	mux.HandleFunc("GET /app/component/clear", func(w http.ResponseWriter, r *http.Request) {
+		ctx := map[string]interface{}{}
+		_middleware.MiddlewareChain(ctx, w, r, _middleware.Init, _middleware.Auth,
+			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+				b := NewViewBuilder("Repairs Log - App", []string{""})
+				w.Write(b.BuildComponent())
 			},
 			_middleware.Log,
 		)

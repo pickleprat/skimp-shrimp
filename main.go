@@ -35,6 +35,8 @@ func main() {
 	_view.UpdateManufacturer(mux, db)
 	_view.CreateEquipment(mux, db)
 	_view.Equipment(mux, db)
+	_view.EquipmentSettingsForm(mux, db)
+	_view.ClearComponent(mux, db)
 
 
 	fmt.Println("Server is running on port 8080")

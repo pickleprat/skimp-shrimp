@@ -28,7 +28,7 @@ func Banner(hasIcon bool, menu string) string {
 
 func Root(components ...string) string {
     content := strings.Join(components, "")
-    return fmt.Sprintf("<main class='sm:px-4 lg:px-16 xl:px-32'>%s</main>", content)
+    return fmt.Sprintf("<main id='root' class='sm:px-4 lg:px-16 xl:px-32'>%s</main>", content)
 }
 
 func NavMenuLink(name string, href string, currentPath string) string {
@@ -342,35 +342,27 @@ func Footer() string {
 }
 
 func EquipmentDetails(equipment _model.Equipment, manufacturer _model.Manufacturer) string {
-	photo := ""
-	if len(equipment.Photo) > 0 {
-		photo = fmt.Sprintf("data:image/jpeg;base64,%s", base64.StdEncoding.EncodeToString(equipment.Photo))
-	}
 	return fmt.Sprintf(`
-		<div x-data="{ loading: false }" class='p-6 w-full flex flex-col gap-4'>
+		<div class='p-6 w-full grid gap-4'>
 			<div class='flex flex-row justify-between'>
-				<h2>Equipment Details</h2>
-				<div class='flex flex-row gap-4'>
-					
-					%s%s
-				</div>
+				<h2 class='mb-2 text-lg'>Equipment Details</h2>
+				%s
 			</div>
-			<div class='flex flex-col text-xs'>
-				<p><strong>Nickname:</strong> %s</p>
-				<p><strong>Serial Number:</strong> %s</p>
-				<p><strong>Manufacturer:</strong> %s</p>
+			<div>
+				<p class='text-xs'>Nickname: %s</p>
+				<p class='text-xs'>Serial Number: %s</p>
+				<p class='text-xs'>Manufacturer: %s</p>
 			</div>
-			<div class='flex flex-col text-xs w-[200px]'>
-				<img src='%s' alt='%s' class='w-full'/>
+			<div>
+				<img src='data:image/jpeg;base64,%s' class='w-full h-auto' alt='%s'/>
 			</div>
 		</div>
 	`, 
-		SvgIcon("/static/svg/edit-dark.svg", "sm", "x-show='!loading' @click='loading = !loading' x-cloak"), 
-		SvgIcon("/static/svg/delete-dark.svg", "sm", "x-show='loading' @click='loading = !loading' x-cloak"), 
+		SvgIcon("/static/svg/gear-dark.svg", "sm", "hx-get='/app/equipment/" + fmt.Sprint(equipment.ID) + "/settings' hx-target='#root' hx-swap='afterend'"),
 		equipment.Nickname, 
 		equipment.SerialNumber, 
-		manufacturer.Name, 
-		photo, 
+		manufacturer.Name,
+		base64.StdEncoding.EncodeToString(equipment.Photo),
 		equipment.Nickname,
 	)
 }
