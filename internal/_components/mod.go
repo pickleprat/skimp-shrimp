@@ -16,7 +16,7 @@ func Banner(hasIcon bool, menu string) string {
 	}
 	return fmt.Sprintf(`
 		<header x-data="{ navopen: false }">
-			<div class='flex flex-row justify-between items-center p-6 h-[75px] z-40 fixed top-0 w-full border-b border-darkgray'>
+			<div class='flex flex-row justify-between items-center p-6 h-[75px] z-40 bg-black fixed top-0 w-full border-b border-darkgray'>
 				<h2 class='text-xl'>Repairs Log</h2>
 				%s%s
 			</div>
@@ -28,7 +28,7 @@ func Banner(hasIcon bool, menu string) string {
 
 func Root(components ...string) string {
     content := strings.Join(components, "")
-    return fmt.Sprintf("<main>%s</main>", content)
+    return fmt.Sprintf("<main class='sm:px-4 lg:px-16 xl:px-32'>%s</main>", content)
 }
 
 func NavMenuLink(name string, href string, currentPath string) string {
@@ -45,13 +45,13 @@ func NavMenuLink(name string, href string, currentPath string) string {
 
 func AppNavMenu(currentPath string) string {
 	return fmt.Sprintf(`
-		<nav x-show='navopen' x-transition x-cloak class='fixed left-0 top-[75px] h-full w-3/5 max-w-[300px] p-6 z-40 bg-black border-r border-darkgray'>
+		<nav x-show='navopen' x-transition x-cloak class='fixed right-0 top-[75px] h-full w-3/5 max-w-[300px] p-6 z-40 bg-black border-l border-darkgray'>
 			<ul class='flex flex-col gap-2'>
 				%s%s
 			</ul>
 		</nav>
 		<div x-show='navopen' @click='navopen = !navopen' class='h-full w-full fixed top-0 left-0 bg-black opacity-50 z-30'></div>
-	`, NavMenuLink("Home", "/app", currentPath), NavMenuLink("Logout", "/logout", currentPath))
+	`, NavMenuLink("Manufacturers", "/app", currentPath), NavMenuLink("Logout", "/logout", currentPath))
 }
 
 func SvgIcon(src string, size string, xattr string) string {
@@ -79,7 +79,7 @@ func MqWrapperCentered(content string) string {
 
 func MqGridTwoColEvenSplit(content1 string, content2 string) string {
 	return fmt.Sprintf(`
-		<div class='grid sm:grid-cols-2 sm:gap-4'>
+		<div class='grid md:grid-cols-2 md:gap-4'>
 			<div class='flex justify-center'>%s</div>
 			<div class='flex justify-center'>%s</div>
 		</div>
@@ -167,7 +167,7 @@ func LoginForm(err string, username string, password string) string {
 
 func CreateManufacturerForm(err string, name string, phone string, email string, xclass string) string {
 	return fmt.Sprintf(`
-		<form x-data="{ loading: false }" method='POST' class='flex flex-col p-6 gap-4 w-full max-w-[500px] %s'>
+		<form x-data="{ loading: false }" method='POST' class='flex flex-col p-6 gap-4 w-full %s'>
 			%s%s%s%s%s%s%s
 		</form>
 	`, xclass, FormTitle("Create Manufacturer"), FormError(err), FormInputLabel("Name", "name", "", name), FormInputLabel("Phone", "phone", "", phone), FormInputLabel("Email", "email", "", email), FormLoader(), FormSubmitButton())
@@ -189,13 +189,13 @@ func ManufacturerList(manufacturers []_model.Manufacturer, xclass string) string
 	}
 	if len(manufacturers) == 0 {
 		return fmt.Sprintf(`
-			<div class='p-6 max-w-[500px] w-full %s'>
+			<div class='p-6 w-full %s'>
 				<p>Oh, so empty!</p>
 			</div>
 		`, xclass)
 	} else {
 		return fmt.Sprintf(`
-			<div class='p-6 max-w-[500px] w-full %s'>
+			<div class='p-6 w-full %s'>
 				<table class='text-xs w-full'>
 					<tr class='text-left'>
 						<th>Name</th>
@@ -217,7 +217,7 @@ func ManufacturerDetails(manufacturer _model.Manufacturer, update string, delete
 	deleteAction := fmt.Sprintf("/app/manufacturer/%d/delete", manufacturer.ID)
 	updateActon := fmt.Sprintf("/app/manufacturer/%d/update", manufacturer.ID)
 	return fmt.Sprintf(`
-		<div x-data="{ update: %s }" class='p-6 w-full flex flex-col gap-4 max-w-[500px] %s'>
+		<div x-data="{ update: %s }" class='p-6 w-full flex flex-col gap-4 %s'>
 			<div class='flex flex-row justify-between'>
 				<h2>Manufacturer Details</h2>
 				%s%s
@@ -261,11 +261,11 @@ func ManufacturerDetails(manufacturer _model.Manufacturer, update string, delete
 
 func CreateEquipmentForm(err string, xclass string) string {
 	return fmt.Sprintf(`
-		<form enctype='multipart/form-data' x-data="{ loading: false }" method='POST' class='flex flex-col p-6 gap-4 w-full max-w-[500px] %s'>
+		<form enctype='multipart/form-data' x-data="{ loading: false }" method='POST' class='flex flex-col p-6 gap-4 w-full  %s'>
 			%s%s%s%s
 			<div class='flex flex-col text-xs w-fit rounded gap-2'>
 				<label>Photo</label>
-				<button type='button' x-on:click="$refs.uploadInput.click()" class='text-left border border-white p-2 rounded'>Upload Photo</button>
+				<button type='button' x-on:click="$refs.uploadInput.click()" class='text-left border border-gray hover:border-lightgray p-2 rounded'>Upload Photo</button>
 				<input name='photo' id='upload-input' x-ref='uploadInput' type='file' class='hidden'/>
 			</div>
 			<div id='image-preview'></div>
@@ -308,14 +308,14 @@ func EquipmentList(equipment []_model.Equipment, xclass string) string {
             photo = fmt.Sprintf("data:image/jpeg;base64,%s", base64.StdEncoding.EncodeToString(eq.Photo))
         }
         equipmentList += fmt.Sprintf(`
-            <div class="max-w-xs rounded overflow-hidden shadow-lg">
+            <a href='/app/equipment/%d' class="rounded overflow-hidden border border-gray p-4 cursor-pointer hover:border-lightgray">
                 <img class="w-full" src="%s" alt="%s">
                 <div class="px-6 py-4">
-                    <div class="font-bold text-xl mb-2">%s</div>
-                    <p class="text-gray-700 text-base">Serial Number: %s</p>
+                    <div class="text-xs mb-2">Name: %s</div>
+                    <p class="text-gray-700 text-xs">Serial Number: %s</p>
                 </div>
-            </div>
-        `, photo, eq.Nickname, eq.Nickname, eq.SerialNumber)
+            </a>
+        `, eq.ID, photo, eq.Nickname, eq.Nickname, eq.SerialNumber)
     }
     if len(equipment) == 0 {
         return fmt.Sprintf(`
@@ -325,11 +325,54 @@ func EquipmentList(equipment []_model.Equipment, xclass string) string {
         `, xclass)
     } else {
         return fmt.Sprintf(`
-            <div class='p-6 w-full flex flex-wrap %s'>
-                %s
-            </div>
+			<div class='w-full flex flex-wrap gap-4 p-6 %s'>
+				%s
+			</div>
         `, xclass, equipmentList)
     }
+}
+
+func Footer() string {
+	return `
+		<div class='mt-32'></div>
+		<footer class='border-t bottom-0 fixed border-gray bg-black w-full h-12 bg-black flex justify-center items-center text-xs text-gray'>
+			<p>© 2024 Repairs Log</p>
+		</footer>
+	`
+}
+
+func EquipmentDetails(equipment _model.Equipment, manufacturer _model.Manufacturer) string {
+	photo := ""
+	if len(equipment.Photo) > 0 {
+		photo = fmt.Sprintf("data:image/jpeg;base64,%s", base64.StdEncoding.EncodeToString(equipment.Photo))
+	}
+	return fmt.Sprintf(`
+		<div x-data="{ loading: false }" class='p-6 w-full flex flex-col gap-4'>
+			<div class='flex flex-row justify-between'>
+				<h2>Equipment Details</h2>
+				<div class='flex flex-row gap-4'>
+					
+					%s%s
+				</div>
+			</div>
+			<div class='flex flex-col text-xs'>
+				<p><strong>Nickname:</strong> %s</p>
+				<p><strong>Serial Number:</strong> %s</p>
+				<p><strong>Manufacturer:</strong> %s</p>
+			</div>
+			<div class='flex flex-col text-xs w-[200px]'>
+				<img src='%s' alt='%s' class='w-full'/>
+			</div>
+		</div>
+	`, 
+		SvgIcon("/static/svg/edit-dark.svg", "sm", "x-show='!loading' @click='loading = !loading' x-cloak"), 
+		SvgIcon("/static/svg/delete-dark.svg", "sm", "x-show='loading' @click='loading = !loading' x-cloak"), 
+		equipment.Nickname, 
+		equipment.SerialNumber, 
+		manufacturer.Name, 
+		photo, 
+		equipment.Nickname,
+	)
 }
 
 

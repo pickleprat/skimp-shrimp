@@ -110,9 +110,11 @@ func App(mux *http.ServeMux, db *gorm.DB) {
                 db.Find(&manufacturers)
 				b := NewViewBuilder("Repairs Log - App", []string{
 					_components.Banner(true, _components.AppNavMenu(r.URL.Path)),
-					_components.MqGridTwoColEvenSplit(
-						_components.CreateManufacturerForm(r.URL.Query().Get("err"), r.URL.Query().Get("name"), r.URL.Query().Get("phone"), r.URL.Query().Get("email"), ""),
-						_components.ManufacturerList(manufacturers, ""),
+					_components.Root(
+						_components.MqGridTwoColEvenSplit(
+							_components.CreateManufacturerForm(r.URL.Query().Get("err"), r.URL.Query().Get("name"), r.URL.Query().Get("phone"), r.URL.Query().Get("email"), ""),
+							_components.ManufacturerList(manufacturers, ""),
+						),
 					),
 				})
 				w.Write(b.Build())
@@ -193,6 +195,7 @@ func Manufacturer(mux *http.ServeMux, db *gorm.DB) {
 							_components.EquipmentList(manufacturer.Equipment, ""),
 						),
 					),
+					_components.Footer(),
 				})
 				w.Write(b.Build())
 			},
@@ -292,6 +295,31 @@ func CreateEquipment(mux *http.ServeMux, db *gorm.DB) {
 	})
 }
 
-
+func Equipment(mux *http.ServeMux, db *gorm.DB) {
+	mux.HandleFunc("GET /app/equipment/{id}", func(w http.ResponseWriter, r *http.Request) {
+		ctx := map[string]interface{}{}
+		_middleware.MiddlewareChain(ctx, w, r, _middleware.Init, _middleware.Auth,
+			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+				id := r.PathValue("id")
+				var equipment _model.Equipment
+				var manufacturer _model.Manufacturer
+				db.First(&equipment, id)
+				db.First(&manufacturer, equipment.ManufacturerID)
+				b := NewViewBuilder("Repairs Log - App", []string{
+					_components.Banner(true, _components.AppNavMenu(r.URL.Path)),
+					_components.Root(
+						_components.MqGridTwoColEvenSplit(
+							_components.EquipmentDetails(equipment, manufacturer),
+							"",
+						),
+					),
+					_components.Footer(),
+				})
+				w.Write(b.Build())
+			},
+			_middleware.Log,
+		)
+	})
+}
 
 
