@@ -6,6 +6,7 @@ import (
 	"cfasuite/internal/_view"
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/joho/godotenv"
 	"gorm.io/driver/sqlite"
@@ -42,6 +43,6 @@ func main() {
 
 
 	fmt.Println("Server is running on port 8080")
-	http.ListenAndServe(":8080", mux)
+	http.ListenAndServe(":" + os.Getenv("PORT"), mux)
 
 }
