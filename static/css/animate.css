@@ -1,0 +1,16 @@
+/* Define the keyframes for fade-in animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px); /* Optional: Slide up effect */
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Apply the animation to elements with the .fade-in class */
+.fade-in {
+  animation: fadeIn 0.2s ease-in-out;
+}

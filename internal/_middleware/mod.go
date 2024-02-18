@@ -72,6 +72,18 @@ func Auth(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func ComponentAuth(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("SessionToken")
+	if err != nil {
+		http.Redirect(w, r, "/app/component/redirect", http.StatusSeeOther)
+		return
+	}
+	if cookie.Value != os.Getenv("ADMIN_SESSION_TOKEN") {
+		http.Redirect(w, r, "/app/component/redirect", http.StatusSeeOther)
+		return
+	}
+}
+
 func MwIncludePNG(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "image/png")
 }

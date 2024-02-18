@@ -132,6 +132,37 @@ func FormDeleteButton() string {
 	`
 }
 
+func FormPhotoUpload() string {
+	return `
+		<div class='flex flex-col text-xs w-fit rounded gap-2'>
+			<label>Photo</label>
+			<button id='photo-upload-button' type='button' class='text-left border border-gray hover:border-lightgray p-2 rounded'>Upload Photo</button>
+			<input name='photo' id='upload-input' type='file' class='hidden'/>
+		</div>
+		<div id='image-preview'></div>
+		<script>
+			document.getElementById('photo-upload-button').addEventListener('click', () => {
+				document.getElementById('upload-input').click()
+			})
+			document.getElementById('upload-input').addEventListener('change', (e) => {
+				const file = e.target.files[0];
+				if (file) {
+					const reader = new FileReader();
+					const imgElement = document.createElement('img');
+					imgElement.alt = 'Image Preview';
+					reader.onload = () => {
+						imgElement.src = reader.result;
+						document.getElementById('image-preview').innerHTML = '';
+						document.getElementById('image-preview').appendChild(imgElement);
+					};
+		
+					reader.readAsDataURL(file);
+				}
+			});
+		</script>
+	`
+}
+
 func FormError(err string) string {
 	if err == "" {
 		return ""
@@ -309,13 +340,13 @@ func EquipmentList(equipment []_model.Equipment, xclass string) string {
         }
         equipmentList += fmt.Sprintf(`
             <a href='/app/equipment/%d' class="rounded overflow-hidden border border-gray p-4 cursor-pointer hover:border-lightgray">
+				<div class="px-6 py-4">
+					<div class="text-xs mb-2">Name: %s</div>
+					<p class="text-gray-700 text-xs">Serial Number: %s</p>
+				</div>
                 <img class="w-full" src="%s" alt="%s">
-                <div class="px-6 py-4">
-                    <div class="text-xs mb-2">Name: %s</div>
-                    <p class="text-gray-700 text-xs">Serial Number: %s</p>
-                </div>
             </a>
-        `, eq.ID, photo, eq.Nickname, eq.Nickname, eq.SerialNumber)
+        `, eq.ID, eq.Nickname, eq.SerialNumber, photo, eq.Nickname)
     }
     if len(equipment) == 0 {
         return fmt.Sprintf(`
@@ -341,17 +372,29 @@ func Footer() string {
 	`
 }
 
-func EquipmentDetails(equipment _model.Equipment, manufacturer _model.Manufacturer) string {
+func ErrorMessage(err string) string {
+	if err == "" {
+		return ""
+	} else {
+		return fmt.Sprintf(`
+			<p class='text-red text-xs py-2'>%s</p>
+		`, err)
+	}
+
+}
+
+func EquipmentDetails(equipment _model.Equipment, manufacturer _model.Manufacturer, updateErr string) string {
 	return fmt.Sprintf(`
 		<div class='p-6 w-full grid gap-4'>
 			<div class='flex flex-row justify-between'>
 				<h2 class='mb-2 text-lg'>Equipment Details</h2>
 				%s
 			</div>
+			%s
 			<div>
 				<p class='text-xs'>Nickname: %s</p>
 				<p class='text-xs'>Serial Number: %s</p>
-				<p class='text-xs'>Manufacturer: %s</p>
+				<p class='text-xs'>Manufacturer: <a href='/app/manufacturer/%d' class='underline'>%s</a></p>
 			</div>
 			<div>
 				<img src='data:image/jpeg;base64,%s' class='w-full h-auto' alt='%s'/>
@@ -359,8 +402,10 @@ func EquipmentDetails(equipment _model.Equipment, manufacturer _model.Manufactur
 		</div>
 	`, 
 		SvgIcon("/static/svg/gear-dark.svg", "sm", "hx-get='/app/equipment/" + fmt.Sprint(equipment.ID) + "/settings' hx-target='#root' hx-swap='afterend'"),
+		ErrorMessage(updateErr),
 		equipment.Nickname, 
-		equipment.SerialNumber, 
+		equipment.SerialNumber,
+		manufacturer.ID, 
 		manufacturer.Name,
 		base64.StdEncoding.EncodeToString(equipment.Photo),
 		equipment.Nickname,

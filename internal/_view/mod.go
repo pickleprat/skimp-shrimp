@@ -40,6 +40,7 @@ func (v *ViewBuilder) Build() []byte {
 			<script src="/static/js/index.js" defer></script>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
 			<link rel="stylesheet" href="/static/css/output.css">
+			<link rel="stylesheet" href="/static/css/animate.css">
 			<style>
 				[x-cloak] { display: none !important; }
 			</style>
@@ -314,7 +315,7 @@ func Equipment(mux *http.ServeMux, db *gorm.DB) {
 					_components.Banner(true, _components.AppNavMenu(r.URL.Path)),
 					_components.Root(
 						_components.MqGridTwoColEvenSplit(
-							_components.EquipmentDetails(equipment, manufacturer),
+							_components.EquipmentDetails(equipment, manufacturer, r.URL.Query().Get("updateErr")),
 							"",
 						),
 					),
@@ -327,10 +328,54 @@ func Equipment(mux *http.ServeMux, db *gorm.DB) {
 	})
 }
 
+func UpdateEquipment(mux *http.ServeMux, db *gorm.DB) {
+    mux.HandleFunc("POST /app/equipment/{id}/update", func(w http.ResponseWriter, r *http.Request) {
+        ctx := map[string]interface{}{}
+        _middleware.MiddlewareChain(ctx, w, r, _middleware.Init, _middleware.ParseMultipartForm, _middleware.Auth,
+            func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+                id := r.PathValue("id")
+                name := r.Form.Get("nickname")
+                number := r.Form.Get("number")
+                
+                // Check if a new photo is provided
+                photo, _, err := r.FormFile("photo")
+                defer func() {
+                    if photo != nil {
+                        photo.Close()
+                    }
+                }()
+                if err != nil && err != http.ErrMissingFile {
+                    http.Redirect(w, r, _util.URLBuilder("/app/equipment/"+id, "updateErr", "failed to retrieve file"), http.StatusSeeOther)
+                    return
+                }
+                
+                var equipment _model.Equipment
+                db.First(&equipment, id)
+                
+                // Update only if a new photo is provided
+                if photo != nil {
+                    photoBytes, err := io.ReadAll(photo)
+                    if err != nil {
+                        http.Error(w, "Failed to read file", http.StatusBadRequest)
+                        return
+                    }
+                    equipment.Photo = photoBytes
+                }
+                
+                equipment.Nickname = name
+                equipment.SerialNumber = number
+                db.Save(&equipment)
+                http.Redirect(w, r, "/app/equipment/"+id, http.StatusSeeOther)
+            },
+            _middleware.Log,
+        )
+    })
+}
+
 func EquipmentSettingsForm(mux *http.ServeMux, db *gorm.DB) {
 	mux.HandleFunc("GET /app/equipment/{id}/settings", func(w http.ResponseWriter, r *http.Request) {
 		ctx := map[string]interface{}{}
-		_middleware.MiddlewareChain(ctx, w, r, _middleware.Init, _middleware.Auth,
+		_middleware.MiddlewareChain(ctx, w, r, _middleware.Init, _middleware.ComponentAuth,
 			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
 				id := r.PathValue("id")
 				var equipment _model.Equipment
@@ -340,15 +385,27 @@ func EquipmentSettingsForm(mux *http.ServeMux, db *gorm.DB) {
 						<span id='equipment-settings-form'>
 							<div class='bg-black opacity-70 fixed h-full w-full top-0 z-40'></div>					
 							<div class='fixed h-full w-full z-50 grid top-0 mt-4 sm:mt-8 px-4'>
-								<form class='md:place-self-center mt-[75px] md:mt-0 mb-[500px] grid w-full p-6 md:max-w-[500px] border border-gray rounded bg-black'>
+								<form enctype='multipart/form-data' method='POST' action='/app/equipment/%d/update' x-data="{ loading: false }" class='fade-in gap-4 md:place-self-center mt-[75px] md:mt-0 mb-[500px] grid w-full p-6 md:max-w-[500px] border border-gray rounded bg-black'>
 									<div class='flex justify-between'>
 										<h2>Equipment Settings</h2>
 										%s
 									</div>
+									<div class='flex flex-col gap-4'>
+										%s%s%s%s%s
+									</div>
 								</form>
 							</div>
 						</span>
-					`, _components.SvgIcon("/static/svg/x-dark.svg", "sm", "hx-get='/app/component/clear' hx-trigger='click' hx-swap='outerHTML' hx-target='#equipment-settings-form'")),
+					`, 
+						equipment.ID,
+						_components.SvgIcon("/static/svg/x-dark.svg", "sm", "hx-get='/app/component/clear' hx-trigger='click' hx-swap='outerHTML' hx-target='#equipment-settings-form'"),
+						_components.FormInputLabel("Nickname", "nickname", "text", equipment.Nickname),
+						_components.FormInputLabel("Serial Number", "number", "text", equipment.SerialNumber),
+						_components.FormPhotoUpload(),
+						_components.FormLoader(),
+						_components.FormSubmitButton(),
+
+					),
 				})
 				w.Write(b.BuildComponent())
 			},
@@ -361,9 +418,26 @@ func EquipmentSettingsForm(mux *http.ServeMux, db *gorm.DB) {
 func ClearComponent(mux *http.ServeMux, db *gorm.DB) {
 	mux.HandleFunc("GET /app/component/clear", func(w http.ResponseWriter, r *http.Request) {
 		ctx := map[string]interface{}{}
-		_middleware.MiddlewareChain(ctx, w, r, _middleware.Init, _middleware.Auth,
+		_middleware.MiddlewareChain(ctx, w, r, _middleware.Init,
 			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
-				b := NewViewBuilder("Repairs Log - App", []string{""})
+				b := NewViewBuilder("Repairs Log - App", []string{``})
+				w.Write(b.BuildComponent())
+			},
+			_middleware.Log,
+		)
+	})
+}
+
+func ClientRedirect(mux *http.ServeMux, db *gorm.DB) {
+	mux.HandleFunc("GET /app/component/redirect", func(w http.ResponseWriter, r *http.Request) {
+		ctx := map[string]interface{}{}
+		_middleware.MiddlewareChain(ctx, w, r, _middleware.Init,
+			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+				b := NewViewBuilder("Repairs Log - App", []string{`
+					<script>
+						htmx.ajax("GET", "/", "body");
+					</script>
+				`})
 				w.Write(b.BuildComponent())
 			},
 			_middleware.Log,
