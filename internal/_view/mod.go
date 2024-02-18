@@ -90,6 +90,7 @@ func Login(mux *http.ServeMux, db *gorm.DB) {
 			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
 				username := r.Form.Get("username")
 				password := r.Form.Get("password")
+				fmt.Println(username, password)
 				if username == os.Getenv("APP_USERNAME") && password == os.Getenv("APP_PASSWORD") {
 					http.SetCookie(w, &http.Cookie{
 						Name: "SessionToken",

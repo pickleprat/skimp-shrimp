@@ -42,7 +42,7 @@ func main() {
 	_view.UpdateEquipment(mux, db)
 
 
-	fmt.Println("Server is running on port 8080")
+	fmt.Println("Server is running on port " + os.Getenv("PORT"))
 	http.ListenAndServe(":" + os.Getenv("PORT"), mux)
 
 }
