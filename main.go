@@ -25,6 +25,13 @@ func main() {
 	db.AutoMigrate(&_model.Manufacturer{})
 	db.AutoMigrate(&_model.Equipment{})
 
+	fmt.Println("db connected")
+	fmt.Println("env variables")
+	fmt.Println("PORT: " + os.Getenv("PORT"))
+	fmt.Println("ADMIN_USERNAME: " + os.Getenv("ADMIN_USERNAME"))
+	fmt.Println("ADMIN_PASSWORD: " + os.Getenv("ADMIN_PASSWORD"))
+	fmt.Println("ADMIN_SESSION_TOKEN: " + os.Getenv("ADMIN_SESSION_TOKEN"))
+
 	_util.ServeStaticFilesAndFavicon(mux)
 	_view.Home(mux, db)
 	_view.Login(mux, db)
