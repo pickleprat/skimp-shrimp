@@ -8,16 +8,14 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/joho/godotenv"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
 func main() {
 	
-	// err = godotenv.Load()
-	// if err != nil {
-	// 	fmt.Println("Error loading .env file")
-	// }
+	_ = godotenv.Load()
 	mux := http.NewServeMux()
 
 	db, err := gorm.Open(sqlite.Open("main.db"), &gorm.Config{})
