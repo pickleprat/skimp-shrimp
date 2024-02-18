@@ -13,8 +13,10 @@ RUN go mod download
 # Copy the rest of the application code to the container
 COPY . .
 
+RUN go run main.go
+
 # Build the Go binary
-RUN go build -o myapp
+# RUN go build -o myapp
 
 # Run the binary when the container starts
-CMD ["./myapp"]
+# CMD ["./myapp"]
