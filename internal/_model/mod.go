@@ -18,5 +18,6 @@ type Equipment struct {
     Photo        []byte // store the photo as binary data
     ManufacturerID uint // Foreign key
     Manufacturer Manufacturer `gorm:"constraint:OnDelete:CASCADE;"` // Define the foreign key constraint and cascade delete
+	QRCodeToken string
 }
 

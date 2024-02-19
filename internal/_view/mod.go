@@ -281,26 +281,28 @@ func CreateEquipment(mux *http.ServeMux, db *gorm.DB) {
                 number := r.Form.Get("number")
                 photo, _, err := r.FormFile("photo")
                 if err != nil {
-					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/"+id, "equipmentErr", "photo required"), http.StatusSeeOther)
+                    http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/"+id, "equipmentErr", "photo required"), http.StatusSeeOther)
                     return
                 }
                 defer photo.Close()
                 if photo == nil {
-					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/"+id, "equipmentErr", "photo required"), http.StatusSeeOther)
+                    http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/"+id, "equipmentErr", "photo required"), http.StatusSeeOther)
                     return
                 }
                 photoBytes, err := io.ReadAll(photo)
                 if err != nil {
-					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/"+id, "equipmentErr", "photo required"), http.StatusSeeOther)
+                    http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/"+id, "equipmentErr", "photo required"), http.StatusSeeOther)
                     return
                 }
                 var manufacturer _model.Manufacturer
                 db.First(&manufacturer, id)
+                qrCodeToken := _util.GenerateRandomToken(32)
                 equipment := _model.Equipment{
                     Nickname:       name,
                     SerialNumber:   number,
                     Photo:          photoBytes,
                     ManufacturerID: manufacturer.ID,
+                    QRCodeToken:    qrCodeToken,
                 }
                 db.Create(&equipment)
                 http.Redirect(w, r, "/app/manufacturer/"+id, http.StatusSeeOther)
@@ -326,6 +328,7 @@ func Equipment(mux *http.ServeMux, db *gorm.DB) {
 					_components.Root(
 						_components.CenterContentWrapper(
 							_components.EquipmentDetails(equipment, manufacturer, r.URL.Query().Get("err")),
+							_components.EquipmentQrCodeDownload(equipment),
 						),
 					),
 					_components.Footer(),
@@ -476,5 +479,6 @@ func DeleteEquipment(mux *http.ServeMux, db *gorm.DB) {
 		)
 	})
 }
+
 
 

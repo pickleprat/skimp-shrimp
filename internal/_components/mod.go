@@ -454,6 +454,7 @@ func EquipmentDetails(equipment _model.Equipment, manufacturer _model.Manufactur
 			<div>
 				<p class='text-xs'>Nickname: %s</p>
 				<p class='text-xs'>Serial Number: %s</p>
+				<p class='text-xs'>QR Code Token: %s</p>
 				<p class='text-xs'>Manufacturer: <a href='/app/manufacturer/%d' class='underline hover:text-red'>%s</a></p>
 			</div>
 			<div class='w-[200px]'>
@@ -499,6 +500,7 @@ func EquipmentDetails(equipment _model.Equipment, manufacturer _model.Manufactur
 		ErrorMessage(err),
 		equipment.Nickname, 
 		equipment.SerialNumber,
+		equipment.QRCodeToken,
 		manufacturer.ID, 
 		manufacturer.Name,
 		base64.StdEncoding.EncodeToString(equipment.Photo),
@@ -535,6 +537,15 @@ func DeleteEquipmentForm(equipment _model.Equipment) string {
 			%s%s%s
 		</form>
 	`, equipment.ID, FormTitle("Delete Equipment"), FormInputLabel("Type '" + equipment.Nickname + "' to delete", "name", "", ""), FormDeleteButton())
+}
+
+func EquipmentQrCodeDownload(equipment _model.Equipment) string {
+	return fmt.Sprintf(`
+		<div class='flex flex-row gap-4 justify-between p-6'>
+			<h2>Equipment QR Code</h2>
+			%s
+		</div>
+	`, SvgIcon("/static/svg/download-dark.svg", "sm", "", ""))
 }
 
 

@@ -4,11 +4,13 @@ import (
 	"encoding/base64"
 	"errors"
 	"html/template"
+	"math/rand"
 	"net/http"
 	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func RenderTemplate(w http.ResponseWriter, tmplFile string, data map[string]interface{}) {
@@ -94,4 +96,14 @@ func IsValidEmail(email string) bool {
 	pattern := `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
 	regex := regexp.MustCompile(pattern)
 	return regex.MatchString(email)
+}
+
+func GenerateRandomToken(length int) string {
+    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    token := make([]byte, length)
+    rand.Seed(time.Now().UnixNano())
+    for i := range token {
+        token[i] = charset[rand.Intn(len(charset))]
+    }
+    return string(token)
 }
