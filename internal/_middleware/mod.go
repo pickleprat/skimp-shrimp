@@ -1,7 +1,6 @@
 package _middleware
 
 import (
-	"encoding/hex"
 	"fmt"
 	"math/rand"
 	"net/http"
@@ -58,12 +57,6 @@ func ParseMultipartForm(ctx map[string]interface{}, w http.ResponseWriter, r *ht
 	r.ParseMultipartForm(10 << 20)
 }
 
-func MwGenMultipartString(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
-	randomBytes := make([]byte, 5)
-	randString := hex.EncodeToString(randomBytes)
-	ctx["MultipartString"] = randString
-}
-
 func Auth(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("SessionToken")
 	if err != nil {
@@ -72,18 +65,6 @@ func Auth(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
 	}
 	if cookie.Value != os.Getenv("ADMIN_SESSION_TOKEN") {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
-		return
-	}
-}
-
-func ComponentAuth(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
-	cookie, err := r.Cookie("SessionToken")
-	if err != nil {
-		http.Redirect(w, r, "/app/component/redirect", http.StatusSeeOther)
-		return
-	}
-	if cookie.Value != os.Getenv("ADMIN_SESSION_TOKEN") {
-		http.Redirect(w, r, "/app/component/redirect", http.StatusSeeOther)
 		return
 	}
 }

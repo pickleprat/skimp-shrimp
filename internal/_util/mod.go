@@ -3,48 +3,12 @@ package _util
 import (
 	"encoding/base64"
 	"errors"
-	"html/template"
 	"math/rand"
-	"net/http"
-	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
 )
-
-func RenderTemplate(w http.ResponseWriter, tmplFile string, data map[string]interface{}) {
-	tmpl, err := template.ParseFiles(tmplFile)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	err = tmpl.Execute(w, data)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-}
-
-func RenderErrorPage(w http.ResponseWriter, r *http.Request, err string) {
-	http.Redirect(w, r, "/500?Err="+err, http.StatusSeeOther)
-}
-
-func ServeStaticFilesAndFavicon(mux *http.ServeMux) {
-	mux.HandleFunc("GET /static/", ServeStaticFiles)
-	mux.HandleFunc("GET /favicon.ico", ServeFavicon)
-}
-
-func ServeFavicon(w http.ResponseWriter, r *http.Request) {
-	filePath := "favicon.ico"
-	fullPath := filepath.Join(".", "static", filePath)
-	http.ServeFile(w, r, fullPath)
-}
-
-func ServeStaticFiles(w http.ResponseWriter, r *http.Request) {
-	filePath := r.URL.Path[len("/static/"):]
-	fullPath := filepath.Join(".", "static", filePath)
-	http.ServeFile(w, r, fullPath)
-}
 
 func ConvertStringToUint(input string) (uint, error) {
 	if input == "" {

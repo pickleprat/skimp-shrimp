@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -57,6 +58,23 @@ func (v *ViewBuilder) Build() []byte {
 func (v *ViewBuilder) BuildComponent() []byte {
 	viewString := strings.Join(v.ViewComponents, "");
 	return []byte(fmt.Sprintf(`%s`, viewString))
+}
+
+func ServeStaticFilesAndFavicon(mux *http.ServeMux) {
+	mux.HandleFunc("GET /static/", ServeStaticFiles)
+	mux.HandleFunc("GET /favicon.ico", ServeFavicon)
+}
+
+func ServeFavicon(w http.ResponseWriter, r *http.Request) {
+	filePath := "favicon.ico"
+	fullPath := filepath.Join(".", "static", filePath)
+	http.ServeFile(w, r, fullPath)
+}
+
+func ServeStaticFiles(w http.ResponseWriter, r *http.Request) {
+	filePath := r.URL.Path[len("/static/"):]
+	fullPath := filepath.Join(".", "static", filePath)
+	http.ServeFile(w, r, fullPath)
 }
 
 
@@ -384,79 +402,6 @@ func UpdateEquipment(mux *http.ServeMux, db *gorm.DB) {
             _middleware.Log,
         )
     })
-}
-
-func EquipmentSettingsForm(mux *http.ServeMux, db *gorm.DB) {
-	mux.HandleFunc("GET /app/equipment/{id}/settings", func(w http.ResponseWriter, r *http.Request) {
-		ctx := map[string]interface{}{}
-		_middleware.MiddlewareChain(ctx, w, r, _middleware.Init, _middleware.ComponentAuth,
-			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
-				id := r.PathValue("id")
-				var equipment _model.Equipment
-				db.First(&equipment, id)
-				b := NewViewBuilder("Repairs Log - App", []string{
-					fmt.Sprintf(`
-						<span id='equipment-settings-form'>
-							<div class='bg-black opacity-70 fixed h-full w-full top-0 z-40'></div>					
-							<div class='fixed h-full w-full z-50 grid top-0 mt-4 sm:mt-8 px-4'>
-								<form enctype='multipart/form-data' method='POST' action='/app/equipment/%d/update' x-data="{ loading: false }" class='fade-in gap-4 md:place-self-center mt-[75px] md:mt-0 mb-[500px] grid w-full p-6 md:max-w-[500px] border border-gray rounded bg-black'>
-									<div class='flex justify-between'>
-										<h2>Equipment Settings</h2>
-										%s
-									</div>
-									<div class='flex flex-col gap-4'>
-										%s%s%s%s%s
-									</div>
-								</form>
-							</div>
-						</span>
-					`, 
-						equipment.ID,
-						_components.SvgIcon("/static/svg/x-dark.svg", "sm", "hx-get='/app/component/clear' hx-trigger='click' hx-swap='outerHTML' hx-target='#equipment-settings-form'", ""),
-						_components.FormInputLabel("Nickname", "nickname", "text", equipment.Nickname),
-						_components.FormInputLabel("Serial Number", "number", "text", equipment.SerialNumber),
-						_components.FormPhotoUpload(),
-						_components.FormLoader(),
-						_components.FormSubmitButton(),
-
-					),
-				})
-				w.Write(b.BuildComponent())
-			},
-			_middleware.Log,
-		)
-	})
-}
-
-
-func ClearComponent(mux *http.ServeMux, db *gorm.DB) {
-	mux.HandleFunc("GET /app/component/clear", func(w http.ResponseWriter, r *http.Request) {
-		ctx := map[string]interface{}{}
-		_middleware.MiddlewareChain(ctx, w, r, _middleware.Init,
-			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
-				b := NewViewBuilder("Repairs Log - App", []string{``})
-				w.Write(b.BuildComponent())
-			},
-			_middleware.Log,
-		)
-	})
-}
-
-func ClientRedirect(mux *http.ServeMux, db *gorm.DB) {
-	mux.HandleFunc("GET /app/component/redirect", func(w http.ResponseWriter, r *http.Request) {
-		ctx := map[string]interface{}{}
-		_middleware.MiddlewareChain(ctx, w, r, _middleware.Init,
-			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
-				b := NewViewBuilder("Repairs Log - App", []string{`
-					<script>
-						htmx.ajax("GET", "/", "body");
-					</script>
-				`})
-				w.Write(b.BuildComponent())
-			},
-			_middleware.Log,
-		)
-	})
 }
 
 func DeleteEquipment(mux *http.ServeMux, db *gorm.DB) {

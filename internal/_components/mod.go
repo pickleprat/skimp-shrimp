@@ -87,32 +87,6 @@ func MqWrapperCentered(content string) string {
 	`, content)
 }
 
-func MqGridTwoColEvenSplit(content1 string, content2 string) string {
-	return fmt.Sprintf(`
-		<div class='grid md:grid-cols-2 md:gap-4'>
-			<div class='flex justify-center'>%s</div>
-			<div class='flex justify-center'>%s</div>
-		</div>
-	`, content1, content2)
-}
-
-func MqGridTwoRowsStacked(content1 string, content2 string) string {
-	return fmt.Sprintf(`
-		<div class='grid sm:grid-rows-2 sm:gap-4 w-full'>
-			<div class='flex justify-center sm:justify-normal'>%s</div>
-			<div class='flex justify-center sm:justify-normal'>%s</div>
-		</div>
-	`, content1, content2)
-}
-
-func MqGridOneRowCentered(content string) string {
-	return fmt.Sprintf(`
-		<div class='grid sm:grid-cols-1 sm:gap-4 items-center'>
-			%s
-		</div>
-	`, content)
-}
-
 func FormInputLabel(name string, serverName string, inputType string, value string) string {
 	if inputType == "" {
 		inputType = "text"

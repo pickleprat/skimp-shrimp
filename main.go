@@ -2,7 +2,6 @@ package main
 
 import (
 	"cfasuite/internal/_model"
-	"cfasuite/internal/_util"
 	"cfasuite/internal/_view"
 	"fmt"
 	"net/http"
@@ -25,7 +24,7 @@ func main() {
 	db.AutoMigrate(&_model.Manufacturer{})
 	db.AutoMigrate(&_model.Equipment{})
 
-	_util.ServeStaticFilesAndFavicon(mux)
+	_view.ServeStaticFilesAndFavicon(mux)
 	_view.Home(mux, db)
 	_view.Login(mux, db)
 	_view.App(mux, db)
@@ -36,9 +35,6 @@ func main() {
 	_view.UpdateManufacturer(mux, db)
 	_view.CreateEquipment(mux, db)
 	_view.Equipment(mux, db)
-	_view.EquipmentSettingsForm(mux, db)
-	_view.ClearComponent(mux, db)
-	_view.ClientRedirect(mux, db)
 	_view.UpdateEquipment(mux, db)
 	_view.DeleteEquipment(mux, db)
 	_view.GetEquipmentQRCode(mux, db)
