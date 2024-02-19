@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	
+
 	_ = godotenv.Load()
 	mux := http.NewServeMux()
 
@@ -39,9 +39,9 @@ func main() {
 	_view.DeleteEquipment(mux, db)
 	_view.GetEquipmentQRCode(mux, db)
 	_view.EquipmentTicket(mux, db)
-
+	_view.PublicTickets(mux, db)
 
 	fmt.Println("Server is running on port " + os.Getenv("PORT"))
-	http.ListenAndServe(":" + os.Getenv("PORT"), mux)
+	http.ListenAndServe(":"+os.Getenv("PORT"), mux)
 
 }

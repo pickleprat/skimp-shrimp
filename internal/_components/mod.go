@@ -27,8 +27,8 @@ func Banner(hasIcon bool, menu string) string {
 }
 
 func Root(components ...string) string {
-    content := strings.Join(components, "")
-    return fmt.Sprintf("<main id='root' class='grid place-items-center p-4'>%s</main>", content)
+	content := strings.Join(components, "")
+	return fmt.Sprintf("<main id='root' class='grid place-items-center p-4'>%s</main>", content)
 }
 
 func CenterContentWrapper(components ...string) string {
@@ -94,7 +94,7 @@ func FormInputLabel(name string, serverName string, inputType string, value stri
 	spanText := ""
 	if serverName == "phone" {
 		spanText = "(format: 123-456-7890)"
-	
+
 	}
 	return fmt.Sprintf(`
 		<div class='flex flex-col gap-2 w-full'>
@@ -150,7 +150,7 @@ func FormPhotoUpload() string {
 func FormError(err string) string {
 	if err == "" {
 		return ""
-	
+
 	} else {
 		return fmt.Sprintf(`
 			<p class='text-red text-xs py-2'>%s</p>
@@ -170,6 +170,35 @@ func FormLoader() string {
 			<div class='h-10 w-10 rounded-full border-2 border-gray border-t-white animate-spin'></div>
 		</div>
 	`
+}
+
+func FormTextAreaLabel(name string, serverName string, rows int, value string) string {
+	return fmt.Sprintf(`
+        <div class='flex flex-col gap-2 w-full'>
+            <label class="text-xs leading-none">%s</label>
+            <textarea name='%s' rows='%d' autocomplete='off' class="flex p-1 w-full rounded-md border border-darkgray border-input bg-black px-2 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">%s</textarea>
+        </div>
+    `, name, serverName, rows, value)
+}
+
+func FormSelectLabel(name string, serverName string, options []string, selectedValue string) string {
+	var optionHTML strings.Builder
+	for _, option := range options {
+		selected := ""
+		if option == selectedValue {
+			selected = "selected"
+		}
+		optionHTML.WriteString(fmt.Sprintf("<option value='%s' %s>%s</option>", option, selected, option))
+	}
+
+	return fmt.Sprintf(`
+        <div class='flex flex-col gap-2 w-full'>
+            <label class="text-xs leading-none">%s</label>
+            <select name='%s' class="flex p-1 w-full rounded-md border border-darkgray border-input bg-black px-2 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                %s
+            </select>
+        </div>
+    `, name, serverName, optionHTML.String())
 }
 
 func LoginForm(err string, username string, password string) string {
@@ -230,14 +259,14 @@ func UpdateManufacturerForm(manufacturer _model.Manufacturer, err string) string
 		<form x-data="{ loading: false }" action='%s' method='POST' class='flex flex-col gap-4 w-full'>
 			%s%s%s%s%s%s%s
 		</form>
-	`, 
-		updateAction, 
-		FormTitle("Update Manufacturer"), 
-		FormError(err), 
-		FormInputLabel("Name", "name", "", manufacturer.Name), 
-		FormInputLabel("Phone", "phone", "", manufacturer.Phone), 
-		FormInputLabel("Email", "email", "", manufacturer.Email), 
-		FormLoader(), 
+	`,
+		updateAction,
+		FormTitle("Update Manufacturer"),
+		FormError(err),
+		FormInputLabel("Name", "name", "", manufacturer.Name),
+		FormInputLabel("Phone", "phone", "", manufacturer.Phone),
+		FormInputLabel("Email", "email", "", manufacturer.Email),
+		FormLoader(),
 		FormSubmitButton(),
 	)
 }
@@ -248,7 +277,7 @@ func DeleteManufacturerForm(manufacturer _model.Manufacturer, err string) string
 		<form x-data="{ loading: false }" action='%s' method='POST' class='flex flex-col gap-4 w-full'>
 			%s%s%s%s
 		</form>
-	`, deleteAction, FormTitle("Delete Manufacturer"), FormError(err), FormInputLabel("Type '" + manufacturer.Name + "' to delete", "name", "", ""), FormDeleteButton())
+	`, deleteAction, FormTitle("Delete Manufacturer"), FormError(err), FormInputLabel("Type '"+manufacturer.Name+"' to delete", "name", "", ""), FormDeleteButton())
 
 }
 
@@ -302,22 +331,16 @@ func ManufacturerDetails(manufacturer _model.Manufacturer, err string) string {
 			})
 
 		</script>
-	`, 
+	`,
 		SvgIcon("/static/svg/gear-dark.svg", "sm", "id='manufacturer-settings-icon'", ""),
 		SvgIcon("/static/svg/x-dark.svg", "sm", "id='manufacturer-close-settings-icon'", "hidden"),
-		manufacturer.Name, 
-		manufacturer.Phone, 
+		manufacturer.Name,
+		manufacturer.Phone,
 		manufacturer.Email,
 		ErrorMessage(err),
 		UpdateManufacturerForm(manufacturer, ""),
 		DeleteManufacturerForm(manufacturer, ""),
 	)
-}
-
-func HtmxPlaceholder(id string) string {
-	return fmt.Sprintf(`
-		<div id='%s' class='hidden'></div>
-	`, id)
 }
 
 func CreateEquipmentForm(err string, xclass string) string {
@@ -349,22 +372,21 @@ func CreateEquipmentForm(err string, xclass string) string {
 				}
 			});
 		</script>
-	`, 
-		xclass, 
-		FormTitle("Create Equipment"), 
-		FormError(err), 
-		FormInputLabel("Nickname", "nickname", "", ""), 
-		FormInputLabel("Serial Number", "number", "", ""), 
+	`,
+		xclass,
+		FormTitle("Create Equipment"),
+		FormError(err),
+		FormInputLabel("Nickname", "nickname", "", ""),
+		FormInputLabel("Serial Number", "number", "", ""),
 		FormLoader(),
 		FormSubmitButton(),
 	)
 }
 
-
 func EquipmentList(equipment []_model.Equipment, xclass string) string {
-    equipmentList := ""
-    for _, eq := range equipment {
-        equipmentList += fmt.Sprintf(`
+	equipmentList := ""
+	for _, eq := range equipment {
+		equipmentList += fmt.Sprintf(`
             <tr>
                 <td>
                     <a href='/app/equipment/%d' class='underline select-none hover:text-red cursor-pointer'>%s</a>
@@ -372,15 +394,15 @@ func EquipmentList(equipment []_model.Equipment, xclass string) string {
                 <td>%s</td>
             </tr>
         `, eq.ID, eq.Nickname, eq.SerialNumber)
-    }
-    if len(equipment) == 0 {
-        return fmt.Sprintf(`
+	}
+	if len(equipment) == 0 {
+		return fmt.Sprintf(`
             <div class='p-6 w-full %s'>
                 <p>Oh, so empty!</p>
             </div>
         `, xclass)
-    } else {
-        return fmt.Sprintf(`
+	} else {
+		return fmt.Sprintf(`
             <div class='p-6 w-full %s'>
                 <table class='text-xs w-full'>
                     <tr class='text-left'>
@@ -391,9 +413,8 @@ func EquipmentList(equipment []_model.Equipment, xclass string) string {
                 </table>
             </div>
         `, xclass, equipmentList)
-    }
+	}
 }
-
 
 func Footer() string {
 	return `
@@ -468,16 +489,16 @@ func EquipmentDetails(equipment _model.Equipment, manufacturer _model.Manufactur
 				document.getElementById('update-equipment-form').classList.add('hidden')
 			})
 		</script>
-	`, 
+	`,
 		SvgIcon("/static/svg/gear-dark.svg", "sm", "id='equipment-settings-icon'", ""),
 		SvgIcon("/static/svg/x-dark.svg", "sm", "id='equipment-close-settings-icon'", "hidden"),
 		ErrorMessage(err),
-		equipment.Nickname, 
+		equipment.Nickname,
 		equipment.SerialNumber,
 		manufacturer.ID,
 		equipment.QRCodeToken,
 		equipment.QRCodeToken,
-		manufacturer.ID, 
+		manufacturer.ID,
 		manufacturer.Name,
 		base64.StdEncoding.EncodeToString(equipment.Photo),
 		equipment.Nickname,
@@ -496,7 +517,7 @@ func UpdateEquipmentForm(equipment _model.Equipment) string {
 				%s%s%s%s%s
 			</div>
 		</form>
-	`, 
+	`,
 		equipment.ID,
 		FormTitle("Update Equipment"),
 		FormInputLabel("Nickname", "nickname", "text", equipment.Nickname),
@@ -512,7 +533,7 @@ func DeleteEquipmentForm(equipment _model.Equipment) string {
 		<form x-data="{ loading: false }" action='/app/equipment/%d/delete' method='POST' class='flex flex-col gap-4 w-full'>
 			%s%s%s
 		</form>
-	`, equipment.ID, FormTitle("Delete Equipment"), FormInputLabel("Type '" + equipment.Nickname + "' to delete", "name", "", ""), FormDeleteButton())
+	`, equipment.ID, FormTitle("Delete Equipment"), FormInputLabel("Type '"+equipment.Nickname+"' to delete", "name", "", ""), FormDeleteButton())
 }
 
 func EquipmentQrCodeDownload(equipment _model.Equipment) string {
@@ -529,5 +550,10 @@ func EquipmentQrCodeDownload(equipment _model.Equipment) string {
 	`, equipment.ID, SvgIcon("/static/svg/download-dark.svg", "sm", "", ""), equipment.ID)
 }
 
-
-
+func CreateTicketForm(err string) string {
+	return fmt.Sprintf(`
+		<form x-data="{ loading: false }" method='POST' class='flex flex-col p-6 gap-4 w-full'>
+			%s%s%s%s%s%s%s%s
+		</form>
+	`, FormTitle("Create Ticket"), FormError(err), FormInputLabel("What is Broken?", "equipment", "", ""), FormTextAreaLabel("Describe the Problem", "problem", 2, ""), FormSelectLabel("Location", "location", []string{"Southroads", "Utica"}, "Southroads"), FormPhotoUpload(), FormSubmitButton(), FormLoader())
+}

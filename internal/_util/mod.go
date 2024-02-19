@@ -27,33 +27,33 @@ func BytesToBase64String(input []byte) string {
 }
 
 func URLBuilder(basePath string, params ...string) string {
-    if len(params)%2 != 0 {
-        panic("Invalid number of parameters. Must be even.")
-    }
+	if len(params)%2 != 0 {
+		panic("Invalid number of parameters. Must be even.")
+	}
 
-    if len(params) == 0 {
-        return basePath
-    }
+	if len(params) == 0 {
+		return basePath
+	}
 
-    var sb strings.Builder
-    sb.WriteString(basePath)
-    sb.WriteString("?")
+	var sb strings.Builder
+	sb.WriteString(basePath)
+	sb.WriteString("?")
 
-    for i := 0; i < len(params); i += 2 {
-        if i > 0 {
-            sb.WriteString("&")
-        }
-        sb.WriteString(params[i])
-        sb.WriteString("=")
-        sb.WriteString(params[i+1])
-    }
-    return sb.String()
+	for i := 0; i < len(params); i += 2 {
+		if i > 0 {
+			sb.WriteString("&")
+		}
+		sb.WriteString(params[i])
+		sb.WriteString("=")
+		sb.WriteString(params[i+1])
+	}
+	return sb.String()
 }
 
 func IsValidPhoneNumber(phone string) bool {
-    pattern := `^\d{3}-\d{3}-\d{4}$`
-    regex := regexp.MustCompile(pattern)
-    return regex.MatchString(phone)
+	pattern := `^\d{3}-\d{3}-\d{4}$`
+	regex := regexp.MustCompile(pattern)
+	return regex.MatchString(phone)
 }
 
 func IsValidEmail(email string) bool {
@@ -63,11 +63,11 @@ func IsValidEmail(email string) bool {
 }
 
 func GenerateRandomToken(length int) string {
-    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-    token := make([]byte, length)
-    rand.Seed(time.Now().UnixNano())
-    for i := range token {
-        token[i] = charset[rand.Intn(len(charset))]
-    }
-    return string(token)
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	token := make([]byte, length)
+	rand.Seed(time.Now().UnixNano())
+	for i := range token {
+		token[i] = charset[rand.Intn(len(charset))]
+	}
+	return string(token)
 }
