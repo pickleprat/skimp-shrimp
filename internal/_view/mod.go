@@ -499,7 +499,7 @@ func GetEquipmentQRCode(mux *http.ServeMux, db *gorm.DB) {
                 
                 // Set headers for download
                 w.Header().Set("Content-Type", "image/png")
-                w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s.png"`, equipment.QRCodeToken))
+                w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s.png"`, equipment.Nickname))
                 
                 _, err = w.Write(png)
                 if err != nil {
