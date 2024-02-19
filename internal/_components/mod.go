@@ -454,8 +454,8 @@ func EquipmentDetails(equipment _model.Equipment, manufacturer _model.Manufactur
 			<div>
 				<p class='text-xs'>Nickname: %s</p>
 				<p class='text-xs'>Serial Number: %s</p>
-				<p class='text-xs'>QR Code Token: %s</p>
-				<p class='text-xs'>Manufacturer: <a href='/app/manufacturer/%d' class='underline hover:text-red'>%s</a></p>
+				<p class='text-xs'>QR Code Token: <a href='/app/manufacturer/%d' class='underline hover:text-red'>%s</a></p>
+				<p class='text-xs'>Manufacturer: <a href='/app/equipment/%d/ticketform?equipmentToken=%s' class='underline hover:text-red'>%s</a></p>
 			</div>
 			<div class='w-[200px]'>
 				<img src='data:image/jpeg;base64,%s' class='w-full h-auto' alt='%s'/>
@@ -500,6 +500,8 @@ func EquipmentDetails(equipment _model.Equipment, manufacturer _model.Manufactur
 		ErrorMessage(err),
 		equipment.Nickname, 
 		equipment.SerialNumber,
+		manufacturer.ID,
+		equipment.QRCodeToken,
 		equipment.QRCodeToken,
 		manufacturer.ID, 
 		manufacturer.Name,
@@ -547,7 +549,6 @@ func EquipmentQrCodeDownload(equipment _model.Equipment) string {
 		</div>
 		<script>
 			document.getElementById('qrcode-download-icon').addEventListener('click', () => {
-				console.log('hit')
 				window.location.href = '/app/equipment/%d/downloadticketqr'
 			})
 		</script>

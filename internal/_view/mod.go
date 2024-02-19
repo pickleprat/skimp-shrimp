@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -496,11 +497,7 @@ func GetEquipmentQRCode(mux *http.ServeMux, db *gorm.DB) {
                     http.Redirect(w, r, _util.URLBuilder(fmt.Sprintf("/app/equipment/%d", equipment.ID), "err", "failed to generate QR code"), http.StatusSeeOther)
                     return
                 }
-                
-                // Set headers for download
-                w.Header().Set("Content-Type", "image/png")
                 w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s.png"`, equipment.Nickname))
-                
                 _, err = w.Write(png)
                 if err != nil {
                     http.Redirect(w, r, _util.URLBuilder(fmt.Sprintf("/app/equipment/%d", equipment.ID), "err", "failed to write QR code"), http.StatusSeeOther)
@@ -511,6 +508,44 @@ func GetEquipmentQRCode(mux *http.ServeMux, db *gorm.DB) {
         )
     })
 }
+
+func EquipmentTicket(mux *http.ServeMux, db *gorm.DB) {
+    mux.HandleFunc("GET /app/equipment/{id}/ticketform", func(w http.ResponseWriter, r *http.Request) {
+        ctx := map[string]interface{}{}
+        _middleware.MiddlewareChain(ctx, w, r, _middleware.Init,
+            func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+                id := r.PathValue("id")
+                equipmentToken := r.URL.Query().Get("equipmentToken")
+                var equipment _model.Equipment
+                if err := db.Where("qr_code_token = ?", equipmentToken).First(&equipment).Error; err != nil {
+                    // Equipment with the provided token does not exist
+                    http.Error(w, "Forbidden", http.StatusForbidden)
+                    return
+                }
+                if strconv.Itoa(int(equipment.ID)) != id {
+                    // Equipment ID in the URL does not match the retrieved equipment ID
+                    http.Error(w, "Forbidden", http.StatusForbidden)
+                    return
+                }
+                var manufacturer _model.Manufacturer
+                db.First(&manufacturer, equipment.ManufacturerID)
+                b := NewViewBuilder("Repairs Log - App", []string{
+                    _components.Banner(true, _components.AppNavMenu(r.URL.Path)),
+                    _components.Root(
+                        _components.CenterContentWrapper(
+                            _components.EquipmentDetails(equipment, manufacturer, r.URL.Query().Get("err")),
+                            _components.EquipmentQrCodeDownload(equipment),
+                        ),
+                    ),
+                    _components.Footer(),
+                })
+                w.Write(b.Build())
+            },
+            _middleware.Log,
+        )
+    })
+}
+
 
 
 

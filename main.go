@@ -42,6 +42,7 @@ func main() {
 	_view.UpdateEquipment(mux, db)
 	_view.DeleteEquipment(mux, db)
 	_view.GetEquipmentQRCode(mux, db)
+	_view.EquipmentTicket(mux, db)
 
 
 	fmt.Println("Server is running on port " + os.Getenv("PORT"))
