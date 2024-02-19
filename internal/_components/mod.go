@@ -543,9 +543,15 @@ func EquipmentQrCodeDownload(equipment _model.Equipment) string {
 	return fmt.Sprintf(`
 		<div class='flex flex-row gap-4 justify-between p-6'>
 			<h2>Equipment QR Code</h2>
-			%s
+			<div id='qrcode-download-icon' href='/app/equipment/%d/downloadticketqr'>%s</div>
 		</div>
-	`, SvgIcon("/static/svg/download-dark.svg", "sm", "", ""))
+		<script>
+			document.getElementById('qrcode-download-icon').addEventListener('click', () => {
+				console.log('hit')
+				window.location.href = '/app/equipment/%d/downloadticketqr'
+			})
+		</script>
+	`, equipment.ID, SvgIcon("/static/svg/download-dark.svg", "sm", "", ""), equipment.ID)
 }
 
 

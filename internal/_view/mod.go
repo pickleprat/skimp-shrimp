@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/skip2/go-qrcode"
 	"gorm.io/gorm"
 )
 
@@ -479,6 +480,39 @@ func DeleteEquipment(mux *http.ServeMux, db *gorm.DB) {
 		)
 	})
 }
+
+func GetEquipmentQRCode(mux *http.ServeMux, db *gorm.DB) {
+    mux.HandleFunc("GET /app/equipment/{id}/downloadticketqr", func(w http.ResponseWriter, r *http.Request) {
+        ctx := map[string]interface{}{}
+        _middleware.MiddlewareChain(ctx, w, r, _middleware.Init, _middleware.Auth, _middleware.IncludePNG,
+            func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+                id := r.PathValue("id")
+                var equipment _model.Equipment
+                db.First(&equipment, id)
+                url := fmt.Sprintf("%s/app/equipment/%d/ticketform?equipmentToken=%s", os.Getenv("BASE_URL"), equipment.ID, equipment.QRCodeToken)
+                // Generate QR code directly into the response writer
+                png, err := qrcode.Encode(url, qrcode.Medium, 256)
+                if err != nil {
+                    http.Redirect(w, r, _util.URLBuilder(fmt.Sprintf("/app/equipment/%d", equipment.ID), "err", "failed to generate QR code"), http.StatusSeeOther)
+                    return
+                }
+                
+                // Set headers for download
+                w.Header().Set("Content-Type", "image/png")
+                w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s.png"`, equipment.QRCodeToken))
+                
+                _, err = w.Write(png)
+                if err != nil {
+                    http.Redirect(w, r, _util.URLBuilder(fmt.Sprintf("/app/equipment/%d", equipment.ID), "err", "failed to write QR code"), http.StatusSeeOther)
+                    return
+                }
+            },
+            _middleware.Log,
+        )
+    })
+}
+
+
 
 
 

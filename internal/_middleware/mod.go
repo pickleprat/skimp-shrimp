@@ -26,6 +26,10 @@ func Init(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
 	ctx["StartTime"] = time.Now()
 }
 
+func SvgHeaders(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "image/svg+xml")
+}
+
 func MwRandomTruett(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
 	quotes := []string{
 		"Quality is remembered long after the price is forgotten.",
@@ -84,6 +88,6 @@ func ComponentAuth(ctx map[string]interface{}, w http.ResponseWriter, r *http.Re
 	}
 }
 
-func MwIncludePNG(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+func IncludePNG(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "image/png")
 }
