@@ -325,7 +325,7 @@ func Equipment(mux *http.ServeMux, db *gorm.DB) {
 					_components.Banner(true, _components.AppNavMenu(r.URL.Path)),
 					_components.Root(
 						_components.CenterContentWrapper(
-							_components.EquipmentDetails(equipment, manufacturer, r.URL.Query().Get("updateErr")),
+							_components.EquipmentDetails(equipment, manufacturer, r.URL.Query().Get("err")),
 						),
 					),
 					_components.Footer(),
@@ -448,6 +448,29 @@ func ClientRedirect(mux *http.ServeMux, db *gorm.DB) {
 					</script>
 				`})
 				w.Write(b.BuildComponent())
+			},
+			_middleware.Log,
+		)
+	})
+}
+
+func DeleteEquipment(mux *http.ServeMux, db *gorm.DB) {
+	mux.HandleFunc("POST /app/equipment/{id}/delete", func(w http.ResponseWriter, r *http.Request) {
+		ctx := map[string]interface{}{}
+		_middleware.MiddlewareChain(ctx, w, r, _middleware.Init, _middleware.ParseForm, _middleware.Auth,
+			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+				id := r.PathValue("id")
+				name := strings.ToLower(r.Form.Get("name"))
+				var equipment _model.Equipment
+				db.First(&equipment, id)
+				var manufacturer _model.Manufacturer
+				db.First(&manufacturer, equipment.ManufacturerID)
+				if name != strings.ToLower(equipment.Nickname) {
+					http.Redirect(w, r, _util.URLBuilder(fmt.Sprintf("/app/equipment/%d", equipment.ID), "err", "invalid delete name provided"), http.StatusSeeOther)
+					return
+				}
+				db.Delete(&equipment, id)
+				http.Redirect(w, r, fmt.Sprintf("/app/manufacturer/%d", manufacturer.ID), http.StatusSeeOther)
 			},
 			_middleware.Log,
 		)

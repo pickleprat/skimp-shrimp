@@ -441,14 +441,16 @@ func ErrorMessage(err string) string {
 
 }
 
-func EquipmentDetails(equipment _model.Equipment, manufacturer _model.Manufacturer, updateErr string) string {
+func EquipmentDetails(equipment _model.Equipment, manufacturer _model.Manufacturer, err string) string {
 	return fmt.Sprintf(`
 		<div class='p-6 w-full grid gap-4'>
 			<div class='flex flex-row justify-between'>
 				<h2 class='mb-2 text-lg'>Equipment Details</h2>
 				%s%s
 			</div>
-			%s
+			<div id='equipment-crud-err' class=''>
+				%s
+			</div>
 			<div>
 				<p class='text-xs'>Nickname: %s</p>
 				<p class='text-xs'>Serial Number: %s</p>
@@ -464,27 +466,37 @@ func EquipmentDetails(equipment _model.Equipment, manufacturer _model.Manufactur
 			<div id='update-equipment-form' class='mt-2 hidden'>
 				%s
 			</div>
+			<div id='delete-equipment-form' class='mt-2 hidden'>
+				%s
+			</div>
 		</div>
 		<script>
 			document.getElementById('equipment-settings-icon').addEventListener('click', () => {
 				document.getElementById('hidden-settings-section').classList.toggle('hidden')
 				document.getElementById('equipment-settings-icon').classList.toggle('hidden')
 				document.getElementById('equipment-close-settings-icon').classList.toggle('hidden')
+				document.getElementById('equipment-crud-err').classList.add('hidden')
 			})
 			document.getElementById('equipment-close-settings-icon').addEventListener('click', () => {
 				document.getElementById('hidden-settings-section').classList.toggle('hidden')
 				document.getElementById('equipment-settings-icon').classList.toggle('hidden')
 				document.getElementById('equipment-close-settings-icon').classList.toggle('hidden')
 				document.getElementById('update-equipment-form').classList.add('hidden')
+				document.getElementById('delete-equipment-form').classList.add('hidden')
 			})
 			document.getElementById('manufacturer-update-button').addEventListener('click', () => {
 				document.getElementById('update-equipment-form').classList.remove('hidden')
+				document.getElementById('delete-equipment-form').classList.add('hidden')
+			})
+			document.getElementById('manufacturer-delete-button').addEventListener('click', () => {
+				document.getElementById('delete-equipment-form').classList.remove('hidden')
+				document.getElementById('update-equipment-form').classList.add('hidden')
 			})
 		</script>
 	`, 
 		SvgIcon("/static/svg/gear-dark.svg", "sm", "id='equipment-settings-icon'", ""),
 		SvgIcon("/static/svg/x-dark.svg", "sm", "id='equipment-close-settings-icon'", "hidden"),
-		ErrorMessage(updateErr),
+		ErrorMessage(err),
 		equipment.Nickname, 
 		equipment.SerialNumber,
 		manufacturer.ID, 
@@ -492,6 +504,7 @@ func EquipmentDetails(equipment _model.Equipment, manufacturer _model.Manufactur
 		base64.StdEncoding.EncodeToString(equipment.Photo),
 		equipment.Nickname,
 		UpdateEquipmentForm(equipment),
+		DeleteEquipmentForm(equipment),
 	)
 }
 
@@ -514,6 +527,14 @@ func UpdateEquipmentForm(equipment _model.Equipment) string {
 		FormLoader(),
 		FormSubmitButton(),
 	)
+}
+
+func DeleteEquipmentForm(equipment _model.Equipment) string {
+	return fmt.Sprintf(`
+		<form x-data="{ loading: false }" action='/app/equipment/%d/delete' method='POST' class='flex flex-col gap-4 w-full'>
+			%s%s%s
+		</form>
+	`, equipment.ID, FormTitle("Delete Equipment"), FormInputLabel("Type '" + equipment.Nickname + "' to delete", "name", "", ""), FormDeleteButton())
 }
 
 

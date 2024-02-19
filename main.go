@@ -40,6 +40,7 @@ func main() {
 	_view.ClearComponent(mux, db)
 	_view.ClientRedirect(mux, db)
 	_view.UpdateEquipment(mux, db)
+	_view.DeleteEquipment(mux, db)
 
 
 	fmt.Println("Server is running on port " + os.Getenv("PORT"))
