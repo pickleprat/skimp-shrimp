@@ -69,8 +69,12 @@ func Home(mux *http.ServeMux, db *gorm.DB) {
 			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
 				b := NewViewBuilder("Repairs Log - Login", []string{
 					_components.Banner(false, ""),
-					_components.MqWrapperCentered(_components.LoginForm(r.URL.Query().Get("err"), r.URL.Query().Get("username"), r.URL.Query().Get("password"))),
-
+					_components.Root(
+						_components.CenterContentWrapper(
+							_components.LoginForm(r.URL.Query().Get("err"), r.URL.Query().Get("username"), r.URL.Query().Get("password")),
+						),
+					),
+					_components.Footer(),
 				})
 				w.Write(b.Build())
 			},
@@ -119,11 +123,12 @@ func App(mux *http.ServeMux, db *gorm.DB) {
 				b := NewViewBuilder("Repairs Log - App", []string{
 					_components.Banner(true, _components.AppNavMenu(r.URL.Path)),
 					_components.Root(
-						_components.MqGridTwoColEvenSplit(
+						_components.CenterContentWrapper(
 							_components.CreateManufacturerForm(r.URL.Query().Get("err"), r.URL.Query().Get("name"), r.URL.Query().Get("phone"), r.URL.Query().Get("email"), ""),
 							_components.ManufacturerList(manufacturers, ""),
 						),
 					),
+					_components.Footer(),
 				})
 				w.Write(b.Build())
 			},
@@ -195,11 +200,9 @@ func Manufacturer(mux *http.ServeMux, db *gorm.DB) {
 				b := NewViewBuilder("Repairs Log - App", []string{
 					_components.Banner(true, _components.AppNavMenu(r.URL.Path)),
 					_components.Root(
-						_components.MqGridTwoColEvenSplit(
-							_components.ManufacturerDetails(manufacturer, r.URL.Query().Get("update"), r.URL.Query().Get("deleteErr"), r.URL.Query().Get("updateErr"), ""),
+						_components.CenterContentWrapper(
+							_components.ManufacturerDetails(manufacturer, r.URL.Query().Get("err")),
 							_components.CreateEquipmentForm(r.URL.Query().Get("equipmentErr"), ""),
-						),
-						_components.MqGridOneRowCentered(
 							_components.EquipmentList(manufacturer.Equipment, ""),
 						),
 					),
@@ -222,7 +225,7 @@ func DeleteManufacturer(mux *http.ServeMux, db *gorm.DB) {
 				var manufacturer _model.Manufacturer
 				db.First(&manufacturer, id)
 				if name != strings.ToLower(manufacturer.Name) {
-					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/"+id, "deleteErr", "invalid name", "update", "false"), http.StatusSeeOther)
+					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/"+id, "err", "invalid delete name provided"), http.StatusSeeOther)
 					return
 				
 				}
@@ -244,15 +247,15 @@ func UpdateManufacturer(mux *http.ServeMux, db *gorm.DB) {
 				phone := r.Form.Get("phone")
 				email := r.Form.Get("email")
 				if name == "" || phone == "" || email == "" {
-					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/"+id, "updateErr", "all fields required"), http.StatusSeeOther)
+					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/"+id, "err", "all fields required"), http.StatusSeeOther)
 					return
 				}
 				if _util.IsValidPhoneNumber(phone) == false {
-					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/"+id, "updateErr", "invalid phone format"), http.StatusSeeOther)
+					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/"+id, "err", "invalid phone format"), http.StatusSeeOther)
 					return
 				}
 				if _util.IsValidEmail(email) == false {
-					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/"+id, "updateErr", "invalid email format"), http.StatusSeeOther)
+					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/"+id, "err", "invalid email format"), http.StatusSeeOther)
 					return
 				}
 				var manufacturer _model.Manufacturer
@@ -269,39 +272,44 @@ func UpdateManufacturer(mux *http.ServeMux, db *gorm.DB) {
 }
 
 func CreateEquipment(mux *http.ServeMux, db *gorm.DB) {
-	mux.HandleFunc("POST /app/manufacturer/{id}", func(w http.ResponseWriter, r *http.Request) {
-		ctx := map[string]interface{}{}
-		_middleware.MiddlewareChain(ctx, w, r, _middleware.Init, _middleware.ParseMultipartForm, _middleware.Auth,
-			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
-				id := r.PathValue("id")
-				name := r.Form.Get("nickname")
-				number := r.Form.Get("number")
-				photo, _, err := r.FormFile("photo")
+    mux.HandleFunc("POST /app/manufacturer/{id}", func(w http.ResponseWriter, r *http.Request) {
+        ctx := map[string]interface{}{}
+        _middleware.MiddlewareChain(ctx, w, r, _middleware.Init, _middleware.ParseMultipartForm, _middleware.Auth,
+            func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+                id := r.PathValue("id")
+                name := r.Form.Get("nickname")
+                number := r.Form.Get("number")
+                photo, _, err := r.FormFile("photo")
                 if err != nil {
-                    http.Error(w, "Failed to retrieve file", http.StatusBadRequest)
+					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/"+id, "equipmentErr", "photo required"), http.StatusSeeOther)
                     return
                 }
                 defer photo.Close()
-				photoBytes, err := io.ReadAll(photo)
-				if err != nil {
-					http.Error(w, "Failed to read file", http.StatusBadRequest)
-					return
-				}
-				var manufacturer _model.Manufacturer
-				db.First(&manufacturer, id)
-				equipment := _model.Equipment{
-					Nickname: name,
-					SerialNumber: number,
-					Photo: photoBytes,
-					ManufacturerID: manufacturer.ID,
-				}
-				db.Create(&equipment)
-				http.Redirect(w, r, "/app/manufacturer/"+id, http.StatusSeeOther)
-			},
-			_middleware.Log,
-		)
-	})
+                if photo == nil {
+					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/"+id, "equipmentErr", "photo required"), http.StatusSeeOther)
+                    return
+                }
+                photoBytes, err := io.ReadAll(photo)
+                if err != nil {
+					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/"+id, "equipmentErr", "photo required"), http.StatusSeeOther)
+                    return
+                }
+                var manufacturer _model.Manufacturer
+                db.First(&manufacturer, id)
+                equipment := _model.Equipment{
+                    Nickname:       name,
+                    SerialNumber:   number,
+                    Photo:          photoBytes,
+                    ManufacturerID: manufacturer.ID,
+                }
+                db.Create(&equipment)
+                http.Redirect(w, r, "/app/manufacturer/"+id, http.StatusSeeOther)
+            },
+            _middleware.Log,
+        )
+    })
 }
+
 
 func Equipment(mux *http.ServeMux, db *gorm.DB) {
 	mux.HandleFunc("GET /app/equipment/{id}", func(w http.ResponseWriter, r *http.Request) {
@@ -316,9 +324,8 @@ func Equipment(mux *http.ServeMux, db *gorm.DB) {
 				b := NewViewBuilder("Repairs Log - App", []string{
 					_components.Banner(true, _components.AppNavMenu(r.URL.Path)),
 					_components.Root(
-						_components.MqGridTwoColEvenSplit(
+						_components.CenterContentWrapper(
 							_components.EquipmentDetails(equipment, manufacturer, r.URL.Query().Get("updateErr")),
-							"",
 						),
 					),
 					_components.Footer(),
@@ -400,7 +407,7 @@ func EquipmentSettingsForm(mux *http.ServeMux, db *gorm.DB) {
 						</span>
 					`, 
 						equipment.ID,
-						_components.SvgIcon("/static/svg/x-dark.svg", "sm", "hx-get='/app/component/clear' hx-trigger='click' hx-swap='outerHTML' hx-target='#equipment-settings-form'"),
+						_components.SvgIcon("/static/svg/x-dark.svg", "sm", "hx-get='/app/component/clear' hx-trigger='click' hx-swap='outerHTML' hx-target='#equipment-settings-form'", ""),
 						_components.FormInputLabel("Nickname", "nickname", "text", equipment.Nickname),
 						_components.FormInputLabel("Serial Number", "number", "text", equipment.SerialNumber),
 						_components.FormPhotoUpload(),
