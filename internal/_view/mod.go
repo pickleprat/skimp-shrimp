@@ -100,38 +100,8 @@ func Home(mux *http.ServeMux, db *gorm.DB) {
 	})
 }
 
-func Login(mux *http.ServeMux, db *gorm.DB) {
-	mux.HandleFunc("POST /", func(w http.ResponseWriter, r *http.Request) {
-		ctx := map[string]interface{}{}
-		if r.URL.Path != "/" {
-			http.NotFound(w, r)
-			return
-		}
-		_middleware.MiddlewareChain(ctx, w, r, _middleware.Init, _middleware.ParseForm,
-			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
-				username := r.Form.Get("username")
-				password := r.Form.Get("password")
-				fmt.Println(username, password)
-				fmt.Println(os.Getenv("ADMIN_USERNAME"), os.Getenv("ADMIN_PASSWORD"))
-				if username == os.Getenv("ADMIN_USERNAME") && password == os.Getenv("ADMIN_PASSWORD") {
-					http.SetCookie(w, &http.Cookie{
-						Name:     "SessionToken",
-						Value:    os.Getenv("ADMIN_SESSION_TOKEN"),
-						Expires:  time.Now().Add(24 * time.Hour),
-						HttpOnly: true,
-					})
-					http.Redirect(w, r, "/app", http.StatusSeeOther)
-					return
-				}
-				http.Redirect(w, r, _util.URLBuilder("/", "err", "invalid credentials", "username", username), http.StatusSeeOther)
-			},
-			_middleware.Log,
-		)
-	})
-}
-
-func App(mux *http.ServeMux, db *gorm.DB) {
-	mux.HandleFunc("GET /app", func(w http.ResponseWriter, r *http.Request) {
+func ManufacturerForm(mux *http.ServeMux, db *gorm.DB) {
+	mux.HandleFunc("GET /app/manufacturer", func(w http.ResponseWriter, r *http.Request) {
 		ctx := map[string]interface{}{}
 		_middleware.MiddlewareChain(ctx, w, r, _middleware.Init, _middleware.Auth,
 			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
@@ -314,4 +284,34 @@ func TicketForm(mux *http.ServeMux, db *gorm.DB) {
 			_middleware.Log,
 		)
 	})
+}
+
+func Ticket(mux *http.ServeMux, db *gorm.DB) {
+    mux.HandleFunc("GET /app/ticket", func(w http.ResponseWriter, r *http.Request) {
+        ctx := map[string]interface{}{}
+        _middleware.MiddlewareChain(ctx, w, r, _middleware.Init, _middleware.Auth,
+            func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+                // Query tickets from the database
+                var tickets []_model.Ticket
+                if err := db.Find(&tickets).Error; err != nil {
+                    // Handle error
+                    http.Error(w, err.Error(), http.StatusInternalServerError)
+                    return
+                }
+
+                b := NewViewBuilder("Repairs Log - Tickets", []string{
+                    _components.Banner(true, _components.AppNavMenu(r.URL.Path)),
+                    _components.Root(
+                        _components.CenterContentWrapper(
+                            _components.CreateTicketForm(r, os.Getenv("ADMIN_REDIRECT_TOKEN")),
+                            _components.TicketList(tickets),
+                        ),
+                    ),
+                    _components.Footer(),
+                })
+                w.Write(b.Build())
+            },
+            _middleware.Log,
+        )
+    })
 }

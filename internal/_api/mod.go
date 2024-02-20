@@ -7,13 +7,45 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strings"
+	"time"
 
 	"gorm.io/gorm"
 )
 
+func Login(mux *http.ServeMux, db *gorm.DB) {
+	mux.HandleFunc("POST /", func(w http.ResponseWriter, r *http.Request) {
+		ctx := map[string]interface{}{}
+		if r.URL.Path != "/" {
+			http.NotFound(w, r)
+			return
+		}
+		_middleware.MiddlewareChain(ctx, w, r, _middleware.Init, _middleware.ParseForm,
+			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+				username := r.Form.Get("username")
+				password := r.Form.Get("password")
+				fmt.Println(username, password)
+				fmt.Println(os.Getenv("ADMIN_USERNAME"), os.Getenv("ADMIN_PASSWORD"))
+				if username == os.Getenv("ADMIN_USERNAME") && password == os.Getenv("ADMIN_PASSWORD") {
+					http.SetCookie(w, &http.Cookie{
+						Name:     "SessionToken",
+						Value:    os.Getenv("ADMIN_SESSION_TOKEN"),
+						Expires:  time.Now().Add(24 * time.Hour),
+						HttpOnly: true,
+					})
+					http.Redirect(w, r, "/app/ticket", http.StatusSeeOther)
+					return
+				}
+				http.Redirect(w, r, _util.URLBuilder("/", "err", "invalid credentials", "username", username), http.StatusSeeOther)
+			},
+			_middleware.Log,
+		)
+	})
+}
+
 func CreateManufacturer(mux *http.ServeMux, db *gorm.DB) {
-	mux.HandleFunc("POST /app", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("POST /app/manufacturer", func(w http.ResponseWriter, r *http.Request) {
 		ctx := map[string]interface{}{}
 		_middleware.MiddlewareChain(ctx, w, r, _middleware.Init, _middleware.Auth, _middleware.ParseForm,
 			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
@@ -215,27 +247,35 @@ func CreateTicket(mux *http.ServeMux, db *gorm.DB) {
 		_middleware.MiddlewareChain(ctx, w, r, _middleware.Init, _middleware.ParseMultipartForm,
 			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
 				securityToken := r.Form.Get("publicSecurityToken")
+				redirectURL := "/app/ticket/public"
+				if securityToken == os.Getenv("ADMIN_REDIRECT_TOKEN") {
+					redirectURL = "/app/ticket"
+				}
+				if redirectURL == "/app/ticket" {
+					_middleware.Auth(ctx, w, r)
+					securityToken = ""
+				}
 				creator := r.Form.Get("creator")
 				item := r.Form.Get("item")
 				problem := r.Form.Get("problem")
 				location := r.Form.Get("location")
 				if creator == "" || item == "" || problem == "" || location == "" {
-					http.Redirect(w, r, _util.URLBuilder("/app/ticket/public", "publicSecurityToken", securityToken, "err", "all fields required", "creator", creator, "item", item, "problem", problem, "location", location), http.StatusSeeOther)
+					http.Redirect(w, r, _util.URLBuilder(redirectURL, "publicSecurityToken", securityToken, "err", "all fields required", "creator", creator, "item", item, "problem", problem, "location", location), http.StatusSeeOther)
 					return
 				}
 				photo, _, err := r.FormFile("photo")
 				if err != nil {
-					http.Redirect(w, r, _util.URLBuilder("/app/ticket/public", "publicSecurityToken", securityToken, "err", "photo required", "creator", creator, "item", item, "problem", problem, "location", location), http.StatusSeeOther)
+					http.Redirect(w, r, _util.URLBuilder(redirectURL, "publicSecurityToken", securityToken, "err", "photo required", "creator", creator, "item", item, "problem", problem, "location", location), http.StatusSeeOther)
 					return
 				}
 				defer photo.Close()
 				if photo == nil {
-					http.Redirect(w, r, _util.URLBuilder("/app/ticket/public", "publicSecurityToken", securityToken, "err", "photo required", "creator", creator, "item", item, "problem", problem, "location", location), http.StatusSeeOther)
+					http.Redirect(w, r, _util.URLBuilder(redirectURL, "publicSecurityToken", securityToken, "err", "photo required", "creator", creator, "item", item, "problem", problem, "location", location), http.StatusSeeOther)
 					return
 				}
 				photoBytes, err := io.ReadAll(photo)
 				if err != nil {
-					http.Redirect(w, r, _util.URLBuilder("/app/ticket/public", "publicSecurityToken", securityToken, "err", "photo required", "creator", creator, "item", item, "problem", problem, "location", location), http.StatusSeeOther)
+					http.Redirect(w, r, _util.URLBuilder(redirectURL, "publicSecurityToken", securityToken, "err", "photo required", "creator", creator, "item", item, "problem", problem, "location", location), http.StatusSeeOther)
 					return
 				}
 				ticket := _model.Ticket{
@@ -246,7 +286,7 @@ func CreateTicket(mux *http.ServeMux, db *gorm.DB) {
 					Photo:       photoBytes,
 				}
 				db.Create(&ticket)
-				http.Redirect(w, r, _util.URLBuilder("/app/ticket/public", "publicSecurityToken", securityToken, "success", "your ticket has been created, thank you!"), http.StatusSeeOther)
+				http.Redirect(w, r, _util.URLBuilder(redirectURL, "publicSecurityToken", securityToken, "success", "your ticket has been created, thank you!"), http.StatusSeeOther)
 			},
 			_middleware.Log,
 		)

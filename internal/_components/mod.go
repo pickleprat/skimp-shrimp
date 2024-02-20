@@ -49,8 +49,8 @@ func NavMenuLink(name string, href string, currentPath string) string {
 		activeClass = "bg-white text-black font-bold"
 	}
 	return fmt.Sprintf(`
-		<li class='border %s p-4 rounded'>
-			<a href='%s'>%s</a>
+		<li class='border border-gray hover:border-white %s rounded flex'>
+			<a href='%s' class='p-4 w-full'>%s</a>
 		</li>
 	`, activeClass, href, name)
 }
@@ -59,11 +59,11 @@ func AppNavMenu(currentPath string) string {
 	return fmt.Sprintf(`
 		<nav x-show='navopen' x-transition x-cloak class='fixed right-0 top-[75px] h-full w-3/5 max-w-[300px] p-6 z-40 bg-black border-l border-darkgray'>
 			<ul class='flex flex-col gap-4'>
-				%s%s
+				%s%s%s
 			</ul>
 		</nav>
 		<div x-show='navopen' @click='navopen = !navopen' class='h-full w-full fixed top-0 left-0 bg-black opacity-50 z-30'></div>
-	`, NavMenuLink("Manufacturers", "/app", currentPath), NavMenuLink("Logout", "/logout", currentPath))
+	`, NavMenuLink("Tickets", "/app/ticket", currentPath), NavMenuLink("Manufacturers", "/app/manufacturer", currentPath), NavMenuLink("Logout", "/logout", currentPath))
 }
 
 func SvgIcon(src string, size string, xattr string, xclass string) string {
@@ -224,7 +224,7 @@ func LoginForm(err string, username string, password string) string {
 
 func CreateManufacturerForm(err string, name string, phone string, email string, xclass string) string {
 	return fmt.Sprintf(`
-		<form x-data="{ loading: false }" method='POST' class='flex flex-col p-6 gap-4 w-full %s'>
+		<form x-data="{ loading: false }" method='POST' action='/app/manufacturer' class='flex flex-col p-6 gap-4 w-full %s'>
 			%s%s%s%s%s%s%s
 		</form>
 	`, xclass, FormTitle("Create Manufacturer"), FormError(err), FormInputLabel("Name", "name", "", name), FormInputLabel("Phone", "phone", "", phone), FormInputLabel("Email", "email", "", email), FormLoader(), FormSubmitButton())
@@ -571,3 +571,39 @@ func CreateTicketForm(r *http.Request, token string) string {
 		</form>
 	`, FormTitle("Create Ticket"), FormError(r.URL.Query().Get("err")), FormSuccess(r.URL.Query().Get("success")), FormInputLabel("What is your name?", "creator", "text", r.URL.Query().Get("creator")), FormInputLabel("What item needs repaired?", "item", "", r.URL.Query().Get("item")), FormTextAreaLabel("Describe the Problem", "problem", 2, r.URL.Query().Get("problem")), FormSelectLabel("Location", "location", []string{"Southroads", "Utica"}, _util.StringWithDefault(r.URL.Query().Get("location"), "Southroads")), FormPhotoUpload(), FormSubmitButton(), FormLoader(), token)
 }
+
+
+func TicketList(tickets []_model.Ticket) string {
+    ticketList := ""
+    for _, ticket := range tickets {
+        href := fmt.Sprintf("/app/ticket/%d", ticket.ID)
+        ticketList += fmt.Sprintf(`
+            <a href='%s' class='p-6 w-full hover:border-white border border-gray rounded text-xs flex gap-6'>
+                <div class=''>
+                    <img src='data:image/jpeg;base64,%s' class='w-[100px] h-auto rounded-full' />
+                </div>
+                <div class='flex-grow'>
+                    <div>
+                        <p>right</p>
+                    </div>
+                </div>
+            </a>
+        `, href, base64.StdEncoding.EncodeToString(ticket.Photo))
+    }
+    if len(tickets) == 0 {
+        return fmt.Sprintf(`
+            <div class='p-6 w-full'>
+                <p>No tickets found!</p>
+            </div>
+        `)
+    } else {
+        return fmt.Sprintf(`
+            <div class='p-6 w-full flex flex-col gap-6'>
+                %s
+            </div>
+        `, ticketList)
+    }
+}
+
+
+
