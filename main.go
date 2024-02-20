@@ -1,6 +1,7 @@
 package main
 
 import (
+	"cfasuite/internal/_api"
 	"cfasuite/internal/_model"
 	"cfasuite/internal/_view"
 	"fmt"
@@ -23,23 +24,26 @@ func main() {
 	}
 	db.AutoMigrate(&_model.Manufacturer{})
 	db.AutoMigrate(&_model.Equipment{})
+	db.AutoMigrate(&_model.Ticket{})
 
 	_view.ServeStaticFilesAndFavicon(mux)
 	_view.Home(mux, db)
 	_view.Login(mux, db)
 	_view.App(mux, db)
 	_view.Logout(mux, db)
-	_view.CreateManufacturer(mux, db)
 	_view.Manufacturer(mux, db)
-	_view.DeleteManufacturer(mux, db)
-	_view.UpdateManufacturer(mux, db)
-	_view.CreateEquipment(mux, db)
 	_view.Equipment(mux, db)
-	_view.UpdateEquipment(mux, db)
-	_view.DeleteEquipment(mux, db)
 	_view.GetEquipmentQRCode(mux, db)
 	_view.EquipmentTicket(mux, db)
-	_view.PublicTickets(mux, db)
+	_view.TicketForm(mux, db)
+
+	_api.CreateManufacturer(mux, db)
+	_api.DeleteManufacturer(mux, db)
+	_api.UpdateManufacturer(mux, db)
+	_api.CreateEquipment(mux, db)
+	_api.UpdateEquipment(mux, db)
+	_api.DeleteEquipment(mux, db)
+	_api.CreateTicket(mux, db)
 
 	fmt.Println("Server is running on port " + os.Getenv("PORT"))
 	http.ListenAndServe(":"+os.Getenv("PORT"), mux)

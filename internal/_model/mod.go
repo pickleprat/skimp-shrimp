@@ -3,19 +3,31 @@ package _model
 import "gorm.io/gorm"
 
 type Manufacturer struct {
-	gorm.Model
-	Name      string
-	Email     string
-	Phone     string
-	Equipment []Equipment `gorm:"foreignKey:ManufacturerID"` // Define the foreign key relationship
+    gorm.Model
+    Name        string
+    Email       string
+    Phone       string
+    Equipment   []Equipment `gorm:"foreignKey:ManufacturerID"`
 }
 
 type Equipment struct {
-	gorm.Model
-	Nickname       string
-	SerialNumber   string
-	Photo          []byte       // store the photo as binary data
-	ManufacturerID uint         // Foreign key
-	Manufacturer   Manufacturer `gorm:"constraint:OnDelete:CASCADE;"` // Define the foreign key constraint and cascade delete
-	QRCodeToken    string
+    gorm.Model
+    Nickname       string
+    SerialNumber   string
+    Photo          []byte
+    ManufacturerID uint
+    Manufacturer   Manufacturer `gorm:"constraint:OnDelete:CASCADE;"`
+    QRCodeToken    string
+    Tickets        []Ticket `gorm:"constraint:OnDelete:CASCADE;"` // Add the foreign key constraint
+}
+
+type Ticket struct {
+    gorm.Model
+    Creator       string
+    Item          string
+    Problem       string
+    Location      string
+    Photo         []byte
+    EquipmentID   *uint
+    Equipment     Equipment
 }

@@ -7,13 +7,15 @@ module.exports = {
           'swoop': "url('/public/svg/swoop.svg')",
         },
         colors: {
-          "red": "#E51636",
-          "white": "#FFFFFF",
-          "blue": "#0000ff",
-          "gray": "#999999",
-          "lightgray": "#eeeeee",
-          "darkgray": "#555555",
-        },
+            "red": "#E51636",
+            "white": "#FFFFFF",
+            "blue": "#0000ff",
+            "gray": "#999999",
+            "lightgray": "#eeeeee",
+            "darkgray": "#555555",
+            "green": "#2ad457", // Adding dark green
+          },
+          
         fontFamily: {
           'playful': ['Chelsea Market', 'cursive'],
         },

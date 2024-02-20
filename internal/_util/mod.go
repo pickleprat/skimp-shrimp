@@ -71,3 +71,10 @@ func GenerateRandomToken(length int) string {
 	}
 	return string(token)
 }
+
+func StringWithDefault(input string, defaultValue string) string {
+	if input == "" {
+		return defaultValue
+	}
+	return input
+}

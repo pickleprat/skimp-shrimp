@@ -2,8 +2,10 @@ package _components
 
 import (
 	"cfasuite/internal/_model"
+	"cfasuite/internal/_util"
 	"encoding/base64"
 	"fmt"
+	"net/http"
 	"strings"
 )
 
@@ -156,6 +158,17 @@ func FormError(err string) string {
 			<p class='text-red text-xs py-2'>%s</p>
 		`, err)
 	}
+}
+
+func FormSuccess(message string) string {
+	if message == "" {
+		return ""
+	} else {
+		return fmt.Sprintf(`
+			<p class='text-green text-xs py-2'>%s</p>
+		`, message)
+	}
+
 }
 
 func FormTitle(title string) string {
@@ -550,10 +563,11 @@ func EquipmentQrCodeDownload(equipment _model.Equipment) string {
 	`, equipment.ID, SvgIcon("/static/svg/download-dark.svg", "sm", "", ""), equipment.ID)
 }
 
-func CreateTicketForm(err string) string {
+func CreateTicketForm(r *http.Request, token string) string {
 	return fmt.Sprintf(`
-		<form x-data="{ loading: false }" method='POST' class='flex flex-col p-6 gap-4 w-full'>
-			%s%s%s%s%s%s%s%s
+		<form enctype='multipart/form-data' action='/app/ticket/public' method='POST' x-data="{ loading: false }" method='POST' class='flex flex-col p-6 gap-4 w-full'>
+			%s%s%s%s%s%s%s%s%s%s
+			<input type='hidden' name='publicSecurityToken' value='%s'/>
 		</form>
-	`, FormTitle("Create Ticket"), FormError(err), FormInputLabel("What is Broken?", "equipment", "", ""), FormTextAreaLabel("Describe the Problem", "problem", 2, ""), FormSelectLabel("Location", "location", []string{"Southroads", "Utica"}, "Southroads"), FormPhotoUpload(), FormSubmitButton(), FormLoader())
+	`, FormTitle("Create Ticket"), FormError(r.URL.Query().Get("err")), FormSuccess(r.URL.Query().Get("success")), FormInputLabel("What is your name?", "creator", "text", r.URL.Query().Get("creator")), FormInputLabel("What item needs repaired?", "item", "", r.URL.Query().Get("item")), FormTextAreaLabel("Describe the Problem", "problem", 2, r.URL.Query().Get("problem")), FormSelectLabel("Location", "location", []string{"Southroads", "Utica"}, _util.StringWithDefault(r.URL.Query().Get("location"), "Southroads")), FormPhotoUpload(), FormSubmitButton(), FormLoader(), token)
 }

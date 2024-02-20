@@ -6,7 +6,6 @@ import (
 	"cfasuite/internal/_model"
 	"cfasuite/internal/_util"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -74,33 +73,6 @@ func ServeStaticFiles(w http.ResponseWriter, r *http.Request) {
 	filePath := r.URL.Path[len("/static/"):]
 	fullPath := filepath.Join(".", "static", filePath)
 	http.ServeFile(w, r, fullPath)
-}
-
-func PublicTickets(mux *http.ServeMux, db *gorm.DB) {
-	mux.HandleFunc("GET /app/ticket/public", func(w http.ResponseWriter, r *http.Request) {
-		ctx := map[string]interface{}{}
-		_middleware.MiddlewareChain(ctx, w, r, _middleware.Init,
-			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
-				token := r.URL.Query().Get("publicSecurityToken")
-				if token != os.Getenv("PUBLIC_SECURITY_TOKEN") {
-					http.Error(w, "Forbidden", http.StatusForbidden)
-					return
-				}
-				b := NewViewBuilder("Repairs Log - Public Tickets", []string{
-					_components.Banner(false, ""),
-					_components.Root(
-						_components.CenterContentWrapper(
-							_components.CreateTicketForm(r.URL.Query().Get("err")),
-						),
-					),
-					_components.Footer(),
-				})
-				w.Write(b.Build())
-			},
-			_middleware.Log,
-		)
-	})
-
 }
 
 func Home(mux *http.ServeMux, db *gorm.DB) {
@@ -182,40 +154,6 @@ func App(mux *http.ServeMux, db *gorm.DB) {
 	})
 }
 
-func CreateManufacturer(mux *http.ServeMux, db *gorm.DB) {
-	mux.HandleFunc("POST /app", func(w http.ResponseWriter, r *http.Request) {
-		ctx := map[string]interface{}{}
-		_middleware.MiddlewareChain(ctx, w, r, _middleware.Init, _middleware.Auth, _middleware.ParseForm,
-			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
-				name := r.Form.Get("name")
-				phone := r.Form.Get("phone")
-				email := r.Form.Get("email")
-				if name == "" || phone == "" || email == "" {
-					http.Redirect(w, r, _util.URLBuilder("/app", "err", "all fields required", "name", name, "phone", phone, "email", email), http.StatusSeeOther)
-					return
-				}
-				if _util.IsValidPhoneNumber(phone) == false {
-					http.Redirect(w, r, _util.URLBuilder("/app", "err", "invalid phone format", "name", name, "phone", phone, "email", email), http.StatusSeeOther)
-					return
-				}
-				if _util.IsValidEmail(email) == false {
-					http.Redirect(w, r, _util.URLBuilder("/app", "err", "invalid email format", "name", name, "phone", phone, "email", email), http.StatusSeeOther)
-					return
-				}
-				manufacturer := _model.Manufacturer{
-					Name:  name,
-					Phone: phone,
-					Email: email,
-				}
-				db.Create(&manufacturer)
-				http.Redirect(w, r, "/app", http.StatusSeeOther)
-			},
-			_middleware.Log,
-		)
-	})
-
-}
-
 func Logout(mux *http.ServeMux, db *gorm.DB) {
 	mux.HandleFunc("GET /logout", func(w http.ResponseWriter, r *http.Request) {
 		ctx := map[string]interface{}{}
@@ -260,103 +198,6 @@ func Manufacturer(mux *http.ServeMux, db *gorm.DB) {
 	})
 }
 
-func DeleteManufacturer(mux *http.ServeMux, db *gorm.DB) {
-	mux.HandleFunc("POST /app/manufacturer/{id}/delete", func(w http.ResponseWriter, r *http.Request) {
-		ctx := map[string]interface{}{}
-		_middleware.MiddlewareChain(ctx, w, r, _middleware.Init, _middleware.ParseForm, _middleware.Auth,
-			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
-				id := r.PathValue("id")
-				name := strings.ToLower(r.Form.Get("name"))
-				var manufacturer _model.Manufacturer
-				db.First(&manufacturer, id)
-				if name != strings.ToLower(manufacturer.Name) {
-					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/"+id, "err", "invalid delete name provided"), http.StatusSeeOther)
-					return
-
-				}
-				db.Delete(&manufacturer, id)
-				http.Redirect(w, r, "/app", http.StatusSeeOther)
-			},
-			_middleware.Log,
-		)
-	})
-}
-
-func UpdateManufacturer(mux *http.ServeMux, db *gorm.DB) {
-	mux.HandleFunc("POST /app/manufacturer/{id}/update", func(w http.ResponseWriter, r *http.Request) {
-		ctx := map[string]interface{}{}
-		_middleware.MiddlewareChain(ctx, w, r, _middleware.Init, _middleware.ParseForm, _middleware.Auth,
-			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
-				id := r.PathValue("id")
-				name := r.Form.Get("name")
-				phone := r.Form.Get("phone")
-				email := r.Form.Get("email")
-				if name == "" || phone == "" || email == "" {
-					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/"+id, "err", "all fields required"), http.StatusSeeOther)
-					return
-				}
-				if _util.IsValidPhoneNumber(phone) == false {
-					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/"+id, "err", "invalid phone format"), http.StatusSeeOther)
-					return
-				}
-				if _util.IsValidEmail(email) == false {
-					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/"+id, "err", "invalid email format"), http.StatusSeeOther)
-					return
-				}
-				var manufacturer _model.Manufacturer
-				db.First(&manufacturer, id)
-				manufacturer.Name = name
-				manufacturer.Phone = phone
-				manufacturer.Email = email
-				db.Save(&manufacturer)
-				http.Redirect(w, r, "/app/manufacturer/"+id, http.StatusSeeOther)
-			},
-			_middleware.Log,
-		)
-	})
-}
-
-func CreateEquipment(mux *http.ServeMux, db *gorm.DB) {
-	mux.HandleFunc("POST /app/manufacturer/{id}", func(w http.ResponseWriter, r *http.Request) {
-		ctx := map[string]interface{}{}
-		_middleware.MiddlewareChain(ctx, w, r, _middleware.Init, _middleware.ParseMultipartForm, _middleware.Auth,
-			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
-				id := r.PathValue("id")
-				name := r.Form.Get("nickname")
-				number := r.Form.Get("number")
-				photo, _, err := r.FormFile("photo")
-				if err != nil {
-					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/"+id, "equipmentErr", "photo required"), http.StatusSeeOther)
-					return
-				}
-				defer photo.Close()
-				if photo == nil {
-					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/"+id, "equipmentErr", "photo required"), http.StatusSeeOther)
-					return
-				}
-				photoBytes, err := io.ReadAll(photo)
-				if err != nil {
-					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/"+id, "equipmentErr", "photo required"), http.StatusSeeOther)
-					return
-				}
-				var manufacturer _model.Manufacturer
-				db.First(&manufacturer, id)
-				qrCodeToken := _util.GenerateRandomToken(32)
-				equipment := _model.Equipment{
-					Nickname:       name,
-					SerialNumber:   number,
-					Photo:          photoBytes,
-					ManufacturerID: manufacturer.ID,
-					QRCodeToken:    qrCodeToken,
-				}
-				db.Create(&equipment)
-				http.Redirect(w, r, "/app/manufacturer/"+id, http.StatusSeeOther)
-			},
-			_middleware.Log,
-		)
-	})
-}
-
 func Equipment(mux *http.ServeMux, db *gorm.DB) {
 	mux.HandleFunc("GET /app/equipment/{id}", func(w http.ResponseWriter, r *http.Request) {
 		ctx := map[string]interface{}{}
@@ -378,73 +219,6 @@ func Equipment(mux *http.ServeMux, db *gorm.DB) {
 					_components.Footer(),
 				})
 				w.Write(b.Build())
-			},
-			_middleware.Log,
-		)
-	})
-}
-
-func UpdateEquipment(mux *http.ServeMux, db *gorm.DB) {
-	mux.HandleFunc("POST /app/equipment/{id}/update", func(w http.ResponseWriter, r *http.Request) {
-		ctx := map[string]interface{}{}
-		_middleware.MiddlewareChain(ctx, w, r, _middleware.Init, _middleware.ParseMultipartForm, _middleware.Auth,
-			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
-				id := r.PathValue("id")
-				name := r.Form.Get("nickname")
-				number := r.Form.Get("number")
-
-				// Check if a new photo is provided
-				photo, _, err := r.FormFile("photo")
-				defer func() {
-					if photo != nil {
-						photo.Close()
-					}
-				}()
-				if err != nil && err != http.ErrMissingFile {
-					http.Redirect(w, r, _util.URLBuilder("/app/equipment/"+id, "updateErr", "failed to retrieve file"), http.StatusSeeOther)
-					return
-				}
-
-				var equipment _model.Equipment
-				db.First(&equipment, id)
-
-				// Update only if a new photo is provided
-				if photo != nil {
-					photoBytes, err := io.ReadAll(photo)
-					if err != nil {
-						http.Error(w, "Failed to read file", http.StatusBadRequest)
-						return
-					}
-					equipment.Photo = photoBytes
-				}
-
-				equipment.Nickname = name
-				equipment.SerialNumber = number
-				db.Save(&equipment)
-				http.Redirect(w, r, "/app/equipment/"+id, http.StatusSeeOther)
-			},
-			_middleware.Log,
-		)
-	})
-}
-
-func DeleteEquipment(mux *http.ServeMux, db *gorm.DB) {
-	mux.HandleFunc("POST /app/equipment/{id}/delete", func(w http.ResponseWriter, r *http.Request) {
-		ctx := map[string]interface{}{}
-		_middleware.MiddlewareChain(ctx, w, r, _middleware.Init, _middleware.ParseForm, _middleware.Auth,
-			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
-				id := r.PathValue("id")
-				name := strings.ToLower(r.Form.Get("name"))
-				var equipment _model.Equipment
-				db.First(&equipment, id)
-				var manufacturer _model.Manufacturer
-				db.First(&manufacturer, equipment.ManufacturerID)
-				if name != strings.ToLower(equipment.Nickname) {
-					http.Redirect(w, r, _util.URLBuilder(fmt.Sprintf("/app/equipment/%d", equipment.ID), "err", "invalid delete name provided"), http.StatusSeeOther)
-					return
-				}
-				db.Delete(&equipment, id)
-				http.Redirect(w, r, fmt.Sprintf("/app/manufacturer/%d", manufacturer.ID), http.StatusSeeOther)
 			},
 			_middleware.Log,
 		)
@@ -504,6 +278,33 @@ func EquipmentTicket(mux *http.ServeMux, db *gorm.DB) {
 						_components.CenterContentWrapper(
 							_components.EquipmentDetails(equipment, manufacturer, r.URL.Query().Get("err")),
 							_components.EquipmentQrCodeDownload(equipment),
+						),
+					),
+					_components.Footer(),
+				})
+				w.Write(b.Build())
+			},
+			_middleware.Log,
+		)
+	})
+}
+
+
+func TicketForm(mux *http.ServeMux, db *gorm.DB) {
+	mux.HandleFunc("GET /app/ticket/public", func(w http.ResponseWriter, r *http.Request) {
+		ctx := map[string]interface{}{}
+		_middleware.MiddlewareChain(ctx, w, r, _middleware.Init,
+			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+				token := r.URL.Query().Get("publicSecurityToken")
+				if token != os.Getenv("PUBLIC_SECURITY_TOKEN") {
+					http.Error(w, "Forbidden", http.StatusForbidden)
+					return
+				}
+				b := NewViewBuilder("Repairs Log - Public Tickets", []string{
+					_components.Banner(false, ""),
+					_components.Root(
+						_components.CenterContentWrapper(
+							_components.CreateTicketForm(r, token),
 						),
 					),
 					_components.Footer(),
