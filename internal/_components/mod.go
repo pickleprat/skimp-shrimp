@@ -44,21 +44,21 @@ func CenterContentWrapper(components ...string) string {
 }
 
 func NavMenuLink(name string, href string, currentPath string) string {
-	activeClass := ""
+	activeClass := "bg-black text-white"
 	if currentPath == href {
-		activeClass = "underline"
+		activeClass = "bg-white text-black font-bold"
 	}
 	return fmt.Sprintf(`
-		<li>
-			<a href='%s' class='%s'>%s</a>
+		<li class='border %s p-4 rounded'>
+			<a href='%s'>%s</a>
 		</li>
-	`, href, activeClass, name)
+	`, activeClass, href, name)
 }
 
 func AppNavMenu(currentPath string) string {
 	return fmt.Sprintf(`
 		<nav x-show='navopen' x-transition x-cloak class='fixed right-0 top-[75px] h-full w-3/5 max-w-[300px] p-6 z-40 bg-black border-l border-darkgray'>
-			<ul class='flex flex-col gap-2'>
+			<ul class='flex flex-col gap-4'>
 				%s%s
 			</ul>
 		</nav>

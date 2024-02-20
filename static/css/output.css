@@ -792,6 +792,16 @@ video {
   border-color: rgb(153 153 153 / var(--tw-border-opacity));
 }
 
+.border-lightgray {
+  --tw-border-opacity: 1;
+  border-color: rgb(238 238 238 / var(--tw-border-opacity));
+}
+
+.border-red {
+  --tw-border-opacity: 1;
+  border-color: rgb(229 22 54 / var(--tw-border-opacity));
+}
+
 .border-t-white {
   --tw-border-opacity: 1;
   border-top-color: rgb(255 255 255 / var(--tw-border-opacity));
@@ -874,6 +884,10 @@ video {
 
 .font-medium {
   font-weight: 500;
+}
+
+.font-bold {
+  font-weight: 700;
 }
 
 .leading-none {
