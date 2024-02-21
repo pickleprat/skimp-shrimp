@@ -21,12 +21,10 @@ func Login(mux *http.ServeMux, db *gorm.DB) {
 			http.NotFound(w, r)
 			return
 		}
-		_middleware.MiddlewareChain(ctx, w, r, _middleware.Init, _middleware.ParseForm,
+		_middleware.MiddlewareChain(ctx, w, r,
 			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
 				username := r.Form.Get("username")
 				password := r.Form.Get("password")
-				fmt.Println(username, password)
-				fmt.Println(os.Getenv("ADMIN_USERNAME"), os.Getenv("ADMIN_PASSWORD"))
 				if username == os.Getenv("ADMIN_USERNAME") && password == os.Getenv("ADMIN_PASSWORD") {
 					http.SetCookie(w, &http.Cookie{
 						Name:     "SessionToken",
@@ -39,7 +37,7 @@ func Login(mux *http.ServeMux, db *gorm.DB) {
 				}
 				http.Redirect(w, r, _util.URLBuilder("/", "err", "invalid credentials", "username", username), http.StatusSeeOther)
 			},
-			_middleware.Log,
+			_middleware.Init, _middleware.ParseForm,
 		)
 	})
 }
@@ -47,7 +45,7 @@ func Login(mux *http.ServeMux, db *gorm.DB) {
 func Logout(mux *http.ServeMux, db *gorm.DB) {
 	mux.HandleFunc("GET /logout", func(w http.ResponseWriter, r *http.Request) {
 		ctx := map[string]interface{}{}
-		_middleware.MiddlewareChain(ctx, w, r, _middleware.Init, _middleware.Auth,
+		_middleware.MiddlewareChain(ctx, w, r,
 			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
 				http.SetCookie(w, &http.Cookie{
 					Name:     "SessionToken",
@@ -57,7 +55,8 @@ func Logout(mux *http.ServeMux, db *gorm.DB) {
 				})
 				http.Redirect(w, r, "/", http.StatusSeeOther)
 			},
-			_middleware.Log,
+			_middleware.Init,
+			_middleware.Auth,
 		)
 	})
 }
@@ -65,7 +64,7 @@ func Logout(mux *http.ServeMux, db *gorm.DB) {
 func CreateManufacturer(mux *http.ServeMux, db *gorm.DB) {
 	mux.HandleFunc("POST /app/manufacturer", func(w http.ResponseWriter, r *http.Request) {
 		ctx := map[string]interface{}{}
-		_middleware.MiddlewareChain(ctx, w, r, _middleware.Init, _middleware.Auth, _middleware.ParseForm,
+		_middleware.MiddlewareChain(ctx, w, r,
 			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
 				name := r.Form.Get("name")
 				phone := r.Form.Get("phone")
@@ -90,7 +89,7 @@ func CreateManufacturer(mux *http.ServeMux, db *gorm.DB) {
 				db.Create(&manufacturer)
 				http.Redirect(w, r, "/app/manufacturer", http.StatusSeeOther)
 			},
-			_middleware.Log,
+			_middleware.Init, _middleware.Auth, _middleware.ParseForm,
 		)
 	})
 }
@@ -98,7 +97,7 @@ func CreateManufacturer(mux *http.ServeMux, db *gorm.DB) {
 func DeleteManufacturer(mux *http.ServeMux, db *gorm.DB) {
 	mux.HandleFunc("POST /app/manufacturer/{id}/delete", func(w http.ResponseWriter, r *http.Request) {
 		ctx := map[string]interface{}{}
-		_middleware.MiddlewareChain(ctx, w, r, _middleware.Init, _middleware.ParseForm, _middleware.Auth,
+		_middleware.MiddlewareChain(ctx, w, r,
 			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
 				id := r.PathValue("id")
 				name := strings.ToLower(r.Form.Get("name"))
@@ -110,9 +109,9 @@ func DeleteManufacturer(mux *http.ServeMux, db *gorm.DB) {
 
 				}
 				db.Delete(&manufacturer, id)
-				http.Redirect(w, r, "/app", http.StatusSeeOther)
+				http.Redirect(w, r, "/app/manufacturer", http.StatusSeeOther)
 			},
-			_middleware.Log,
+			_middleware.Init, _middleware.ParseForm, _middleware.Auth,
 		)
 	})
 }
@@ -120,7 +119,7 @@ func DeleteManufacturer(mux *http.ServeMux, db *gorm.DB) {
 func UpdateManufacturer(mux *http.ServeMux, db *gorm.DB) {
 	mux.HandleFunc("POST /app/manufacturer/{id}/update", func(w http.ResponseWriter, r *http.Request) {
 		ctx := map[string]interface{}{}
-		_middleware.MiddlewareChain(ctx, w, r, _middleware.Init, _middleware.ParseForm, _middleware.Auth,
+		_middleware.MiddlewareChain(ctx, w, r,
 			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
 				id := r.PathValue("id")
 				name := r.Form.Get("name")
@@ -146,7 +145,7 @@ func UpdateManufacturer(mux *http.ServeMux, db *gorm.DB) {
 				db.Save(&manufacturer)
 				http.Redirect(w, r, "/app/manufacturer/"+id, http.StatusSeeOther)
 			},
-			_middleware.Log,
+			_middleware.Init, _middleware.ParseForm, _middleware.Auth,
 		)
 	})
 }
@@ -154,7 +153,7 @@ func UpdateManufacturer(mux *http.ServeMux, db *gorm.DB) {
 func CreateEquipment(mux *http.ServeMux, db *gorm.DB) {
 	mux.HandleFunc("POST /app/manufacturer/{id}", func(w http.ResponseWriter, r *http.Request) {
 		ctx := map[string]interface{}{}
-		_middleware.MiddlewareChain(ctx, w, r, _middleware.Init, _middleware.ParseMultipartForm, _middleware.Auth,
+		_middleware.MiddlewareChain(ctx, w, r,
 			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
 				id := r.PathValue("id")
 				name := r.Form.Get("nickname")
@@ -187,7 +186,7 @@ func CreateEquipment(mux *http.ServeMux, db *gorm.DB) {
 				db.Create(&equipment)
 				http.Redirect(w, r, "/app/manufacturer/"+id, http.StatusSeeOther)
 			},
-			_middleware.Log,
+			_middleware.Init, _middleware.ParseMultipartForm, _middleware.Auth,
 		)
 	})
 }
@@ -195,7 +194,7 @@ func CreateEquipment(mux *http.ServeMux, db *gorm.DB) {
 func UpdateEquipment(mux *http.ServeMux, db *gorm.DB) {
 	mux.HandleFunc("POST /app/equipment/{id}/update", func(w http.ResponseWriter, r *http.Request) {
 		ctx := map[string]interface{}{}
-		_middleware.MiddlewareChain(ctx, w, r, _middleware.Init, _middleware.ParseMultipartForm, _middleware.Auth,
+		_middleware.MiddlewareChain(ctx, w, r,
 			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
 				id := r.PathValue("id")
 				name := r.Form.Get("nickname")
@@ -231,7 +230,7 @@ func UpdateEquipment(mux *http.ServeMux, db *gorm.DB) {
 				db.Save(&equipment)
 				http.Redirect(w, r, "/app/equipment/"+id, http.StatusSeeOther)
 			},
-			_middleware.Log,
+			_middleware.Init, _middleware.ParseMultipartForm, _middleware.Auth,
 		)
 	})
 }
@@ -239,7 +238,7 @@ func UpdateEquipment(mux *http.ServeMux, db *gorm.DB) {
 func DeleteEquipment(mux *http.ServeMux, db *gorm.DB) {
 	mux.HandleFunc("POST /app/equipment/{id}/delete", func(w http.ResponseWriter, r *http.Request) {
 		ctx := map[string]interface{}{}
-		_middleware.MiddlewareChain(ctx, w, r, _middleware.Init, _middleware.ParseForm, _middleware.Auth,
+		_middleware.MiddlewareChain(ctx, w, r,
 			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
 				id := r.PathValue("id")
 				name := strings.ToLower(r.Form.Get("name"))
@@ -254,7 +253,7 @@ func DeleteEquipment(mux *http.ServeMux, db *gorm.DB) {
 				db.Delete(&equipment, id)
 				http.Redirect(w, r, fmt.Sprintf("/app/manufacturer/%d", manufacturer.ID), http.StatusSeeOther)
 			},
-			_middleware.Log,
+			_middleware.Init, _middleware.ParseForm, _middleware.Auth,
 		)
 	})
 }
@@ -262,7 +261,7 @@ func DeleteEquipment(mux *http.ServeMux, db *gorm.DB) {
 func CreateTicket(mux *http.ServeMux, db *gorm.DB) {
 	mux.HandleFunc("POST /app/ticket/public", func(w http.ResponseWriter, r *http.Request) {
 		ctx := map[string]interface{}{}
-		_middleware.MiddlewareChain(ctx, w, r, _middleware.Init, _middleware.ParseMultipartForm,
+		_middleware.MiddlewareChain(ctx, w, r,
 			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
 				securityToken := r.Form.Get("publicSecurityToken")
 				redirectURL := "/app/ticket/public"
@@ -306,7 +305,7 @@ func CreateTicket(mux *http.ServeMux, db *gorm.DB) {
 				db.Create(&ticket)
 				http.Redirect(w, r, _util.URLBuilder(redirectURL, "publicSecurityToken", securityToken, "success", "your ticket has been created, thank you!"), http.StatusSeeOther)
 			},
-			_middleware.Log,
+			_middleware.Init, _middleware.ParseMultipartForm,
 		)
 	})
 }

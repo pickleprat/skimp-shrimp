@@ -91,7 +91,7 @@ func Home(mux *http.ServeMux, db *gorm.DB) {
 			http.NotFound(w, r)
 			return
 		}
-		_middleware.MiddlewareChain(ctx, w, r, _middleware.Init,
+		_middleware.MiddlewareChain(ctx, w, r,
 			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
 				b := NewViewBuilder("Repairs Log - Login", []string{
 					_components.Banner(false, ""),
@@ -104,7 +104,7 @@ func Home(mux *http.ServeMux, db *gorm.DB) {
 				})
 				w.Write(b.Build())
 			},
-			_middleware.Log,
+			_middleware.Init,
 		)
 	})
 }
@@ -112,7 +112,7 @@ func Home(mux *http.ServeMux, db *gorm.DB) {
 func ManufacturerForm(mux *http.ServeMux, db *gorm.DB) {
 	mux.HandleFunc("GET /app/manufacturer", func(w http.ResponseWriter, r *http.Request) {
 		ctx := map[string]interface{}{}
-		_middleware.MiddlewareChain(ctx, w, r, _middleware.Init, _middleware.Auth,
+		_middleware.MiddlewareChain(ctx, w, r,
 			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
 				var manufacturers []_model.Manufacturer
 				db.Find(&manufacturers)
@@ -128,7 +128,7 @@ func ManufacturerForm(mux *http.ServeMux, db *gorm.DB) {
 				})
 				w.Write(b.Build())
 			},
-			_middleware.Log,
+			_middleware.Init, _middleware.Auth,
 		)
 	})
 }
@@ -138,7 +138,7 @@ func ManufacturerForm(mux *http.ServeMux, db *gorm.DB) {
 func Manufacturer(mux *http.ServeMux, db *gorm.DB) {
 	mux.HandleFunc("GET /app/manufacturer/{id}", func(w http.ResponseWriter, r *http.Request) {
 		ctx := map[string]interface{}{}
-		_middleware.MiddlewareChain(ctx, w, r, _middleware.Init, _middleware.Auth,
+		_middleware.MiddlewareChain(ctx, w, r,
 			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
 				id := r.PathValue("id")
 				var manufacturer _model.Manufacturer
@@ -156,7 +156,7 @@ func Manufacturer(mux *http.ServeMux, db *gorm.DB) {
 				})
 				w.Write(b.Build())
 			},
-			_middleware.Log,
+			_middleware.Init, _middleware.Auth,
 		)
 	})
 }
@@ -164,7 +164,7 @@ func Manufacturer(mux *http.ServeMux, db *gorm.DB) {
 func Equipment(mux *http.ServeMux, db *gorm.DB) {
 	mux.HandleFunc("GET /app/equipment/{id}", func(w http.ResponseWriter, r *http.Request) {
 		ctx := map[string]interface{}{}
-		_middleware.MiddlewareChain(ctx, w, r, _middleware.Init, _middleware.Auth,
+		_middleware.MiddlewareChain(ctx, w, r,
 			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
 				id := r.PathValue("id")
 				var equipment _model.Equipment
@@ -183,7 +183,7 @@ func Equipment(mux *http.ServeMux, db *gorm.DB) {
 				})
 				w.Write(b.Build())
 			},
-			_middleware.Log,
+			_middleware.Init, _middleware.Auth,
 		)
 	})
 }
@@ -191,7 +191,7 @@ func Equipment(mux *http.ServeMux, db *gorm.DB) {
 func GetEquipmentQRCode(mux *http.ServeMux, db *gorm.DB) {
 	mux.HandleFunc("GET /app/equipment/{id}/downloadticketqr", func(w http.ResponseWriter, r *http.Request) {
 		ctx := map[string]interface{}{}
-		_middleware.MiddlewareChain(ctx, w, r, _middleware.Init, _middleware.Auth, _middleware.IncludePNG,
+		_middleware.MiddlewareChain(ctx, w, r,
 			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
 				id := r.PathValue("id")
 				var equipment _model.Equipment
@@ -210,7 +210,7 @@ func GetEquipmentQRCode(mux *http.ServeMux, db *gorm.DB) {
 					return
 				}
 			},
-			_middleware.Log,
+			_middleware.Init, _middleware.Auth, _middleware.IncludePNG,
 		)
 	})
 }
@@ -218,7 +218,7 @@ func GetEquipmentQRCode(mux *http.ServeMux, db *gorm.DB) {
 func EquipmentTicket(mux *http.ServeMux, db *gorm.DB) {
 	mux.HandleFunc("GET /app/equipment/{id}/ticketform", func(w http.ResponseWriter, r *http.Request) {
 		ctx := map[string]interface{}{}
-		_middleware.MiddlewareChain(ctx, w, r, _middleware.Init,
+		_middleware.MiddlewareChain(ctx, w, r,
 			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
 				id := r.PathValue("id")
 				equipmentToken := r.URL.Query().Get("equipmentToken")
@@ -247,7 +247,7 @@ func EquipmentTicket(mux *http.ServeMux, db *gorm.DB) {
 				})
 				w.Write(b.Build())
 			},
-			_middleware.Log,
+			_middleware.Init,
 		)
 	})
 }
@@ -256,7 +256,7 @@ func EquipmentTicket(mux *http.ServeMux, db *gorm.DB) {
 func TicketForm(mux *http.ServeMux, db *gorm.DB) {
 	mux.HandleFunc("GET /app/ticket/public", func(w http.ResponseWriter, r *http.Request) {
 		ctx := map[string]interface{}{}
-		_middleware.MiddlewareChain(ctx, w, r, _middleware.Init,
+		_middleware.MiddlewareChain(ctx, w, r,
 			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
 				token := r.URL.Query().Get("publicSecurityToken")
 				if token != os.Getenv("PUBLIC_SECURITY_TOKEN") {
@@ -274,7 +274,7 @@ func TicketForm(mux *http.ServeMux, db *gorm.DB) {
 				})
 				w.Write(b.Build())
 			},
-			_middleware.Log,
+			_middleware.Init,
 		)
 	})
 }
@@ -282,7 +282,7 @@ func TicketForm(mux *http.ServeMux, db *gorm.DB) {
 func Ticket(mux *http.ServeMux, db *gorm.DB) {
     mux.HandleFunc("GET /app/ticket", func(w http.ResponseWriter, r *http.Request) {
         ctx := map[string]interface{}{}
-        _middleware.MiddlewareChain(ctx, w, r, _middleware.Init, _middleware.Auth,
+        _middleware.MiddlewareChain(ctx, w, r,
             func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
                 var tickets []_model.Ticket
                 if err := db.Find(&tickets).Error; err != nil {
@@ -305,7 +305,7 @@ func Ticket(mux *http.ServeMux, db *gorm.DB) {
                 })
                 w.Write(b.Build())
             },
-            _middleware.Log,
+            _middleware.Init, _middleware.Auth,
         )
     })
 }
