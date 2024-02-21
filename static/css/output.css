@@ -680,6 +680,10 @@ video {
   height: 100%;
 }
 
+.h-\[100px\] {
+  height: 100px;
+}
+
 .w-10 {
   width: 2.5rem;
 }
@@ -723,6 +727,10 @@ video {
 
 .max-w-\[300px\] {
   max-width: 300px;
+}
+
+.flex-shrink-0 {
+  flex-shrink: 0;
 }
 
 .flex-grow {

@@ -578,17 +578,20 @@ func TicketList(tickets []_model.Ticket) string {
     for _, ticket := range tickets {
         href := fmt.Sprintf("/app/ticket/%d", ticket.ID)
         ticketList += fmt.Sprintf(`
-            <a href='%s' class='p-6 w-full hover:border-white border border-gray rounded text-xs flex gap-6'>
-                <div class=''>
-                    <img src='data:image/jpeg;base64,%s' class='w-[100px] h-auto rounded-full' />
-                </div>
-                <div class='flex-grow'>
-                    <div>
-                        <p>right</p>
-                    </div>
+            <a href='%s' class='p-6 w-full hover:border-white border border-gray rounded text-xs flex gap-6 justify-between'>
+				<div class=''>
+					<div class=''>
+						<p><strong>Creator:</strong> %s</p>
+                        <p><strong>Item:</strong> %s</p>
+                        <p><strong>Location:</strong> %s</p>
+                        <p><strong>Problem:</strong> %s</p>
+					</div>
+				</div>
+                <div class='w-[100px] h-[100px] flex-shrink-0'>
+                    <img src='data:image/jpeg;base64,%s' class='h-full w-full rounded-full' />
                 </div>
             </a>
-        `, href, base64.StdEncoding.EncodeToString(ticket.Photo))
+        `, href, ticket.Creator, ticket.Item, ticket.Location, ticket.Problem, base64.StdEncoding.EncodeToString(ticket.Photo))
     }
     if len(tickets) == 0 {
         return fmt.Sprintf(`

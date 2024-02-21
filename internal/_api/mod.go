@@ -53,15 +53,15 @@ func CreateManufacturer(mux *http.ServeMux, db *gorm.DB) {
 				phone := r.Form.Get("phone")
 				email := r.Form.Get("email")
 				if name == "" || phone == "" || email == "" {
-					http.Redirect(w, r, _util.URLBuilder("/app", "err", "all fields required", "name", name, "phone", phone, "email", email), http.StatusSeeOther)
+					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer", "err", "all fields required", "name", name, "phone", phone, "email", email), http.StatusSeeOther)
 					return
 				}
 				if _util.IsValidPhoneNumber(phone) == false {
-					http.Redirect(w, r, _util.URLBuilder("/app", "err", "invalid phone format", "name", name, "phone", phone, "email", email), http.StatusSeeOther)
+					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer", "err", "invalid phone format", "name", name, "phone", phone, "email", email), http.StatusSeeOther)
 					return
 				}
 				if _util.IsValidEmail(email) == false {
-					http.Redirect(w, r, _util.URLBuilder("/app", "err", "invalid email format", "name", name, "phone", phone, "email", email), http.StatusSeeOther)
+					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer", "err", "invalid email format", "name", name, "phone", phone, "email", email), http.StatusSeeOther)
 					return
 				}
 				manufacturer := _model.Manufacturer{
@@ -70,7 +70,7 @@ func CreateManufacturer(mux *http.ServeMux, db *gorm.DB) {
 					Email: email,
 				}
 				db.Create(&manufacturer)
-				http.Redirect(w, r, "/app", http.StatusSeeOther)
+				http.Redirect(w, r, "/app/manufacturer", http.StatusSeeOther)
 			},
 			_middleware.Log,
 		)
