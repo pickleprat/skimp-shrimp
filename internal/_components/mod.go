@@ -609,4 +609,36 @@ func TicketList(tickets []_model.Ticket) string {
 }
 
 
+func TicketViewOptions() string { 
+	return fmt.Sprintf(`
+		<div id='ticket-view-options' class='p-6 w-full flex flex-wrap gap-4 text-xs'>
+			<div class='ticket-view-option p-2 border border-gray rounded hover:border-white bg-white text-black'>Unassigned Tickets</div>
+			<div class='ticket-view-option p-2 border border-gray rounded hover:border-white'>All Tickets</div>
+			<div class='ticket-view-option p-2 border border-gray rounded hover:border-white'>Assigned Tickets</div>
+		</div>
+		<script>
+			document.querySelectorAll('.ticket-view-option').forEach(option => {
+				option.addEventListener('click', (e) => {
+					document.querySelectorAll('.ticket-view-option').forEach(option => {
+						if (option.textContent === e.target.textContent) {
+							option.classList.add('bg-white')
+							option.classList.add('text-black')
+						} else {
+							option.classList.remove('bg-white')
+							option.classList.remove('text-black')
+						}						
+					})
+				});
+			});
+		</script>
+	`)
+}
+
+func HxGetLoader(href string) string {
+	return fmt.Sprintf(`
+		<div hx-get='%s' hx-swap='outerHTML'></div>
+	`, href)
+}
+
+
 

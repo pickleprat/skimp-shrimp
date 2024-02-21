@@ -43,6 +43,16 @@ func (v *ViewBuilder) Build() []byte {
 			<link rel="stylesheet" href="/static/css/animate.css">
 			<style>
 				[x-cloak] { display: none !important; }
+				.htmx-indicator{
+					opacity:0;
+					transition: opacity 500ms ease-in;
+				}
+				.htmx-request .htmx-indicator{
+					opacity:1
+				}
+				.htmx-request.htmx-indicator{
+					opacity:1
+				}
 			</style>
 			<title>%s</title>
 		</head>
@@ -274,7 +284,6 @@ func Ticket(mux *http.ServeMux, db *gorm.DB) {
         ctx := map[string]interface{}{}
         _middleware.MiddlewareChain(ctx, w, r, _middleware.Init, _middleware.Auth,
             func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
-                // Query tickets from the database
                 var tickets []_model.Ticket
                 if err := db.Find(&tickets).Error; err != nil {
                     // Handle error
@@ -287,7 +296,9 @@ func Ticket(mux *http.ServeMux, db *gorm.DB) {
                     _components.Root(
                         _components.CenterContentWrapper(
                             _components.CreateTicketForm(r, os.Getenv("ADMIN_REDIRECT_TOKEN")),
-                            _components.TicketList(tickets),
+							_components.TicketViewOptions(),
+							_components.HxGetLoader("/partial/ticketlist"),
+                            // _components.TicketList(tickets),
                         ),
                     ),
                     _components.Footer(),

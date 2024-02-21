@@ -2,7 +2,6 @@ package _middleware
 
 import (
 	"fmt"
-	"math/rand"
 	"net/http"
 	"os"
 	"time"
@@ -29,25 +28,6 @@ func SvgHeaders(ctx map[string]interface{}, w http.ResponseWriter, r *http.Reque
 	w.Header().Set("Content-Type", "image/svg+xml")
 }
 
-func MwRandomTruett(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
-	quotes := []string{
-		"Quality is remembered long after the price is forgotten.",
-		"People don't care how much you know until they know how much you care.",
-		"Be better before you get bigger.",
-		"The more you give, the more you get.",
-		"If you want a great business, you have to have great operators.",
-		"It's easier to succeed than to fail.",
-		"We live in a changing world, but we need to be reminded that the important things have not changed.",
-		"Food is essential to life; therefore, make it good.",
-		"It is more rewarding to watch money change the world than watch it accumulate.",
-		"Adversity is the diamond dust heaven polishes its jewels with.",
-	}
-	source := rand.NewSource(time.Now().UnixNano())
-	randomGenerator := rand.New(source)
-	randomIndex := randomGenerator.Intn(len(quotes))
-	randomQuote := quotes[randomIndex]
-	ctx["RandomTruett"] = randomQuote
-}
 
 func ParseForm(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
