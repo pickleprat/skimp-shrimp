@@ -44,6 +44,24 @@ func Login(mux *http.ServeMux, db *gorm.DB) {
 	})
 }
 
+func Logout(mux *http.ServeMux, db *gorm.DB) {
+	mux.HandleFunc("GET /logout", func(w http.ResponseWriter, r *http.Request) {
+		ctx := map[string]interface{}{}
+		_middleware.MiddlewareChain(ctx, w, r, _middleware.Init, _middleware.Auth,
+			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+				http.SetCookie(w, &http.Cookie{
+					Name:     "SessionToken",
+					Value:    "",
+					Expires:  time.Now(),
+					HttpOnly: true,
+				})
+				http.Redirect(w, r, "/", http.StatusSeeOther)
+			},
+			_middleware.Log,
+		)
+	})
+}
+
 func CreateManufacturer(mux *http.ServeMux, db *gorm.DB) {
 	mux.HandleFunc("POST /app/manufacturer", func(w http.ResponseWriter, r *http.Request) {
 		ctx := map[string]interface{}{}
