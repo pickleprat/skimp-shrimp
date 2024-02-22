@@ -29,5 +29,9 @@ type Ticket struct {
     Location      string
     Photo         []byte
     EquipmentID   *uint
+	Priority      *string
+	Owner		  *string
+	Status		  *string
+	Notes		  *string
     Equipment     Equipment
 }
