@@ -16,13 +16,12 @@ import (
 
 func Login(mux *http.ServeMux, db *gorm.DB) {
 	mux.HandleFunc("POST /", func(w http.ResponseWriter, r *http.Request) {
-		ctx := map[string]interface{}{}
 		if r.URL.Path != "/" {
 			http.NotFound(w, r)
 			return
 		}
-		_middleware.MiddlewareChain(ctx, w, r,
-			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+		_middleware.MiddlewareChain(w, r,
+			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 				username := r.Form.Get("username")
 				password := r.Form.Get("password")
 				if username == os.Getenv("ADMIN_USERNAME") && password == os.Getenv("ADMIN_PASSWORD") {
@@ -44,9 +43,8 @@ func Login(mux *http.ServeMux, db *gorm.DB) {
 
 func Logout(mux *http.ServeMux, db *gorm.DB) {
 	mux.HandleFunc("GET /logout", func(w http.ResponseWriter, r *http.Request) {
-		ctx := map[string]interface{}{}
-		_middleware.MiddlewareChain(ctx, w, r,
-			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+		_middleware.MiddlewareChain(w, r,
+			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 				http.SetCookie(w, &http.Cookie{
 					Name:     "SessionToken",
 					Value:    "",
@@ -55,17 +53,15 @@ func Logout(mux *http.ServeMux, db *gorm.DB) {
 				})
 				http.Redirect(w, r, "/", http.StatusSeeOther)
 			},
-			_middleware.Init,
-			_middleware.Auth,
+			_middleware.Init, _middleware.Auth,
 		)
 	})
 }
 
 func CreateManufacturer(mux *http.ServeMux, db *gorm.DB) {
 	mux.HandleFunc("POST /app/manufacturer", func(w http.ResponseWriter, r *http.Request) {
-		ctx := map[string]interface{}{}
-		_middleware.MiddlewareChain(ctx, w, r,
-			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+		_middleware.MiddlewareChain(w, r,
+			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 				name := r.Form.Get("name")
 				phone := r.Form.Get("phone")
 				email := r.Form.Get("email")
@@ -96,9 +92,8 @@ func CreateManufacturer(mux *http.ServeMux, db *gorm.DB) {
 
 func DeleteManufacturer(mux *http.ServeMux, db *gorm.DB) {
 	mux.HandleFunc("POST /app/manufacturer/{id}/delete", func(w http.ResponseWriter, r *http.Request) {
-		ctx := map[string]interface{}{}
-		_middleware.MiddlewareChain(ctx, w, r,
-			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+		_middleware.MiddlewareChain(w, r,
+			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 				id := r.PathValue("id")
 				name := strings.ToLower(r.Form.Get("name"))
 				var manufacturer _model.Manufacturer
@@ -118,9 +113,8 @@ func DeleteManufacturer(mux *http.ServeMux, db *gorm.DB) {
 
 func UpdateManufacturer(mux *http.ServeMux, db *gorm.DB) {
 	mux.HandleFunc("POST /app/manufacturer/{id}/update", func(w http.ResponseWriter, r *http.Request) {
-		ctx := map[string]interface{}{}
-		_middleware.MiddlewareChain(ctx, w, r,
-			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+		_middleware.MiddlewareChain(w, r,
+			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 				id := r.PathValue("id")
 				name := r.Form.Get("name")
 				phone := r.Form.Get("phone")
@@ -152,9 +146,8 @@ func UpdateManufacturer(mux *http.ServeMux, db *gorm.DB) {
 
 func CreateEquipment(mux *http.ServeMux, db *gorm.DB) {
 	mux.HandleFunc("POST /app/manufacturer/{id}", func(w http.ResponseWriter, r *http.Request) {
-		ctx := map[string]interface{}{}
-		_middleware.MiddlewareChain(ctx, w, r,
-			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+		_middleware.MiddlewareChain(w, r,
+			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 				id := r.PathValue("id")
 				name := r.Form.Get("nickname")
 				number := r.Form.Get("number")
@@ -193,9 +186,8 @@ func CreateEquipment(mux *http.ServeMux, db *gorm.DB) {
 
 func UpdateEquipment(mux *http.ServeMux, db *gorm.DB) {
 	mux.HandleFunc("POST /app/equipment/{id}/update", func(w http.ResponseWriter, r *http.Request) {
-		ctx := map[string]interface{}{}
-		_middleware.MiddlewareChain(ctx, w, r,
-			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+		_middleware.MiddlewareChain(w, r,
+			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 				id := r.PathValue("id")
 				name := r.Form.Get("nickname")
 				number := r.Form.Get("number")
@@ -237,9 +229,8 @@ func UpdateEquipment(mux *http.ServeMux, db *gorm.DB) {
 
 func DeleteEquipment(mux *http.ServeMux, db *gorm.DB) {
 	mux.HandleFunc("POST /app/equipment/{id}/delete", func(w http.ResponseWriter, r *http.Request) {
-		ctx := map[string]interface{}{}
-		_middleware.MiddlewareChain(ctx, w, r,
-			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+		_middleware.MiddlewareChain(w, r,
+			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 				id := r.PathValue("id")
 				name := strings.ToLower(r.Form.Get("name"))
 				var equipment _model.Equipment
@@ -260,16 +251,15 @@ func DeleteEquipment(mux *http.ServeMux, db *gorm.DB) {
 
 func CreateTicket(mux *http.ServeMux, db *gorm.DB) {
 	mux.HandleFunc("POST /app/ticket/public", func(w http.ResponseWriter, r *http.Request) {
-		ctx := map[string]interface{}{}
-		_middleware.MiddlewareChain(ctx, w, r,
-			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+		_middleware.MiddlewareChain(w, r,
+			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 				securityToken := r.Form.Get("publicSecurityToken")
 				redirectURL := "/app/ticket/public"
 				if securityToken == os.Getenv("ADMIN_REDIRECT_TOKEN") {
 					redirectURL = "/app/ticket"
 				}
 				if redirectURL == "/app/ticket" {
-					_middleware.Auth(ctx, w, r)
+					_middleware.Auth(customContext, w, r)
 					securityToken = ""
 				}
 				creator := r.Form.Get("creator")

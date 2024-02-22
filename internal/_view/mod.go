@@ -86,13 +86,12 @@ func ServeStaticFiles(w http.ResponseWriter, r *http.Request) {
 
 func Home(mux *http.ServeMux, db *gorm.DB) {
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		ctx := map[string]interface{}{}
 		if r.URL.Path != "/" {
 			http.NotFound(w, r)
 			return
 		}
-		_middleware.MiddlewareChain(ctx, w, r,
-			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+		_middleware.MiddlewareChain(w, r,
+			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 				b := NewViewBuilder("Repairs Log - Login", []string{
 					_components.Banner(false, ""),
 					_components.Root(
@@ -111,9 +110,8 @@ func Home(mux *http.ServeMux, db *gorm.DB) {
 
 func ManufacturerForm(mux *http.ServeMux, db *gorm.DB) {
 	mux.HandleFunc("GET /app/manufacturer", func(w http.ResponseWriter, r *http.Request) {
-		ctx := map[string]interface{}{}
-		_middleware.MiddlewareChain(ctx, w, r,
-			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+		_middleware.MiddlewareChain(w, r,
+			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 				var manufacturers []_model.Manufacturer
 				db.Find(&manufacturers)
 				b := NewViewBuilder("Repairs Log - App", []string{
@@ -137,9 +135,8 @@ func ManufacturerForm(mux *http.ServeMux, db *gorm.DB) {
 
 func Manufacturer(mux *http.ServeMux, db *gorm.DB) {
 	mux.HandleFunc("GET /app/manufacturer/{id}", func(w http.ResponseWriter, r *http.Request) {
-		ctx := map[string]interface{}{}
-		_middleware.MiddlewareChain(ctx, w, r,
-			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+		_middleware.MiddlewareChain(w, r,
+			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 				id := r.PathValue("id")
 				var manufacturer _model.Manufacturer
 				db.Preload("Equipment").First(&manufacturer, id)
@@ -163,9 +160,8 @@ func Manufacturer(mux *http.ServeMux, db *gorm.DB) {
 
 func Equipment(mux *http.ServeMux, db *gorm.DB) {
 	mux.HandleFunc("GET /app/equipment/{id}", func(w http.ResponseWriter, r *http.Request) {
-		ctx := map[string]interface{}{}
-		_middleware.MiddlewareChain(ctx, w, r,
-			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+		_middleware.MiddlewareChain(w, r,
+			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 				id := r.PathValue("id")
 				var equipment _model.Equipment
 				var manufacturer _model.Manufacturer
@@ -190,9 +186,8 @@ func Equipment(mux *http.ServeMux, db *gorm.DB) {
 
 func GetEquipmentQRCode(mux *http.ServeMux, db *gorm.DB) {
 	mux.HandleFunc("GET /app/equipment/{id}/downloadticketqr", func(w http.ResponseWriter, r *http.Request) {
-		ctx := map[string]interface{}{}
-		_middleware.MiddlewareChain(ctx, w, r,
-			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+		_middleware.MiddlewareChain(w, r,
+			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 				id := r.PathValue("id")
 				var equipment _model.Equipment
 				db.First(&equipment, id)
@@ -217,9 +212,8 @@ func GetEquipmentQRCode(mux *http.ServeMux, db *gorm.DB) {
 
 func EquipmentTicket(mux *http.ServeMux, db *gorm.DB) {
 	mux.HandleFunc("GET /app/equipment/{id}/ticketform", func(w http.ResponseWriter, r *http.Request) {
-		ctx := map[string]interface{}{}
-		_middleware.MiddlewareChain(ctx, w, r,
-			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+		_middleware.MiddlewareChain(w, r,
+			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 				id := r.PathValue("id")
 				equipmentToken := r.URL.Query().Get("equipmentToken")
 				var equipment _model.Equipment
@@ -255,9 +249,8 @@ func EquipmentTicket(mux *http.ServeMux, db *gorm.DB) {
 
 func TicketForm(mux *http.ServeMux, db *gorm.DB) {
 	mux.HandleFunc("GET /app/ticket/public", func(w http.ResponseWriter, r *http.Request) {
-		ctx := map[string]interface{}{}
-		_middleware.MiddlewareChain(ctx, w, r,
-			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+		_middleware.MiddlewareChain(w, r,
+			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 				token := r.URL.Query().Get("publicSecurityToken")
 				if token != os.Getenv("PUBLIC_SECURITY_TOKEN") {
 					http.Error(w, "Forbidden", http.StatusForbidden)
@@ -281,9 +274,8 @@ func TicketForm(mux *http.ServeMux, db *gorm.DB) {
 
 func Ticket(mux *http.ServeMux, db *gorm.DB) {
     mux.HandleFunc("GET /app/ticket", func(w http.ResponseWriter, r *http.Request) {
-        ctx := map[string]interface{}{}
-        _middleware.MiddlewareChain(ctx, w, r,
-            func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+        _middleware.MiddlewareChain(w, r,
+            func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
                 var tickets []_model.Ticket
                 if err := db.Find(&tickets).Error; err != nil {
                     // Handle error
