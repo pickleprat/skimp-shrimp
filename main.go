@@ -34,6 +34,7 @@ func main() {
 	_view.GetEquipmentQRCode(mux, db)
 	_view.EquipmentTicket(mux, db)
 	_view.TicketForm(mux, db)
+	_view.Tickets(mux, db)
 	_view.Ticket(mux, db)
 	
 	_api.Login(mux, db)
@@ -45,6 +46,8 @@ func main() {
 	_api.UpdateEquipment(mux, db)
 	_api.DeleteEquipment(mux, db)
 	_api.CreateTicket(mux, db)
+	_api.UpdateTicket(mux, db)
+	_api.DeleteTicket(mux, db)
 
 	fmt.Println("Server is running on port " + os.Getenv("PORT"))
 	http.ListenAndServe(":"+os.Getenv("PORT"), mux)

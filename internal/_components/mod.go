@@ -625,6 +625,8 @@ func TicketViewOptions(ticketFilter string) string {
 	isAll := false
 	isAssigned := false
 	switch ticketFilter {
+		case "":
+			isUnassigned = true
 		case "unassigned":
 			isUnassigned = true
 		case "all":
@@ -640,10 +642,105 @@ func TicketViewOptions(ticketFilter string) string {
 	`, ActiveLink("/app/ticket?ticketFilter=unassigned", "Unassigned Tickets", isUnassigned), ActiveLink("/app/ticket?ticketFilter=all", "All Tickets", isAll), ActiveLink("/app/ticket?ticketFilter=assigned", "Assigned Tickets", isAssigned))
 }
 
-func HxGetLoader(href string) string {
+func TicketDetails(ticket _model.Ticket, err string) string {
 	return fmt.Sprintf(`
-		<div hx-get='%s' hx-swap='outerHTML'></div>
-	`, href)
+		<div class='p-6 w-full flex flex-col gap-4'>
+			<div class='flex flex-row justify-between'>
+				<h2>Ticket Details</h2>
+				%s%s
+			</div>
+			<div class='text-xs'>
+				<p><strong>Creator:</strong> %s</p>
+				<p><strong>Item:</strong> %s</p>
+				<p><strong>Location:</strong> %s</p>
+			</div>
+			<div class='text-xs'>
+				<p><strong>Problem:</strong> %s</p>
+			</div>
+			<div id='manufacturer-delete-message'>
+				%s
+			</div>
+			<div class='w-[200px]'>
+				<img src='data:image/jpeg;base64,%s' class='w-full h-auto' alt='%s'/>
+			</div>
+			<div id='hidden-settings-section' class='text-xs hidden flex flex-row gap-2'>
+				<div id='manufacturer-update-button' class='cursor-pointer rounded py-1 px-2 border border-black bg-white text-black'>Update</div>
+				<div id='manufacturer-delete-button' class='cursor-pointer rounded py-1 px-2 border border-black bg-red'>Delete</div>
+			</div>
+			<div id='update-manufacturer-form' class='hidden mt-2'>
+				%s
+			</div>
+			<div id='delete-manufacturer-form' class='hidden mt-2'>
+				%s
+			</div>
+		</div>
+		<script>
+			document.getElementById('manufacturer-settings-icon').addEventListener('click', () => {
+				document.getElementById('hidden-settings-section').classList.toggle('hidden')
+				document.getElementById('manufacturer-close-settings-icon').classList.toggle('hidden')
+				document.getElementById('manufacturer-settings-icon').classList.toggle('hidden')
+				document.getElementById('manufacturer-delete-message').classList.add('hidden')
+			})
+			document.getElementById('manufacturer-close-settings-icon').addEventListener('click', () => {
+				document.getElementById('hidden-settings-section').classList.toggle('hidden')
+				document.getElementById('manufacturer-close-settings-icon').classList.toggle('hidden')
+				document.getElementById('manufacturer-settings-icon').classList.toggle('hidden')
+				document.getElementById('delete-manufacturer-form').classList.add('hidden')
+				document.getElementById('update-manufacturer-form').classList.add('hidden')
+			})
+			document.getElementById('manufacturer-update-button').addEventListener('click', () => {
+				document.getElementById('update-manufacturer-form').classList.toggle('hidden')
+				document.getElementById('delete-manufacturer-form').classList.add('hidden')
+			})
+			document.getElementById('manufacturer-delete-button').addEventListener('click', () => {
+				document.getElementById('delete-manufacturer-form').classList.toggle('hidden')
+				document.getElementById('update-manufacturer-form').classList.add('hidden')
+			})
+
+		</script>
+	`,
+		SvgIcon("/static/svg/gear-dark.svg", "sm", "id='manufacturer-settings-icon'", ""),
+		SvgIcon("/static/svg/x-dark.svg", "sm", "id='manufacturer-close-settings-icon'", "hidden"),
+		ticket.Creator,
+		ticket.Item,
+		ticket.Location,
+		ticket.Problem,
+		ErrorMessage(err),
+		base64.StdEncoding.EncodeToString(ticket.Photo),
+		ticket.Item,
+		UpdateTicketForm(ticket),
+		DeleteTicketForm(ticket),
+	)
+}
+
+func UpdateTicketForm(ticket _model.Ticket) string {
+	return fmt.Sprintf(`
+		<form enctype='multipart/form-data' method='POST' action='/app/ticket/%d/update' x-data="{ loading: false }" class='gap-4 grid w-full rounded bg-black'>
+			<div class='flex justify-between'>
+				%s
+			</div>
+			<div class='flex flex-col gap-4'>
+				%s%s%s%s%s%s
+			</div>
+		</form>
+	`,
+		ticket.ID,
+		FormTitle("Update Ticket"),
+		FormInputLabel("Creator", "creator", "text", ticket.Creator),
+		FormInputLabel("Item Description", "item", "text", ticket.Item),
+		FormTextAreaLabel("Problem", "problem", 2, ticket.Problem),
+		FormPhotoUpload(),
+		FormLoader(),
+		FormSubmitButton(),
+	)
+}
+
+func DeleteTicketForm(ticket _model.Ticket) string {
+	return fmt.Sprintf(`
+		<form x-data="{ loading: false }" action='/app/ticket/%d/delete' method='POST' class='flex flex-col gap-4 w-full'>
+			%s%s%s
+		</form>
+	`, ticket.ID, FormTitle("Delete Ticket"), FormInputLabel("Type 'yes' to delete", "keyword", "", ""), FormDeleteButton())
 }
 
 

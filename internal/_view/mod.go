@@ -272,7 +272,7 @@ func TicketForm(mux *http.ServeMux, db *gorm.DB) {
 	})
 }
 
-func Ticket(mux *http.ServeMux, db *gorm.DB) {
+func Tickets(mux *http.ServeMux, db *gorm.DB) {
     mux.HandleFunc("GET /app/ticket", func(w http.ResponseWriter, r *http.Request) {
         _middleware.MiddlewareChain(w, r,
             func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
@@ -315,4 +315,32 @@ func Ticket(mux *http.ServeMux, db *gorm.DB) {
         )
     })
 }
+
+func Ticket(mux *http.ServeMux, db *gorm.DB) {
+    mux.HandleFunc("GET /app/ticket/{id}", func(w http.ResponseWriter, r *http.Request) {
+        _middleware.MiddlewareChain(w, r,
+            func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
+                var ticket _model.Ticket
+				id := r.PathValue("id")
+				if err := db.First(&ticket, id).Error; err != nil {
+					http.Error(w, err.Error(), http.StatusNotFound)
+					return
+				}
+                b := NewViewBuilder("Repairs Log - Tickets", []string{
+                    _components.Banner(true, _components.AppNavMenu(r.URL.Path)),
+                    _components.Root(
+                        _components.CenterContentWrapper(
+                           _components.TicketDetails(ticket, r.URL.Query().Get("err")),
+                        ),
+                    ),
+                    _components.Footer(),
+                })
+                w.Write(b.Build())
+            },
+            _middleware.Init, _middleware.Auth,
+        )
+    })
+}
+
+
 

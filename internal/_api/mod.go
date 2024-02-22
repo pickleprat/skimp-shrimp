@@ -299,3 +299,64 @@ func CreateTicket(mux *http.ServeMux, db *gorm.DB) {
 		)
 	})
 }
+
+func UpdateTicket(mux *http.ServeMux, db *gorm.DB) {
+	mux.HandleFunc("POST /app/ticket/{id}/update", func(w http.ResponseWriter, r *http.Request) {
+		_middleware.MiddlewareChain(w, r,
+			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
+				id := r.PathValue("id")
+				creator := r.Form.Get("creator")
+				item := r.Form.Get("item")
+				problem := r.Form.Get("problem")
+				location := r.Form.Get("location")
+				photo, _, err := r.FormFile("photo")
+				defer func() {
+					if photo != nil {
+						photo.Close()
+					}
+				}()
+				if err != nil && err != http.ErrMissingFile {
+					http.Redirect(w, r, _util.URLBuilder("/app/ticket/"+id, "err", "failed to retrieve file"), http.StatusSeeOther)
+					return
+				}
+				var ticket _model.Ticket
+				db.First(&ticket, id)
+				if photo != nil {
+					photoBytes, err := io.ReadAll(photo)
+					if err != nil {
+						http.Error(w, "Failed to read file", http.StatusBadRequest)
+						return
+					}
+					ticket.Photo = photoBytes
+				}
+				ticket.Creator = creator
+				ticket.Item = item
+				ticket.Problem = problem
+				ticket.Location = location
+				db.Save(&ticket)
+				http.Redirect(w, r, "/app/ticket/"+id, http.StatusSeeOther)
+			},
+			_middleware.Init, _middleware.ParseMultipartForm, _middleware.Auth,
+		)
+	})
+}
+
+func DeleteTicket(mux *http.ServeMux, db *gorm.DB) {
+	mux.HandleFunc("POST /app/ticket/{id}/delete", func(w http.ResponseWriter, r *http.Request) {
+		_middleware.MiddlewareChain(w, r,
+			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
+				id := r.PathValue("id")
+				keyword := strings.ToLower(r.Form.Get("keyword"))
+				if keyword != "yes" {
+					http.Redirect(w, r, _util.URLBuilder("/app/ticket/"+id, "err", "invalid delete keyword provided"), http.StatusSeeOther)
+					return
+				}
+				var ticket _model.Ticket
+				db.First(&ticket, id)
+				db.Delete(&ticket, id)
+				http.Redirect(w, r, "/app/ticket", http.StatusSeeOther)
+			},
+			_middleware.Init, _middleware.ParseForm, _middleware.Auth,
+		)
+	})
+}
