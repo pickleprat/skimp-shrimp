@@ -277,20 +277,34 @@ func Ticket(mux *http.ServeMux, db *gorm.DB) {
         _middleware.MiddlewareChain(w, r,
             func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
                 var tickets []_model.Ticket
-                if err := db.Find(&tickets).Error; err != nil {
-                    // Handle error
-                    http.Error(w, err.Error(), http.StatusInternalServerError)
+                ticketFilter := r.URL.Query().Get("ticketFilter")
+                if ticketFilter == "" || ticketFilter == "all" {
+                    if err := db.Find(&tickets).Error; err != nil {
+                        http.Error(w, err.Error(), http.StatusInternalServerError)
+                        return
+                    }
+                } else if ticketFilter == "unassigned" {
+                    if err := db.Where("equipment_id IS NULL").Find(&tickets).Error; err != nil {
+                        http.Error(w, err.Error(), http.StatusInternalServerError)
+                        return
+                    }
+                } else if ticketFilter == "assigned" {
+                    if err := db.Where("equipment_id IS NOT NULL").Find(&tickets).Error; err != nil {
+                        http.Error(w, err.Error(), http.StatusInternalServerError)
+                        return
+                    }
+                } else {
+                    // Handle invalid ticketFilter value
+                    http.Error(w, "Invalid ticket filter", http.StatusBadRequest)
                     return
                 }
-
                 b := NewViewBuilder("Repairs Log - Tickets", []string{
                     _components.Banner(true, _components.AppNavMenu(r.URL.Path)),
                     _components.Root(
                         _components.CenterContentWrapper(
                             _components.CreateTicketForm(r, os.Getenv("ADMIN_REDIRECT_TOKEN")),
-							_components.TicketViewOptions(),
-							_components.HxGetLoader("/partial/ticketlist"),
-                            // _components.TicketList(tickets),
+                            _components.TicketViewOptions(r.URL.Query().Get("ticketFilter")),
+                            _components.TicketList(tickets),
                         ),
                     ),
                     _components.Footer(),
@@ -301,3 +315,4 @@ func Ticket(mux *http.ServeMux, db *gorm.DB) {
         )
     })
 }
+

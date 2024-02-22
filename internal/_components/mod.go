@@ -608,30 +608,36 @@ func TicketList(tickets []_model.Ticket) string {
     }
 }
 
+func ActiveLink(href string, text string, isActive bool) string {
+	var xclass string
+	if isActive {
+		xclass = "bg-white text-black"
+	} else {
+		xclass = "text-white bg-black"
+	}
+	return fmt.Sprintf(`
+		<a href='%s' hx-swap='innerHTML show:no-scroll' class='ticket-view-option p-2 border border-gray rounded hover:border-white %s'>%s</a>
+	`, href, xclass, text)
+}
 
-func TicketViewOptions() string { 
+func TicketViewOptions(ticketFilter string) string {
+	isUnassigned := false
+	isAll := false
+	isAssigned := false
+	switch ticketFilter {
+		case "unassigned":
+			isUnassigned = true
+		case "all":
+			isAll = true
+		case "assigned":
+			isAssigned = true
+	}
+	
 	return fmt.Sprintf(`
 		<div id='ticket-view-options' class='p-6 w-full flex flex-wrap gap-4 text-xs'>
-			<div class='ticket-view-option p-2 border border-gray rounded hover:border-white bg-white text-black'>Unassigned Tickets</div>
-			<div class='ticket-view-option p-2 border border-gray rounded hover:border-white'>All Tickets</div>
-			<div class='ticket-view-option p-2 border border-gray rounded hover:border-white'>Assigned Tickets</div>
+			%s%s%s
 		</div>
-		<script>
-			document.querySelectorAll('.ticket-view-option').forEach(option => {
-				option.addEventListener('click', (e) => {
-					document.querySelectorAll('.ticket-view-option').forEach(option => {
-						if (option.textContent === e.target.textContent) {
-							option.classList.add('bg-white')
-							option.classList.add('text-black')
-						} else {
-							option.classList.remove('bg-white')
-							option.classList.remove('text-black')
-						}						
-					})
-				});
-			});
-		</script>
-	`)
+	`, ActiveLink("/app/ticket?ticketFilter=unassigned", "Unassigned Tickets", isUnassigned), ActiveLink("/app/ticket?ticketFilter=all", "All Tickets", isAll), ActiveLink("/app/ticket?ticketFilter=assigned", "Assigned Tickets", isAssigned))
 }
 
 func HxGetLoader(href string) string {
