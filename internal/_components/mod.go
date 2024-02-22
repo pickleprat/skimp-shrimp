@@ -189,7 +189,7 @@ func FormTextAreaLabel(name string, serverName string, rows int, value string) s
 	return fmt.Sprintf(`
         <div class='flex flex-col gap-2 w-full'>
             <label class="text-xs leading-none">%s</label>
-            <textarea name='%s' rows='%d' autocomplete='off' class="flex p-1 w-full rounded-md border border-darkgray border-input bg-black px-2 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">%s</textarea>
+            <textarea name='%s' rows='%d' autocomplete='off' spellcheck='false' class="flex p-1 w-full rounded-md border border-darkgray border-input bg-black px-2 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">%s</textarea>
         </div>
     `, name, serverName, rows, value)
 }
@@ -621,25 +621,25 @@ func ActiveLink(href string, text string, isActive bool) string {
 }
 
 func TicketViewOptions(ticketFilter string) string {
-	isUnassigned := false
+	isNeedsAttention := false
 	isAll := false
-	isAssigned := false
+	isCompleted := false
 	switch ticketFilter {
 		case "":
-			isUnassigned = true
-		case "unassigned":
-			isUnassigned = true
+			isNeedsAttention = true
+		case "completed":
+			isCompleted = true
 		case "all":
 			isAll = true
-		case "assigned":
-			isAssigned = true
+		case "needsAttention":
+			isNeedsAttention = true
 	}
 	
 	return fmt.Sprintf(`
 		<div id='ticket-view-options' class='p-6 w-full flex flex-wrap gap-4 text-xs'>
 			%s%s%s
 		</div>
-	`, ActiveLink("/app/ticket?ticketFilter=unassigned", "Unassigned Tickets", isUnassigned), ActiveLink("/app/ticket?ticketFilter=all", "All Tickets", isAll), ActiveLink("/app/ticket?ticketFilter=assigned", "Assigned Tickets", isAssigned))
+	`, ActiveLink("/app/ticket?ticketFilter=needsAttention", "Needs Attention", isNeedsAttention), ActiveLink("/app/ticket?ticketFilter=all", "All Tickets", isAll), ActiveLink("/app/ticket?ticketFilter=completed", "Completed Tickets", isCompleted))
 }
 
 func TicketDetails(ticket _model.Ticket, err string) string {

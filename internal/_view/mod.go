@@ -278,32 +278,38 @@ func Tickets(mux *http.ServeMux, db *gorm.DB) {
             func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
                 var tickets []_model.Ticket
                 ticketFilter := r.URL.Query().Get("ticketFilter")
-                if ticketFilter == "" || ticketFilter == "all" {
+                
+                switch ticketFilter {
+                case "", "needsAttention":
+                    // Filter tickets where any of the pointer fields are empty
+                    if err := db.Where("priority IS NULL OR owner IS NULL OR status IS NULL OR notes IS NULL").Find(&tickets).Error; err != nil {
+                        http.Error(w, err.Error(), http.StatusInternalServerError)
+                        return
+                    }
+                case "all":
+                    // Retrieve all tickets
                     if err := db.Find(&tickets).Error; err != nil {
                         http.Error(w, err.Error(), http.StatusInternalServerError)
                         return
                     }
-                } else if ticketFilter == "unassigned" {
-                    if err := db.Where("equipment_id IS NULL").Find(&tickets).Error; err != nil {
+                case "completed":
+                    // Retrieve completed tickets
+                    if err := db.Where("status = ?", "completed").Find(&tickets).Error; err != nil {
                         http.Error(w, err.Error(), http.StatusInternalServerError)
                         return
                     }
-                } else if ticketFilter == "assigned" {
-                    if err := db.Where("equipment_id IS NOT NULL").Find(&tickets).Error; err != nil {
-                        http.Error(w, err.Error(), http.StatusInternalServerError)
-                        return
-                    }
-                } else {
+                default:
                     // Handle invalid ticketFilter value
                     http.Error(w, "Invalid ticket filter", http.StatusBadRequest)
                     return
                 }
+
                 b := NewViewBuilder("Repairs Log - Tickets", []string{
                     _components.Banner(true, _components.AppNavMenu(r.URL.Path)),
                     _components.Root(
                         _components.CenterContentWrapper(
                             _components.CreateTicketForm(r, os.Getenv("ADMIN_REDIRECT_TOKEN")),
-                            _components.TicketViewOptions(r.URL.Query().Get("ticketFilter")),
+                            _components.TicketViewOptions(ticketFilter),
                             _components.TicketList(tickets),
                         ),
                     ),
