@@ -279,21 +279,21 @@ func Tickets(mux *http.ServeMux, db *gorm.DB) {
                 ticketFilter := r.URL.Query().Get("ticketFilter")
                 
                 switch ticketFilter {
-                case "", "needsAttention":
-                    // Filter tickets where any of the pointer fields are empty
-                    if err := db.Where("priority IS NULL OR owner IS NULL OR status IS NULL OR notes IS NULL").Find(&tickets).Error; err != nil {
+                case "", "new":
+                    // Filter tickets with status "new"
+                    if err := db.Where("status = ?", string(_model.TicketStatusNew)).Find(&tickets).Error; err != nil {
                         http.Error(w, err.Error(), http.StatusInternalServerError)
                         return
                     }
-				case "active":
-					// Filter tickets where all fields are filled out and completed = false
-					if err := db.Where("priority IS NOT NULL AND owner IS NOT NULL AND status IS NOT NULL AND notes IS NOT NULL AND completed = ?", false).Find(&tickets).Error; err != nil {
-						http.Error(w, err.Error(), http.StatusInternalServerError)
-						return
-					}
-                case "completed":
-                    // Retrieve completed tickets
-                    if err := db.Where("status = ?", "completed").Find(&tickets).Error; err != nil {
+                case "active", "onhold":
+                    // Filter tickets with status "active" or "onhold"
+                    if err := db.Where("status IN (?, ?)", string(_model.TicketStatusActive), string(_model.TicketStatusOnHold)).Find(&tickets).Error; err != nil {
+                        http.Error(w, err.Error(), http.StatusInternalServerError)
+                        return
+                    }
+                case "complete":
+                    // Filter tickets with status "complete"
+                    if err := db.Where("status = ?", string(_model.TicketStatusComplete)).Find(&tickets).Error; err != nil {
                         http.Error(w, err.Error(), http.StatusInternalServerError)
                         return
                     }
@@ -326,16 +326,25 @@ func Ticket(mux *http.ServeMux, db *gorm.DB) {
         _middleware.MiddlewareChain(w, r,
             func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
                 var ticket _model.Ticket
-				id := r.PathValue("id")
-				if err := db.First(&ticket, id).Error; err != nil {
-					http.Error(w, err.Error(), http.StatusNotFound)
-					return
-				}
+                id := r.PathValue("id")
+                if err := db.First(&ticket, id).Error; err != nil {
+                    http.Error(w, err.Error(), http.StatusNotFound)
+                    return
+                }
+                
+                // Load all manufacturers
+                var manufacturers []_model.Manufacturer
+                if err := db.Find(&manufacturers).Error; err != nil {
+                    http.Error(w, err.Error(), http.StatusInternalServerError)
+                    return
+                }
+
                 b := NewViewBuilder("Repairs Log - Tickets", []string{
                     _components.Banner(true, _components.AppNavMenu(r.URL.Path)),
                     _components.Root(
                         _components.CenterContentWrapper(
-                           _components.TicketDetails(ticket, r.URL.Query().Get("err")),
+                            _components.TicketDetails(ticket, r.URL.Query().Get("err")),
+                            _components.TicketActivationForm(ticket, manufacturers),
                         ),
                     ),
                     _components.Footer(),

@@ -623,25 +623,23 @@ func ActiveLink(href string, text string, isActive bool) string {
 }
 
 func TicketViewOptions(ticketFilter string) string {
-	isNeedsAttention := false
-	isAll := false
-	isCompleted := false
+	isNew := false
+	isActive := false
+	isComplete := false
 	switch ticketFilter {
-		case "":
-			isNeedsAttention = true
-		case "completed":
-			isCompleted = true
+		case "", "new":
+			isNew = true
+		case "complete":
+			isComplete = true
 		case "active":
-			isAll = true
-		case "needsAttention":
-			isNeedsAttention = true
+			isActive = true
 	}
 	
 	return fmt.Sprintf(`
 		<div id='ticket-view-options' class='p-6 w-full flex flex-wrap gap-4 text-xs'>
 			%s%s%s
 		</div>
-	`, ActiveLink("/app/ticket?ticketFilter=needsAttention", "Needs Attention", isNeedsAttention), ActiveLink("/app/ticket?ticketFilter=active", "Active Tickets", isAll), ActiveLink("/app/ticket?ticketFilter=completed", "Completed Tickets", isCompleted))
+	`, ActiveLink("/app/ticket?ticketFilter=new", "New Tickets", isNew), ActiveLink("/app/ticket?ticketFilter=active", "Active Tickets", isActive), ActiveLink("/app/ticket?ticketFilter=complete", "Completed Tickets", isComplete))
 }
 
 func TicketDetails(ticket _model.Ticket, err string) string {
@@ -743,6 +741,23 @@ func DeleteTicketForm(ticket _model.Ticket) string {
 			%s%s%s
 		</form>
 	`, ticket.ID, FormTitle("Delete Ticket"), FormInputLabel("Type 'yes' to delete", "keyword", "", ""), FormDeleteButton())
+}
+
+func TicketActivationForm(ticket _model.Ticket, manufacturers []_model.Manufacturer) string {
+	manufacturerNames := []string{}
+
+	return fmt.Sprintf(`
+		<form x-data="{ loading: false }" action='/app/ticket/%d/activation' method='POST' class='flex flex-col gap-4 w-full p-6'>
+			%s%s%s%s
+		</form>
+	`, 
+		ticket.ID, 
+		FormTitle("Ticket Activation"), 
+		FormInputLabel("Owner", "owner", "text", ticket.Owner),
+		FormSelectLabel("Priority", "priority", []string{string(_model.TicketPriorityUnspecified), string(_model.TicketPriorityLow), string(_model.TicketPriorityInconvenient), string(_model.TicketPriorityUrgent)}, string(ticket.Priority)),
+		FormSelectLabel("Status", "status", []string{string(_model.TicketStatusNew), string(_model.TicketStatusActive), string(_model.TicketStatusOnHold), string(_model.TicketStatusComplete)}, string(ticket.Status)),
+		
+	)
 }
 
 

@@ -21,6 +21,23 @@ type Equipment struct {
     Tickets        []Ticket `gorm:"constraint:OnDelete:CASCADE;"` // Add the foreign key constraint
 }
 
+
+type TicketStatus string
+const (
+	TicketStatusNew TicketStatus = "new"
+	TicketStatusActive TicketStatus = "active"
+	TicketStatusComplete TicketStatus = "complete"
+	TicketStatusOnHold TicketStatus = "onhold"
+)
+
+type TicketPriority string
+const (
+	TicketPriorityUrgent TicketPriority = "urgent"
+	TicketPriorityInconvenient TicketPriority = "inconvenient"
+	TicketPriorityLow TicketPriority = "low"
+	TicketPriorityUnspecified TicketPriority = "unspecified"
+)
+
 type Ticket struct {
     gorm.Model
     Creator       string
@@ -28,11 +45,10 @@ type Ticket struct {
     Problem       string
     Location      string
     Photo         []byte
+	Priority      TicketPriority
+	Status		  TicketStatus
+	Notes		  string
+	Owner		  string
     EquipmentID   *uint
-	Priority      *string
-	Owner		  *string
-	Status		  *string
-	Notes		  *string
-	Completed	  bool
     Equipment     Equipment
 }

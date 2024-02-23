@@ -291,7 +291,10 @@ func CreateTicket(mux *http.ServeMux, db *gorm.DB) {
 					Problem:     problem,
 					Location:    location,
 					Photo:       photoBytes,
-					Completed:   false,
+					Priority:    _model.TicketPriorityUnspecified,
+					Status:      _model.TicketStatusNew,
+					Notes:       "",
+					Owner:       "",
 				}
 				db.Create(&ticket)
 				http.Redirect(w, r, _util.URLBuilder(redirectURL, "publicSecurityToken", securityToken, "success", "your ticket has been created, thank you!"), http.StatusSeeOther)
