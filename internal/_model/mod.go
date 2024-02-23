@@ -33,5 +33,6 @@ type Ticket struct {
 	Owner		  *string
 	Status		  *string
 	Notes		  *string
+	Completed	  bool
     Equipment     Equipment
 }

@@ -172,7 +172,6 @@ func Equipment(mux *http.ServeMux, db *gorm.DB) {
 					_components.Root(
 						_components.CenterContentWrapper(
 							_components.EquipmentDetails(equipment, manufacturer, r.URL.Query().Get("err")),
-							_components.EquipmentQrCodeDownload(equipment),
 						),
 					),
 					_components.Footer(),
@@ -286,12 +285,12 @@ func Tickets(mux *http.ServeMux, db *gorm.DB) {
                         http.Error(w, err.Error(), http.StatusInternalServerError)
                         return
                     }
-                case "all":
-                    // Retrieve all tickets
-                    if err := db.Find(&tickets).Error; err != nil {
-                        http.Error(w, err.Error(), http.StatusInternalServerError)
-                        return
-                    }
+				case "active":
+					// Filter tickets where all fields are filled out and completed = false
+					if err := db.Where("priority IS NOT NULL AND owner IS NOT NULL AND status IS NOT NULL AND notes IS NOT NULL AND completed = ?", false).Find(&tickets).Error; err != nil {
+						http.Error(w, err.Error(), http.StatusInternalServerError)
+						return
+					}
                 case "completed":
                     // Retrieve completed tickets
                     if err := db.Where("status = ?", "completed").Find(&tickets).Error; err != nil {

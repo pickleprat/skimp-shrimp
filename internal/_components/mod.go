@@ -462,8 +462,7 @@ func EquipmentDetails(equipment _model.Equipment, manufacturer _model.Manufactur
 			<div>
 				<p class='text-xs'>Nickname: %s</p>
 				<p class='text-xs'>Serial Number: %s</p>
-				<p class='text-xs'>QR Code Token: <a href='/app/manufacturer/%d' class='underline hover:text-red'>%s</a></p>
-				<p class='text-xs'>Manufacturer: <a href='/app/equipment/%d/ticketform?equipmentToken=%s' class='underline hover:text-red'>%s</a></p>
+				<p class='text-xs'>Manufacturer: <a href='/app/manufacturer/%d' class='underline hover:text-red'>%s</a></p>
 			</div>
 			<div class='w-[200px]'>
 				<img src='data:image/jpeg;base64,%s' class='w-full h-auto' alt='%s'/>
@@ -508,9 +507,6 @@ func EquipmentDetails(equipment _model.Equipment, manufacturer _model.Manufactur
 		ErrorMessage(err),
 		equipment.Nickname,
 		equipment.SerialNumber,
-		manufacturer.ID,
-		equipment.QRCodeToken,
-		equipment.QRCodeToken,
 		manufacturer.ID,
 		manufacturer.Name,
 		base64.StdEncoding.EncodeToString(equipment.Photo),
@@ -569,44 +565,50 @@ func CreateTicketForm(r *http.Request, token string) string {
 			%s%s%s%s%s%s%s%s%s%s
 			<input type='hidden' name='publicSecurityToken' value='%s'/>
 		</form>
-	`, FormTitle("Create Ticket"), FormError(r.URL.Query().Get("err")), FormSuccess(r.URL.Query().Get("success")), FormInputLabel("What is your name?", "creator", "text", r.URL.Query().Get("creator")), FormInputLabel("What item needs repaired?", "item", "", r.URL.Query().Get("item")), FormTextAreaLabel("Describe the Problem", "problem", 2, r.URL.Query().Get("problem")), FormSelectLabel("Location", "location", []string{"Southroads", "Utica"}, _util.StringWithDefault(r.URL.Query().Get("location"), "Southroads")), FormPhotoUpload(), FormSubmitButton(), FormLoader(), token)
+	`, FormTitle("Create Tickets"), FormError(r.URL.Query().Get("err")), FormSuccess(r.URL.Query().Get("success")), FormInputLabel("What is your name?", "creator", "text", r.URL.Query().Get("creator")), FormInputLabel("What item needs repaired?", "item", "", r.URL.Query().Get("item")), FormTextAreaLabel("Describe the Problem", "problem", 2, r.URL.Query().Get("problem")), FormSelectLabel("Location", "location", []string{"Southroads", "Utica"}, _util.StringWithDefault(r.URL.Query().Get("location"), "Southroads")), FormPhotoUpload(), FormSubmitButton(), FormLoader(), token)
 }
 
 
 func TicketList(tickets []_model.Ticket) string {
     ticketList := ""
     for _, ticket := range tickets {
-        href := fmt.Sprintf("/app/ticket/%d", ticket.ID)
         ticketList += fmt.Sprintf(`
-            <a href='%s' class='p-6 w-full hover:border-white border border-gray rounded text-xs flex gap-6 justify-between'>
-				<div class=''>
-					<div class=''>
-						<p><strong>Creator:</strong> %s</p>
-                        <p><strong>Item:</strong> %s</p>
-                        <p><strong>Location:</strong> %s</p>
-                        <p><strong>Problem:</strong> %s</p>
-					</div>
-				</div>
-                <div class='w-[100px] h-[100px] flex-shrink-0'>
-                    <img src='data:image/jpeg;base64,%s' class='h-full w-full rounded-full' />
-                </div>
-            </a>
-        `, href, ticket.Creator, ticket.Item, ticket.Location, ticket.Problem, base64.StdEncoding.EncodeToString(ticket.Photo))
+            <tr class="hover:bg-white hover:border border-lightgray hover:font-bold  hover:text-black cursor-pointer" onclick="window.location='/app/ticket/%d';">
+                <td class='w-1/4 border border-inherit px-4 py-2'>%s</td>
+                <td class='w-1/4 border border-inherit px-4 py-2'>%s</td>
+                <td class='w-1/4 border border-inherit px-4 py-2'>%s</td>
+                <td class='w-1/4 border border-inherit px-4 py-2'>%s</td>
+            </tr>
+        `, ticket.ID, ticket.Creator, ticket.Item, ticket.Location, ticket.Problem)
     }
     if len(tickets) == 0 {
-        return fmt.Sprintf(`
+        return `
             <div class='p-6 w-full'>
                 <p>No tickets found!</p>
             </div>
-        `)
+        `
     } else {
         return fmt.Sprintf(`
-            <div class='p-6 w-full flex flex-col gap-6'>
-                %s
+            <div class='p-6 w-full'>
+                <table class='text-xs w-full border-collapse border border-gray-300'>
+                    <thead>
+                        <tr class='text-left'>
+                            <th class='w-1/4 border border-gray-300 px-4 py-2'>Creator</th>
+                            <th class='w-1/4 border border-gray-300 px-4 py-2'>Item</th>
+                            <th class='w-1/4 border border-gray-300 px-4 py-2'>Location</th>
+                            <th class='w-1/4 border border-gray-300 px-4 py-2'>Problem</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        %s
+                    </tbody>
+                </table>
             </div>
         `, ticketList)
     }
 }
+
+
 
 func ActiveLink(href string, text string, isActive bool) string {
 	var xclass string
@@ -629,7 +631,7 @@ func TicketViewOptions(ticketFilter string) string {
 			isNeedsAttention = true
 		case "completed":
 			isCompleted = true
-		case "all":
+		case "active":
 			isAll = true
 		case "needsAttention":
 			isNeedsAttention = true
@@ -639,7 +641,7 @@ func TicketViewOptions(ticketFilter string) string {
 		<div id='ticket-view-options' class='p-6 w-full flex flex-wrap gap-4 text-xs'>
 			%s%s%s
 		</div>
-	`, ActiveLink("/app/ticket?ticketFilter=needsAttention", "Needs Attention", isNeedsAttention), ActiveLink("/app/ticket?ticketFilter=all", "All Tickets", isAll), ActiveLink("/app/ticket?ticketFilter=completed", "Completed Tickets", isCompleted))
+	`, ActiveLink("/app/ticket?ticketFilter=needsAttention", "Needs Attention", isNeedsAttention), ActiveLink("/app/ticket?ticketFilter=active", "Active Tickets", isAll), ActiveLink("/app/ticket?ticketFilter=completed", "Completed Tickets", isCompleted))
 }
 
 func TicketDetails(ticket _model.Ticket, err string) string {
