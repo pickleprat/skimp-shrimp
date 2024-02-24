@@ -573,12 +573,13 @@ func TicketList(tickets []_model.Ticket) string {
     ticketList := ""
     for _, ticket := range tickets {
         ticketList += fmt.Sprintf(`
-            <tr class="hover:bg-white hover:border border-lightgray hover:font-bold  hover:text-black cursor-pointer" onclick="window.location='/app/ticket/%d';">
-                <td class='w-1/4 border border-inherit px-4 py-2'>%s</td>
-                <td class='w-1/4 border border-inherit px-4 py-2'>%s</td>
-                <td class='w-1/4 border border-inherit px-4 py-2'>%s</td>
-                <td class='w-1/4 border border-inherit px-4 py-2'>%s</td>
-            </tr>
+			<a href='/app/ticket/%d' class='grid grid-cols-4 text-xs'>
+				<div class='border border-gray p-1'>%s</div>
+				<div class='border border-gray p-1'>%s</div>
+				<div class='border border-gray p-1'>%s</div>
+				<div class='border border-gray p-1'>%s</div>
+			</a>
+
         `, ticket.ID, ticket.Creator, ticket.Item, ticket.Location, ticket.Problem)
     }
     if len(tickets) == 0 {
@@ -589,24 +590,19 @@ func TicketList(tickets []_model.Ticket) string {
         `
     } else {
         return fmt.Sprintf(`
-            <div class='p-6 w-full'>
-                <table class='text-xs w-full border-collapse border border-gray-300'>
-                    <thead>
-                        <tr class='text-left'>
-                            <th class='w-1/4 border border-gray-300 px-4 py-2'>Creator</th>
-                            <th class='w-1/4 border border-gray-300 px-4 py-2'>Item</th>
-                            <th class='w-1/4 border border-gray-300 px-4 py-2'>Location</th>
-                            <th class='w-1/4 border border-gray-300 px-4 py-2'>Problem</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        %s
-                    </tbody>
-                </table>
+            <div class='p-6 w-full flex flex-col text-sm'>
+                <div class='grid grid-cols-4'>
+                    <div class='border p-1'>Creator</div>
+                    <div class='border p-1'>Item</div>
+                    <div class='border p-1'>Location</div>
+                    <div class='border p-1'>Problem</div>
+                </div>
+				%s
             </div>
         `, ticketList)
     }
 }
+
 
 
 
@@ -744,19 +740,27 @@ func DeleteTicketForm(ticket _model.Ticket) string {
 }
 
 func TicketActivationForm(ticket _model.Ticket, manufacturers []_model.Manufacturer) string {
-	manufacturerNames := []string{}
-
+	manufacturerNames := make([]string, len(manufacturers)+2)
+	manufacturerNames[0] = "" // Set the first item as an empty string
+	manufacturerNames[1] = "Manufacturer Not Listed"
+	for i, manufacturer := range manufacturers {
+		manufacturerNames[i+2] = manufacturer.Name
+	}
 	return fmt.Sprintf(`
-		<form x-data="{ loading: false }" action='/app/ticket/%d/activation' method='POST' class='flex flex-col gap-4 w-full p-6'>
-			%s%s%s%s
+		<form id='ticket-activation-form' x-data="{ loading: false }" action='/app/ticket/%d/activation' method='POST' class='flex flex-col gap-4 w-full p-6'>
+			%s%s%s%s%s
 		</form>
+		<script>
+			let form = document.getElementById('ticket-activation-form')
+			console.log(form)
+		</script>
 	`, 
 		ticket.ID, 
 		FormTitle("Ticket Activation"), 
 		FormInputLabel("Owner", "owner", "text", ticket.Owner),
 		FormSelectLabel("Priority", "priority", []string{string(_model.TicketPriorityUnspecified), string(_model.TicketPriorityLow), string(_model.TicketPriorityInconvenient), string(_model.TicketPriorityUrgent)}, string(ticket.Priority)),
 		FormSelectLabel("Status", "status", []string{string(_model.TicketStatusNew), string(_model.TicketStatusActive), string(_model.TicketStatusOnHold), string(_model.TicketStatusComplete)}, string(ticket.Status)),
-		
+		FormSelectLabel("Manufacturer", "manufacturer", manufacturerNames, ""),
 	)
 }
 
