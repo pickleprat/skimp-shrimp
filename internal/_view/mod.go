@@ -131,8 +131,6 @@ func ManufacturerForm(mux *http.ServeMux, db *gorm.DB) {
 	})
 }
 
-
-
 func Manufacturer(mux *http.ServeMux, db *gorm.DB) {
 	mux.HandleFunc("GET /app/manufacturer/{id}", func(w http.ResponseWriter, r *http.Request) {
 		_middleware.MiddlewareChain(w, r,
@@ -245,7 +243,6 @@ func EquipmentTicket(mux *http.ServeMux, db *gorm.DB) {
 	})
 }
 
-
 func TicketForm(mux *http.ServeMux, db *gorm.DB) {
 	mux.HandleFunc("GET /app/ticket/public", func(w http.ResponseWriter, r *http.Request) {
 		_middleware.MiddlewareChain(w, r,
@@ -272,89 +269,86 @@ func TicketForm(mux *http.ServeMux, db *gorm.DB) {
 }
 
 func Tickets(mux *http.ServeMux, db *gorm.DB) {
-    mux.HandleFunc("GET /app/ticket", func(w http.ResponseWriter, r *http.Request) {
-        _middleware.MiddlewareChain(w, r,
-            func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
-                var tickets []_model.Ticket
-                ticketFilter := r.URL.Query().Get("ticketFilter")
-                
-                switch ticketFilter {
-                case "", "new":
-                    // Filter tickets with status "new"
-                    if err := db.Where("status = ?", string(_model.TicketStatusNew)).Find(&tickets).Error; err != nil {
-                        http.Error(w, err.Error(), http.StatusInternalServerError)
-                        return
-                    }
-                case "active", "onhold":
-                    // Filter tickets with status "active" or "onhold"
-                    if err := db.Where("status IN (?, ?)", string(_model.TicketStatusActive), string(_model.TicketStatusOnHold)).Find(&tickets).Error; err != nil {
-                        http.Error(w, err.Error(), http.StatusInternalServerError)
-                        return
-                    }
-                case "complete":
-                    // Filter tickets with status "complete"
-                    if err := db.Where("status = ?", string(_model.TicketStatusComplete)).Find(&tickets).Error; err != nil {
-                        http.Error(w, err.Error(), http.StatusInternalServerError)
-                        return
-                    }
-                default:
-                    // Handle invalid ticketFilter value
-                    http.Error(w, "Invalid ticket filter", http.StatusBadRequest)
-                    return
-                }
+	mux.HandleFunc("GET /app/ticket", func(w http.ResponseWriter, r *http.Request) {
+		_middleware.MiddlewareChain(w, r,
+			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
+				var tickets []_model.Ticket
+				ticketFilter := r.URL.Query().Get("ticketFilter")
 
-                b := NewViewBuilder("Repairs Log - Tickets", []string{
-                    _components.Banner(true, _components.AppNavMenu(r.URL.Path)),
-                    _components.Root(
-                        _components.CenterContentWrapper(
-                            _components.CreateTicketForm(r, os.Getenv("ADMIN_REDIRECT_TOKEN")),
-                            _components.TicketViewOptions(ticketFilter),
-                            _components.TicketList(tickets),
-                        ),
-                    ),
-                    _components.Footer(),
-                })
-                w.Write(b.Build())
-            },
-            _middleware.Init, _middleware.Auth,
-        )
-    })
+				switch ticketFilter {
+				case "", "new":
+					// Filter tickets with status "new"
+					if err := db.Where("status = ?", string(_model.TicketStatusNew)).Find(&tickets).Error; err != nil {
+						http.Error(w, err.Error(), http.StatusInternalServerError)
+						return
+					}
+				case "active", "onhold":
+					// Filter tickets with status "active" or "onhold"
+					if err := db.Where("status IN (?, ?)", string(_model.TicketStatusActive), string(_model.TicketStatusOnHold)).Find(&tickets).Error; err != nil {
+						http.Error(w, err.Error(), http.StatusInternalServerError)
+						return
+					}
+				case "complete":
+					// Filter tickets with status "complete"
+					if err := db.Where("status = ?", string(_model.TicketStatusComplete)).Find(&tickets).Error; err != nil {
+						http.Error(w, err.Error(), http.StatusInternalServerError)
+						return
+					}
+				default:
+					// Handle invalid ticketFilter value
+					http.Error(w, "Invalid ticket filter", http.StatusBadRequest)
+					return
+				}
+
+				b := NewViewBuilder("Repairs Log - Tickets", []string{
+					_components.Banner(true, _components.AppNavMenu(r.URL.Path)),
+					_components.Root(
+						_components.CenterContentWrapper(
+							_components.CreateTicketForm(r, os.Getenv("ADMIN_REDIRECT_TOKEN")),
+							_components.TicketViewOptions(ticketFilter),
+							_components.TicketList(tickets),
+						),
+					),
+					_components.Footer(),
+				})
+				w.Write(b.Build())
+			},
+			_middleware.Init, _middleware.Auth,
+		)
+	})
 }
 
 func Ticket(mux *http.ServeMux, db *gorm.DB) {
-    mux.HandleFunc("GET /app/ticket/{id}", func(w http.ResponseWriter, r *http.Request) {
-        _middleware.MiddlewareChain(w, r,
-            func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
-                var ticket _model.Ticket
-                id := r.PathValue("id")
-                if err := db.First(&ticket, id).Error; err != nil {
-                    http.Error(w, err.Error(), http.StatusNotFound)
-                    return
-                }
-                
-                // Load all manufacturers
-                var manufacturers []_model.Manufacturer
-                if err := db.Find(&manufacturers).Error; err != nil {
-                    http.Error(w, err.Error(), http.StatusInternalServerError)
-                    return
-                }
+	mux.HandleFunc("GET /app/ticket/{id}", func(w http.ResponseWriter, r *http.Request) {
+		_middleware.MiddlewareChain(w, r,
+			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
+				var ticket _model.Ticket
+				id := r.PathValue("id")
+				if err := db.First(&ticket, id).Error; err != nil {
+					http.Error(w, err.Error(), http.StatusNotFound)
+					return
+				}
 
-                b := NewViewBuilder("Repairs Log - Tickets", []string{
-                    _components.Banner(true, _components.AppNavMenu(r.URL.Path)),
-                    _components.Root(
-                        _components.CenterContentWrapper(
-                            _components.TicketDetails(ticket, r.URL.Query().Get("err")),
-                            _components.TicketActivationForm(ticket, manufacturers),
-                        ),
-                    ),
-                    _components.Footer(),
-                })
-                w.Write(b.Build())
-            },
-            _middleware.Init, _middleware.Auth,
-        )
-    })
+				// Load all manufacturers
+				var manufacturers []_model.Manufacturer
+				if err := db.Find(&manufacturers).Error; err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+
+				b := NewViewBuilder("Repairs Log - Tickets", []string{
+					_components.Banner(true, _components.AppNavMenu(r.URL.Path)),
+					_components.Root(
+						_components.CenterContentWrapper(
+							_components.TicketDetails(ticket, r.URL.Query().Get("err")),
+							_components.TicketActivationForm(ticket, manufacturers),
+						),
+					),
+					_components.Footer(),
+				})
+				w.Write(b.Build())
+			},
+			_middleware.Init, _middleware.Auth,
+		)
+	})
 }
-
-
-

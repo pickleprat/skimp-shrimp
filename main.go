@@ -36,7 +36,7 @@ func main() {
 	_view.TicketForm(mux, db)
 	_view.Tickets(mux, db)
 	_view.Ticket(mux, db)
-	
+
 	_api.Login(mux, db)
 	_api.Logout(mux, db)
 	_api.CreateManufacturer(mux, db)

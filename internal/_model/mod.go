@@ -3,52 +3,53 @@ package _model
 import "gorm.io/gorm"
 
 type Manufacturer struct {
-    gorm.Model
-    Name        string
-    Email       string
-    Phone       string
-    Equipment   []Equipment `gorm:"foreignKey:ManufacturerID"`
+	gorm.Model
+	Name      string
+	Email     string
+	Phone     string
+	Equipment []Equipment `gorm:"foreignKey:ManufacturerID"`
 }
 
 type Equipment struct {
-    gorm.Model
-    Nickname       string
-    SerialNumber   string
-    Photo          []byte
-    ManufacturerID uint
-    Manufacturer   Manufacturer `gorm:"constraint:OnDelete:CASCADE;"`
-    QRCodeToken    string
-    Tickets        []Ticket `gorm:"constraint:OnDelete:CASCADE;"` // Add the foreign key constraint
+	gorm.Model
+	Nickname       string
+	SerialNumber   string
+	Photo          []byte
+	ManufacturerID uint
+	Manufacturer   Manufacturer `gorm:"constraint:OnDelete:CASCADE;"`
+	QRCodeToken    string
+	Tickets        []Ticket `gorm:"constraint:OnDelete:CASCADE;"` // Add the foreign key constraint
 }
 
-
 type TicketStatus string
+
 const (
-	TicketStatusNew TicketStatus = "new"
-	TicketStatusActive TicketStatus = "active"
+	TicketStatusNew      TicketStatus = "new"
+	TicketStatusActive   TicketStatus = "active"
 	TicketStatusComplete TicketStatus = "complete"
-	TicketStatusOnHold TicketStatus = "onhold"
+	TicketStatusOnHold   TicketStatus = "onhold"
 )
 
 type TicketPriority string
+
 const (
-	TicketPriorityUrgent TicketPriority = "urgent"
+	TicketPriorityUrgent       TicketPriority = "urgent"
 	TicketPriorityInconvenient TicketPriority = "inconvenient"
-	TicketPriorityLow TicketPriority = "low"
-	TicketPriorityUnspecified TicketPriority = "unspecified"
+	TicketPriorityLow          TicketPriority = "low"
+	TicketPriorityUnspecified  TicketPriority = "unspecified"
 )
 
 type Ticket struct {
-    gorm.Model
-    Creator       string
-    Item          string
-    Problem       string
-    Location      string
-    Photo         []byte
-	Priority      TicketPriority
-	Status		  TicketStatus
-	Notes		  string
-	Owner		  string
-    EquipmentID   *uint
-    Equipment     Equipment
+	gorm.Model
+	Creator     string
+	Item        string
+	Problem     string
+	Location    string
+	Photo       []byte
+	Priority    TicketPriority
+	Status      TicketStatus
+	Notes       string
+	Owner       string
+	EquipmentID *uint
+	Equipment   Equipment
 }

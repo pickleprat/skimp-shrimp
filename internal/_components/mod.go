@@ -568,11 +568,10 @@ func CreateTicketForm(r *http.Request, token string) string {
 	`, FormTitle("Create Tickets"), FormError(r.URL.Query().Get("err")), FormSuccess(r.URL.Query().Get("success")), FormInputLabel("What is your name?", "creator", "text", r.URL.Query().Get("creator")), FormInputLabel("What item needs repaired?", "item", "", r.URL.Query().Get("item")), FormTextAreaLabel("Describe the Problem", "problem", 2, r.URL.Query().Get("problem")), FormSelectLabel("Location", "location", []string{"Southroads", "Utica"}, _util.StringWithDefault(r.URL.Query().Get("location"), "Southroads")), FormPhotoUpload(), FormSubmitButton(), FormLoader(), token)
 }
 
-
 func TicketList(tickets []_model.Ticket) string {
-    ticketList := ""
-    for _, ticket := range tickets {
-        ticketList += fmt.Sprintf(`
+	ticketList := ""
+	for _, ticket := range tickets {
+		ticketList += fmt.Sprintf(`
 			<a href='/app/ticket/%d' class='grid grid-cols-4 text-xs'>
 				<div class='border border-gray p-1'>%s</div>
 				<div class='border border-gray p-1'>%s</div>
@@ -581,15 +580,15 @@ func TicketList(tickets []_model.Ticket) string {
 			</a>
 
         `, ticket.ID, ticket.Creator, ticket.Item, ticket.Location, ticket.Problem)
-    }
-    if len(tickets) == 0 {
-        return `
+	}
+	if len(tickets) == 0 {
+		return `
             <div class='p-6 w-full'>
                 <p>No tickets found!</p>
             </div>
         `
-    } else {
-        return fmt.Sprintf(`
+	} else {
+		return fmt.Sprintf(`
             <div class='p-6 w-full flex flex-col text-sm'>
                 <div class='grid grid-cols-4'>
                     <div class='border p-1'>Creator</div>
@@ -600,11 +599,8 @@ func TicketList(tickets []_model.Ticket) string {
 				%s
             </div>
         `, ticketList)
-    }
+	}
 }
-
-
-
 
 func ActiveLink(href string, text string, isActive bool) string {
 	var xclass string
@@ -623,14 +619,14 @@ func TicketViewOptions(ticketFilter string) string {
 	isActive := false
 	isComplete := false
 	switch ticketFilter {
-		case "", "new":
-			isNew = true
-		case "complete":
-			isComplete = true
-		case "active":
-			isActive = true
+	case "", "new":
+		isNew = true
+	case "complete":
+		isComplete = true
+	case "active":
+		isActive = true
 	}
-	
+
 	return fmt.Sprintf(`
 		<div id='ticket-view-options' class='p-6 w-full flex flex-wrap gap-4 text-xs'>
 			%s%s%s
@@ -748,21 +744,19 @@ func TicketActivationForm(ticket _model.Ticket, manufacturers []_model.Manufactu
 	}
 	return fmt.Sprintf(`
 		<form id='ticket-activation-form' x-data="{ loading: false }" action='/app/ticket/%d/activation' method='POST' class='flex flex-col gap-4 w-full p-6'>
-			%s%s%s%s%s
+			%s%s%s%s%s%s
 		</form>
 		<script>
 			let form = document.getElementById('ticket-activation-form')
 			console.log(form)
 		</script>
-	`, 
-		ticket.ID, 
-		FormTitle("Ticket Activation"), 
+	`,
+		ticket.ID,
+		FormTitle("Ticket Activation"),
 		FormInputLabel("Owner", "owner", "text", ticket.Owner),
 		FormSelectLabel("Priority", "priority", []string{string(_model.TicketPriorityUnspecified), string(_model.TicketPriorityLow), string(_model.TicketPriorityInconvenient), string(_model.TicketPriorityUrgent)}, string(ticket.Priority)),
 		FormSelectLabel("Status", "status", []string{string(_model.TicketStatusNew), string(_model.TicketStatusActive), string(_model.TicketStatusOnHold), string(_model.TicketStatusComplete)}, string(ticket.Status)),
+		FormTextAreaLabel("Notes", "notes", 2, ticket.Notes),
 		FormSelectLabel("Manufacturer", "manufacturer", manufacturerNames, ""),
 	)
 }
-
-
-
