@@ -78,3 +78,10 @@ func StringWithDefault(input string, defaultValue string) string {
 	}
 	return input
 }
+
+func ConditionalString(condition bool, option1 string, option2 string) string {
+	if condition {
+		return option1
+	}
+	return option2
+}

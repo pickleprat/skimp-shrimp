@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+
+	"gorm.io/gorm"
 )
 
 func Banner(hasIcon bool, menu string) string {
@@ -222,12 +224,13 @@ func LoginForm(err string, username string, password string) string {
 	`, FormTitle("Login"), FormError(err), FormInputLabel("Username", "username", "", username), FormInputLabel("Password", "password", "password", password), FormLoader(), FormSubmitButton())
 }
 
-func CreateManufacturerForm(err string, name string, phone string, email string, xclass string) string {
+func CreateManufacturerForm(err string, name string, phone string, email string, submitRedirect string) string {
 	return fmt.Sprintf(`
-		<form x-data="{ loading: false }" method='POST' action='/app/manufacturer' class='flex flex-col p-6 gap-4 w-full %s'>
+		<form x-data="{ loading: false }" method='POST' action='/app/manufacturer' class='flex flex-col p-6 gap-4 w-full'>
+			<input type='hidden' name='submitRedirect' value='%s'/>
 			%s%s%s%s%s%s%s
 		</form>
-	`, xclass, FormTitle("Create Manufacturer"), FormError(err), FormInputLabel("Name", "name", "", name), FormInputLabel("Phone", "phone", "", phone), FormInputLabel("Email", "email", "", email), FormLoader(), FormSubmitButton())
+	`, submitRedirect, FormTitle("Create Manufacturer"), FormError(err), FormInputLabel("Name", "name", "", name), FormInputLabel("Phone", "phone", "", phone), FormInputLabel("Email", "email", "", email), FormLoader(), FormSubmitButton())
 }
 
 func ManufacturerList(manufacturers []_model.Manufacturer, xclass string) string {
@@ -572,14 +575,18 @@ func TicketList(tickets []_model.Ticket) string {
 	ticketList := ""
 	for _, ticket := range tickets {
 		ticketList += fmt.Sprintf(`
-			<a href='/app/ticket/%d' class='grid grid-cols-4 text-xs'>
-				<div class='border border-gray p-1'>%s</div>
-				<div class='border border-gray p-1'>%s</div>
-				<div class='border border-gray p-1'>%s</div>
-				<div class='border border-gray p-1'>%s</div>
+			<a href='/app/ticket/%d' class='flex flex-col border rounded border-gray text-xs'>
+				<div class='flex border-b border-gray p-2 rounded-t'>
+					<div class='font-bold text-sm'>%s</div>			
+				</div>
+				<div class='p-2'>
+					<div class=''>Creator: %s</div>
+					<div class=''>Location: %s</div>
+				</div>
+				<div class='p-2'>Problem: %s</div>
 			</a>
 
-        `, ticket.ID, ticket.Creator, ticket.Item, ticket.Location, ticket.Problem)
+        `, ticket.ID, ticket.Item, ticket.Creator, ticket.Location, ticket.Problem)
 	}
 	if len(tickets) == 0 {
 		return `
@@ -590,12 +597,6 @@ func TicketList(tickets []_model.Ticket) string {
 	} else {
 		return fmt.Sprintf(`
             <div class='p-6 w-full flex flex-col text-sm'>
-                <div class='grid grid-cols-4'>
-                    <div class='border p-1'>Creator</div>
-                    <div class='border p-1'>Item</div>
-                    <div class='border p-1'>Location</div>
-                    <div class='border p-1'>Problem</div>
-                </div>
 				%s
             </div>
         `, ticketList)
@@ -735,28 +736,38 @@ func DeleteTicketForm(ticket _model.Ticket) string {
 	`, ticket.ID, FormTitle("Delete Ticket"), FormInputLabel("Type 'yes' to delete", "keyword", "", ""), FormDeleteButton())
 }
 
-func TicketActivationForm(ticket _model.Ticket, manufacturers []_model.Manufacturer) string {
-	manufacturerNames := make([]string, len(manufacturers)+2)
-	manufacturerNames[0] = "" // Set the first item as an empty string
-	manufacturerNames[1] = "Manufacturer Not Listed"
-	for i, manufacturer := range manufacturers {
-		manufacturerNames[i+2] = manufacturer.Name
-	}
+func TicketPublicDetailsForm(ticket _model.Ticket) string {
 	return fmt.Sprintf(`
-		<form id='ticket-activation-form' x-data="{ loading: false }" action='/app/ticket/%d/activation' method='POST' class='flex flex-col gap-4 w-full p-6'>
-			%s%s%s%s%s%s
+		<form x-data="{ loading: false }" action='/app/ticket/%d/publicdetails' method='POST' class='flex flex-col gap-4 w-full p-6'>
+			%s%s%s%s%s%s%s
 		</form>
-		<script>
-			let form = document.getElementById('ticket-activation-form')
-			console.log(form)
-		</script>
 	`,
 		ticket.ID,
-		FormTitle("Ticket Activation"),
+		FormTitle("Ticket Public Details"),
 		FormInputLabel("Owner", "owner", "text", ticket.Owner),
 		FormSelectLabel("Priority", "priority", []string{string(_model.TicketPriorityUnspecified), string(_model.TicketPriorityLow), string(_model.TicketPriorityInconvenient), string(_model.TicketPriorityUrgent)}, string(ticket.Priority)),
 		FormSelectLabel("Status", "status", []string{string(_model.TicketStatusNew), string(_model.TicketStatusActive), string(_model.TicketStatusOnHold), string(_model.TicketStatusComplete)}, string(ticket.Status)),
 		FormTextAreaLabel("Notes", "notes", 2, ticket.Notes),
-		FormSelectLabel("Manufacturer", "manufacturer", manufacturerNames, ""),
+		FormSubmitButton(),
+		FormLoader(),
 	)
+}
+
+func TicketAssignmentForm(ticket _model.Ticket, manufacturers []_model.Manufacturer, db *gorm.DB) string {
+	manufacturerOptions := fmt.Sprintf(`<a href='/app/manufacturer?submitRedirect=/app/ticket/%d' class='border hover:bg-white hover:text-black border-white cursor-pointer bg-black p-2 rounded-full text-sm'>+</a>`, ticket.ID)
+	for _, manufacturer := range manufacturers {
+		manufacturerOptions += fmt.Sprintf("<div hx-get='/partial/manufacturer/%d/equipmentSelectionList' hx-target='#manufacturer-selection-list' hx-swap='outerHTML' class='border hover:bg-white hover:text-black border-white cursor-pointer bg-black p-2 rounded text-sm' value='%d'>%s</div>", manufacturer.ID, manufacturer.ID, manufacturer.Name)
+	}
+	return fmt.Sprintf(`
+		<form id='ticket-assignment-form' x-data="{ loading: false }" action='/app/ticket/%d/assign' method='POST' class='flex flex-col gap-4 w-full p-6'>
+			<input id='equipment-id-input' type='hidden' name='equipmentID' value=''/>
+			<div id='manufacturer-selection-list' class='flex flex-col gap-6'>
+				<h2>Assign Manufacturer</h2>
+				<div class='flex flex-wrap gap-4'>
+					%s
+				</div>
+			</div>
+			%s%s
+		</form>
+	`, ticket.ID, manufacturerOptions, FormLoader(), FormSubmitButton())
 }

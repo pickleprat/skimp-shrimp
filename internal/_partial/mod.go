@@ -1,6 +1,7 @@
 package _partial
 
 import (
+	"fmt"
 	"net/http"
 
 	"cfasuite/internal/_middleware"
@@ -9,20 +10,41 @@ import (
 	"gorm.io/gorm"
 )
 
-func TicketList(mux *http.ServeMux, db *gorm.DB) {
-	mux.HandleFunc("GET /partial/ticket/list", func(w http.ResponseWriter, r *http.Request) {
-		ctx := map[string]interface{}{}
-		_middleware.MiddlewareChain(ctx, w, r, _middleware.Init, _middleware.Auth,
-			func(ctx map[string]interface{}, w http.ResponseWriter, r *http.Request) {
-				var tickets []_model.Ticket
-				if err := db.Find(&tickets).Error; err != nil {
-					// Handle error
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return
+func EquipmentSelectionList(mux *http.ServeMux, db *gorm.DB) {
+	mux.HandleFunc("GET /partial/manufacturer/{id}/equipmentSelectionList", func(w http.ResponseWriter, r *http.Request) {
+		_middleware.MiddlewareChain(w, r,
+			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
+				id := r.PathValue("id")
+				manufacturer := _model.Manufacturer{}
+				db.First(&manufacturer, id)
+				equipment := []_model.Equipment{}
+				db.Where("manufacturer_id = ?", id).Find(&equipment)
+				equipmentOptions := ""
+				for _, e := range equipment {
+					option := fmt.Sprintf(`
+						<div value='%d' class='equipment-option border hover:bg-white hover:text-black border-white cursor-pointer bg-black p-2 rounded text-sm' value='%d'>
+							%s
+						</div>`, e.ID, e.ID, e.Nickname)
+					equipmentOptions += option
 				}
-				w.Write()
+				component := fmt.Sprintf(`
+					<div id='equipment-selection-list' class="flex flex-col gap-6">
+						<h2>Assign Equipment</h2>
+						<div class='flex flex-wrap gap-4'>
+							%s
+						</div>
+					</div>
+					<script>
+						document.querySelectorAll('.equipment-option').forEach(option => {
+							option.addEventListener('click', () => {
+								document.getElementById('equipment-id-input').value = option.getAttribute('value')
+							})
+						})
+					</script>
+				`, equipmentOptions)
+				w.Write([]byte(component))
 			},
-			_middleware.Log,
+			_middleware.Init, _middleware.ParseForm, _middleware.Auth,
 		)
 	})
 }

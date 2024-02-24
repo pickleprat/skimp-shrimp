@@ -113,12 +113,13 @@ func ManufacturerForm(mux *http.ServeMux, db *gorm.DB) {
 		_middleware.MiddlewareChain(w, r,
 			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 				var manufacturers []_model.Manufacturer
+				submitRedirect := r.URL.Query().Get("submitRedirect")
 				db.Find(&manufacturers)
 				b := NewViewBuilder("Repairs Log - App", []string{
 					_components.Banner(true, _components.AppNavMenu(r.URL.Path)),
 					_components.Root(
 						_components.CenterContentWrapper(
-							_components.CreateManufacturerForm(r.URL.Query().Get("err"), r.URL.Query().Get("name"), r.URL.Query().Get("phone"), r.URL.Query().Get("email"), ""),
+							_components.CreateManufacturerForm(r.URL.Query().Get("err"), r.URL.Query().Get("name"), r.URL.Query().Get("phone"), r.URL.Query().Get("email"), submitRedirect),
 							_components.ManufacturerList(manufacturers, ""),
 						),
 					),
@@ -328,20 +329,18 @@ func Ticket(mux *http.ServeMux, db *gorm.DB) {
 					http.Error(w, err.Error(), http.StatusNotFound)
 					return
 				}
-
-				// Load all manufacturers
 				var manufacturers []_model.Manufacturer
-				if err := db.Find(&manufacturers).Error; err != nil {
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return
-				}
-
+				db.Find(&manufacturers)
 				b := NewViewBuilder("Repairs Log - Tickets", []string{
 					_components.Banner(true, _components.AppNavMenu(r.URL.Path)),
 					_components.Root(
 						_components.CenterContentWrapper(
 							_components.TicketDetails(ticket, r.URL.Query().Get("err")),
-							_components.TicketActivationForm(ticket, manufacturers),
+							_util.ConditionalString(
+								ticket.EquipmentID == nil, 
+								_components.TicketAssignmentForm(ticket, manufacturers,  db),
+								_components.TicketPublicDetailsForm(ticket),
+							),
 						),
 					),
 					_components.Footer(),

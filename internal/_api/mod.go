@@ -65,6 +65,7 @@ func CreateManufacturer(mux *http.ServeMux, db *gorm.DB) {
 				name := r.Form.Get("name")
 				phone := r.Form.Get("phone")
 				email := r.Form.Get("email")
+				submitRedirect := r.Form.Get("submitRedirect")
 				if name == "" || phone == "" || email == "" {
 					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer", "err", "all fields required", "name", name, "phone", phone, "email", email), http.StatusSeeOther)
 					return
@@ -83,7 +84,9 @@ func CreateManufacturer(mux *http.ServeMux, db *gorm.DB) {
 					Email: email,
 				}
 				db.Create(&manufacturer)
-				http.Redirect(w, r, "/app/manufacturer", http.StatusSeeOther)
+				
+				redirectURL := _util.ConditionalString(submitRedirect == "", "/app/manufacturer", "/"+submitRedirect)
+				http.Redirect(w, r, redirectURL, http.StatusSeeOther)
 			},
 			_middleware.Init, _middleware.Auth, _middleware.ParseForm,
 		)
@@ -361,6 +364,29 @@ func DeleteTicket(mux *http.ServeMux, db *gorm.DB) {
 				http.Redirect(w, r, "/app/ticket", http.StatusSeeOther)
 			},
 			_middleware.Init, _middleware.ParseForm, _middleware.Auth,
+		)
+	})
+}
+
+func UpdateTicketPublicDetails(mux *http.ServeMux, db *gorm.DB) {
+	mux.HandleFunc("POST /app/ticket/{id}/publicdetails", func(w http.ResponseWriter, r *http.Request) {
+		_middleware.MiddlewareChain(w, r,
+			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
+				id := r.PathValue("id")
+				owner := r.Form.Get("owner")
+				priority := r.Form.Get("priority")
+				status := r.Form.Get("status")
+				notes := r.Form.Get("notes")
+				var ticket _model.Ticket
+				db.First(&ticket, id)
+				ticket.Owner = owner
+				ticket.Priority = _model.TicketPriority(priority) // Convert priority to _model.TicketPriority type
+				ticket.Status = _model.TicketStatus(status)       // Convert status to _model.TicketStatus type
+				ticket.Notes = notes
+				db.Save(&ticket)
+				http.Redirect(w, r, _util.URLBuilder("/app/ticket/"+id, "publicSecurityToken", r.Form.Get("publicSecurityToken")), http.StatusSeeOther)
+			},
+			_middleware.Init, _middleware.ParseMultipartForm,
 		)
 	})
 }

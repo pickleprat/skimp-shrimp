@@ -3,6 +3,7 @@ package main
 import (
 	"cfasuite/internal/_api"
 	"cfasuite/internal/_model"
+	"cfasuite/internal/_partial"
 	"cfasuite/internal/_view"
 	"fmt"
 	"net/http"
@@ -48,6 +49,9 @@ func main() {
 	_api.CreateTicket(mux, db)
 	_api.UpdateTicket(mux, db)
 	_api.DeleteTicket(mux, db)
+	_api.UpdateTicketPublicDetails(mux, db)
+
+	_partial.EquipmentSelectionList(mux, db)
 
 	fmt.Println("Server is running on port " + os.Getenv("PORT"))
 	http.ListenAndServe(":"+os.Getenv("PORT"), mux)
