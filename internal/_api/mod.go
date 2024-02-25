@@ -84,8 +84,8 @@ func CreateManufacturer(mux *http.ServeMux, db *gorm.DB) {
 					Email: email,
 				}
 				db.Create(&manufacturer)
-				
-				redirectURL := _util.ConditionalString(submitRedirect == "", "/app/manufacturer", "/"+submitRedirect)
+				redirectURL := _util.ConditionalString(submitRedirect == "", "/app/manufacturer", submitRedirect)
+				fmt.Println(redirectURL)
 				http.Redirect(w, r, redirectURL, http.StatusSeeOther)
 			},
 			_middleware.Init, _middleware.Auth, _middleware.ParseForm,

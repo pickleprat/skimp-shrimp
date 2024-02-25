@@ -754,9 +754,9 @@ func TicketPublicDetailsForm(ticket _model.Ticket) string {
 }
 
 func TicketAssignmentForm(ticket _model.Ticket, manufacturers []_model.Manufacturer, db *gorm.DB) string {
-	manufacturerOptions := fmt.Sprintf(`<a href='/app/manufacturer?submitRedirect=/app/ticket/%d' class='border hover:bg-white hover:text-black border-white cursor-pointer bg-black p-2 rounded-full text-sm'>+</a>`, ticket.ID)
+	manufacturerOptions := fmt.Sprintf(`<a href='/app/manufacturer?submitRedirect=/app/ticket/%d' class='border hover:border-white border-darkgray cursor-pointer bg-black p-2 rounded-full text-sm'><img class='h-[25px] w-[25px]' src='/static/svg/plus-dark.svg'></img></a>`, ticket.ID)
 	for _, manufacturer := range manufacturers {
-		manufacturerOptions += fmt.Sprintf("<div hx-get='/partial/manufacturer/%d/equipmentSelectionList' hx-target='#manufacturer-selection-list' hx-swap='outerHTML' class='border hover:bg-white hover:text-black border-white cursor-pointer bg-black p-2 rounded text-sm' value='%d'>%s</div>", manufacturer.ID, manufacturer.ID, manufacturer.Name)
+		manufacturerOptions += fmt.Sprintf("<div hx-get='/partial/manufacturer/%d/equipmentSelectionList' hx-indicator='#main-loader' hx-target='#equipment-selection-list' hx-swap='outerHTML' class='manufacturer-option border h-fit hover:border-white flex items-center justify-center border-darkgray cursor-pointer bg-black p-2 rounded text-sm' value='%d'>%s</div>", manufacturer.ID, manufacturer.ID, manufacturer.Name)
 	}
 	return fmt.Sprintf(`
 		<form id='ticket-assignment-form' x-data="{ loading: false }" action='/app/ticket/%d/assign' method='POST' class='flex flex-col gap-4 w-full p-6'>
@@ -767,7 +767,32 @@ func TicketAssignmentForm(ticket _model.Ticket, manufacturers []_model.Manufactu
 					%s
 				</div>
 			</div>
-			%s%s
+			<div id='equipment-selection-list' class='hidden'></div>
+			%s
+			<span id='ticket-assignment-submit' class='hidden'>%s</span>
 		</form>
+		<script>
+		document.querySelectorAll('.manufacturer-option').forEach((option) => {
+			option.addEventListener('click', (e) => {
+				document.querySelectorAll('.manufacturer-option').forEach((opt) => {
+					opt.classList.remove('bg-white', 'text-black');
+					opt.classList.add('bg-black', 'text-white');
+				});
+				e.target.classList.remove('bg-black', 'text-white');
+				e.target.classList.add('bg-white', 'text-black');
+			});
+		});
+		</script>
 	`, ticket.ID, manufacturerOptions, FormLoader(), FormSubmitButton())
+}
+
+func MainLoader() string {
+    return `
+        <div id='main-loader' class='flex-indicator'>
+			<div class='fixed top-0 left-0 w-full h-full bg-black opacity-50 z-50'></div>
+            <div class='fixed top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50'>
+                <div class='h-[100px] w-[100px] rounded-full border-4 border-darkgray border-t-white animate-spin'></div>
+            </div>
+        </div>
+    `
 }

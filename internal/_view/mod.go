@@ -41,17 +41,21 @@ func (v *ViewBuilder) Build() []byte {
 			<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
 			<link rel="stylesheet" href="/static/css/output.css">
 			<link rel="stylesheet" href="/static/css/animate.css">
+			<script src="https://cdn.tailwindcss.com"></script>
 			<style>
-				[x-cloak] { display: none !important; }
-				.htmx-indicator{
-					opacity:0;
-					transition: opacity 500ms ease-in;
+				[x-cloak] { 
+					display: none !important; 
 				}
-				.htmx-request .htmx-indicator{
-					opacity:1
+				
+				.flex-indicator {
+					display:none;
 				}
-				.htmx-request.htmx-indicator{
-					opacity:1
+								
+				.htmx-request .flex-indicator {
+					display: flex;
+				}
+				.htmx-request.flex-indicator {
+					display: flex;
 				}
 			</style>
 			<title>%s</title>
@@ -94,6 +98,7 @@ func Home(mux *http.ServeMux, db *gorm.DB) {
 			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 				b := NewViewBuilder("Repairs Log - Login", []string{
 					_components.Banner(false, ""),
+					_components.MainLoader(),
 					_components.Root(
 						_components.CenterContentWrapper(
 							_components.LoginForm(r.URL.Query().Get("err"), r.URL.Query().Get("username"), r.URL.Query().Get("password")),
@@ -117,6 +122,7 @@ func ManufacturerForm(mux *http.ServeMux, db *gorm.DB) {
 				db.Find(&manufacturers)
 				b := NewViewBuilder("Repairs Log - App", []string{
 					_components.Banner(true, _components.AppNavMenu(r.URL.Path)),
+					_components.MainLoader(),
 					_components.Root(
 						_components.CenterContentWrapper(
 							_components.CreateManufacturerForm(r.URL.Query().Get("err"), r.URL.Query().Get("name"), r.URL.Query().Get("phone"), r.URL.Query().Get("email"), submitRedirect),
@@ -141,6 +147,7 @@ func Manufacturer(mux *http.ServeMux, db *gorm.DB) {
 				db.Preload("Equipment").First(&manufacturer, id)
 				b := NewViewBuilder("Repairs Log - App", []string{
 					_components.Banner(true, _components.AppNavMenu(r.URL.Path)),
+					_components.MainLoader(),
 					_components.Root(
 						_components.CenterContentWrapper(
 							_components.ManufacturerDetails(manufacturer, r.URL.Query().Get("err")),
@@ -168,6 +175,7 @@ func Equipment(mux *http.ServeMux, db *gorm.DB) {
 				db.First(&manufacturer, equipment.ManufacturerID)
 				b := NewViewBuilder("Repairs Log - App", []string{
 					_components.Banner(true, _components.AppNavMenu(r.URL.Path)),
+					_components.MainLoader(),
 					_components.Root(
 						_components.CenterContentWrapper(
 							_components.EquipmentDetails(equipment, manufacturer, r.URL.Query().Get("err")),
@@ -333,6 +341,7 @@ func Ticket(mux *http.ServeMux, db *gorm.DB) {
 				db.Find(&manufacturers)
 				b := NewViewBuilder("Repairs Log - Tickets", []string{
 					_components.Banner(true, _components.AppNavMenu(r.URL.Path)),
+					_components.MainLoader(),
 					_components.Root(
 						_components.CenterContentWrapper(
 							_components.TicketDetails(ticket, r.URL.Query().Get("err")),
