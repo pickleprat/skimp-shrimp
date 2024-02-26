@@ -41,7 +41,6 @@ func (v *ViewBuilder) Build() []byte {
 			<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
 			<link rel="stylesheet" href="/static/css/output.css">
 			<link rel="stylesheet" href="/static/css/animate.css">
-			<script src="https://cdn.tailwindcss.com"></script>
 			<style>
 				[x-cloak] { 
 					display: none !important; 
@@ -58,6 +57,14 @@ func (v *ViewBuilder) Build() []byte {
 					display: flex;
 				}
 			</style>
+			<script>
+				function qsa(sel) {
+					return document.querySelectorAll(sel);
+				}
+				function qs(sel) {
+					return document.querySelector(sel);
+				}
+			</script>
 			<title>%s</title>
 		</head>
 		<body hx-boost='true' class='bg-black text-white'>
@@ -334,26 +341,50 @@ func Ticket(mux *http.ServeMux, db *gorm.DB) {
 			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 				var ticket _model.Ticket
 				id := r.PathValue("id")
+				form := r.URL.Query().Get("form")
 				if err := db.First(&ticket, id).Error; err != nil {
 					http.Error(w, err.Error(), http.StatusNotFound)
 					return
 				}
 				var manufacturers []_model.Manufacturer
 				db.Find(&manufacturers)
+				if ticket.EquipmentID == nil && form == "" {
+					form = "assign"
+				}
+				if ticket.EquipmentID != nil && form == "" {
+					form = "public"
+				}
 				b := NewViewBuilder("Repairs Log - Tickets", []string{
 					_components.Banner(true, _components.AppNavMenu(r.URL.Path)),
 					_components.MainLoader(),
 					_components.Root(
 						_components.CenterContentWrapper(
 							_components.TicketDetails(ticket, r.URL.Query().Get("err")),
+							_components.TicketSettings(ticket),
 							_util.ConditionalString(
-								ticket.EquipmentID == nil, 
-								_components.TicketAssignmentForm(ticket, manufacturers,  db),
+								form == "update",
+								_components.UpdateTicketForm(ticket),
+								"",
+							),
+							_util.ConditionalString(
+								form == "delete",
+								_components.DeleteTicketForm(ticket),
+								"",
+							),
+							_util.ConditionalString(
+								form == "assign",
+								_components.TicketAssignmentForm(ticket, manufacturers, db),
+								"",
+							),
+							_util.ConditionalString(
+								form == "public",
 								_components.TicketPublicDetailsForm(ticket),
+								"",
 							),
 						),
 					),
 					_components.Footer(),
+					_components.TicketSettingsScript(),
 				})
 				w.Write(b.Build())
 			},

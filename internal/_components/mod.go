@@ -110,13 +110,13 @@ func FormInputLabel(name string, serverName string, inputType string, value stri
 
 func FormSubmitButton() string {
 	return `
-		<input @click='loading = true' x-show='!loading' type='submit' class="flex w-full row-start-5 row-end-5 col-start-1 col-end-8 bg-white text-black mt-4 items-center justify-center whitespace-nowrap rounded-md text-xs font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2" type="submit"/ >
+		<input type='submit' class="flex w-full row-start-5 row-end-5 col-start-1 col-end-8 bg-white text-black mt-4 items-center justify-center whitespace-nowrap rounded-md text-xs font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2" type="submit"/ >
 	`
 }
 
 func FormDeleteButton() string {
 	return `
-		<input @click='loading = true' x-show='!loading' type='submit' class="flex w-full row-start-5 row-end-5 col-start-1 col-end-8 bg-red text-black mt-4 items-center justify-center whitespace-nowrap rounded-md text-xs font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-primary text-white text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2" type="submit" value='Delete'/>
+		<input type='submit' class="flex w-full row-start-5 row-end-5 col-start-1 col-end-8 bg-red text-black mt-4 items-center justify-center whitespace-nowrap rounded-md text-xs font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-primary text-white text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2" type="submit" value='Delete'/>
 	`
 }
 
@@ -636,85 +636,53 @@ func TicketViewOptions(ticketFilter string) string {
 	`, ActiveLink("/app/ticket?ticketFilter=new", "New Tickets", isNew), ActiveLink("/app/ticket?ticketFilter=active", "Active Tickets", isActive), ActiveLink("/app/ticket?ticketFilter=complete", "Completed Tickets", isComplete))
 }
 
-func TicketDetails(ticket _model.Ticket, err string) string {
+func TicketSettings(ticket _model.Ticket) string {
+	resetEquipmentButton := ""
+	if ticket.EquipmentID != nil {
+		resetEquipmentButton = fmt.Sprintf(`<a id='ticket-reset-equipment-button' href='/app/ticket/%d/resetEquipment' hx-indicator='#main-loader' class='cursor-pointer text-center rounded w-fit py-1 px-4 border border-black bg-green text-black text-sm'>Reset Equipment Association</a>`, ticket.ID)
+	}
+	assignEquipmentButton := ""
+	if ticket.EquipmentID == nil {
+		assignEquipmentButton = fmt.Sprintf(`<a href='/app/ticket/%d?form=assign' hx-indicator='#main-loader' class='cursor-pointer text-center rounded w-fit py-1 px-4 border border-black bg-blue text-white text-sm'>Assign Equipment</a>`, ticket.ID)
+	}
 	return fmt.Sprintf(`
-		<div class='p-6 w-full flex flex-col gap-4'>
-			<div class='flex flex-row justify-between'>
-				<h2>Ticket Details</h2>
-				%s%s
-			</div>
-			<div class='text-xs'>
-				<p><strong>Creator:</strong> %s</p>
-				<p><strong>Item:</strong> %s</p>
-				<p><strong>Location:</strong> %s</p>
-			</div>
-			<div class='text-xs'>
-				<p><strong>Problem:</strong> %s</p>
-			</div>
-			<div id='manufacturer-delete-message'>
+			<div id='ticket-settings' class='text-sm flex flex-col gap-4 hidden p-6'>
+				<a href='/app/ticket/%d?form=update' hx-indicator='#main-loader' id='ticket-update-button' class='cursor-pointer w-fit text-center rounded py-1 px-4 border border-black text-black bg-white'>Update Private Details</a>
 				%s
-			</div>
-			<div class='w-[200px]'>
-				<img src='data:image/jpeg;base64,%s' class='w-full h-auto' alt='%s'/>
-			</div>
-			<div id='hidden-settings-section' class='text-xs hidden flex flex-row gap-2'>
-				<div id='manufacturer-update-button' class='cursor-pointer rounded py-1 px-2 border border-black bg-white text-black'>Update</div>
-				<div id='manufacturer-delete-button' class='cursor-pointer rounded py-1 px-2 border border-black bg-red'>Delete</div>
-			</div>
-			<div id='update-manufacturer-form' class='hidden mt-2'>
 				%s
+				<a href='/app/ticket/%d?form=delete' hx-indicator='#main-loader' id='ticket-delete-button' class='cursor-pointer w-fit text-center rounded py-1 px-4 border border-black bg-red'>Delete Ticket</a>				
 			</div>
-			<div id='delete-manufacturer-form' class='hidden mt-2'>
-				%s
-			</div>
-		</div>
-		<script>
-			document.getElementById('manufacturer-settings-icon').addEventListener('click', () => {
-				document.getElementById('hidden-settings-section').classList.toggle('hidden')
-				document.getElementById('manufacturer-close-settings-icon').classList.toggle('hidden')
-				document.getElementById('manufacturer-settings-icon').classList.toggle('hidden')
-				document.getElementById('manufacturer-delete-message').classList.add('hidden')
-			})
-			document.getElementById('manufacturer-close-settings-icon').addEventListener('click', () => {
-				document.getElementById('hidden-settings-section').classList.toggle('hidden')
-				document.getElementById('manufacturer-close-settings-icon').classList.toggle('hidden')
-				document.getElementById('manufacturer-settings-icon').classList.toggle('hidden')
-				document.getElementById('delete-manufacturer-form').classList.add('hidden')
-				document.getElementById('update-manufacturer-form').classList.add('hidden')
-			})
-			document.getElementById('manufacturer-update-button').addEventListener('click', () => {
-				document.getElementById('update-manufacturer-form').classList.toggle('hidden')
-				document.getElementById('delete-manufacturer-form').classList.add('hidden')
-			})
-			document.getElementById('manufacturer-delete-button').addEventListener('click', () => {
-				document.getElementById('delete-manufacturer-form').classList.toggle('hidden')
-				document.getElementById('update-manufacturer-form').classList.add('hidden')
-			})
+		`,
+		ticket.ID, resetEquipmentButton, assignEquipmentButton, ticket.ID,
+	)
+}
 
-		</script>
-	`,
-		SvgIcon("/static/svg/gear-dark.svg", "sm", "id='manufacturer-settings-icon'", ""),
-		SvgIcon("/static/svg/x-dark.svg", "sm", "id='manufacturer-close-settings-icon'", "hidden"),
-		ticket.Creator,
+func TicketDetails(ticket _model.Ticket, err string) string {
+	ticketPhotoBase64 := base64.StdEncoding.EncodeToString(ticket.Photo)
+	return fmt.Sprintf(`
+			<div class='grid grid-cols-2 p-6 gap-6'>
+				<img src='data:image/jpeg;base64,%s' class='w-full h-auto' alt='%s'/>
+				<div class='flex flex-col gap-6'>
+					<div id='ticket-settings-icon' class='place-self-end'>%s</div>
+					<div id='ticket-close-settings-icon' class='place-self-end hidden'>%s</div>
+				</div>
+			</div>
+		`,
+		ticketPhotoBase64,
 		ticket.Item,
-		ticket.Location,
-		ticket.Problem,
-		ErrorMessage(err),
-		base64.StdEncoding.EncodeToString(ticket.Photo),
-		ticket.Item,
-		UpdateTicketForm(ticket),
-		DeleteTicketForm(ticket),
+		SvgIcon("/static/svg/gear-dark.svg", "sm", "", ""),
+		SvgIcon("/static/svg/x-dark.svg", "sm", "", ""),
 	)
 }
 
 func UpdateTicketForm(ticket _model.Ticket) string {
 	return fmt.Sprintf(`
-		<form enctype='multipart/form-data' method='POST' action='/app/ticket/%d/update' x-data="{ loading: false }" class='gap-4 grid w-full rounded bg-black'>
+		<form id='update-ticket-form' enctype='multipart/form-data' method='POST' action='/app/ticket/%d/update' class='gap-4 grid w-full rounded bg-black p-6'>
 			<div class='flex justify-between'>
 				%s
 			</div>
 			<div class='flex flex-col gap-4'>
-				%s%s%s%s%s%s
+				%s%s%s%s%s
 			</div>
 		</form>
 	`,
@@ -724,14 +692,13 @@ func UpdateTicketForm(ticket _model.Ticket) string {
 		FormInputLabel("Item Description", "item", "text", ticket.Item),
 		FormTextAreaLabel("Problem", "problem", 2, ticket.Problem),
 		FormPhotoUpload(),
-		FormLoader(),
 		FormSubmitButton(),
 	)
 }
 
 func DeleteTicketForm(ticket _model.Ticket) string {
 	return fmt.Sprintf(`
-		<form x-data="{ loading: false }" action='/app/ticket/%d/delete' method='POST' class='flex flex-col gap-4 w-full'>
+		<form id='delete-ticket-form' action='/app/ticket/%d/delete' method='POST' class='flex flex-col gap-4 w-full p-6'>
 			%s%s%s
 		</form>
 	`, ticket.ID, FormTitle("Delete Ticket"), FormInputLabel("Type 'yes' to delete", "keyword", "", ""), FormDeleteButton())
@@ -739,8 +706,8 @@ func DeleteTicketForm(ticket _model.Ticket) string {
 
 func TicketPublicDetailsForm(ticket _model.Ticket) string {
 	return fmt.Sprintf(`
-		<form x-data="{ loading: false }" action='/app/ticket/%d/publicdetails' method='POST' class='flex flex-col gap-4 w-full p-6'>
-			%s%s%s%s%s%s%s
+		<form id='ticket-public-details' action='/app/ticket/%d/publicdetails' method='POST' class='flex flex-col gap-4 w-full p-6'>
+			%s%s%s%s%s%s
 		</form>
 	`,
 		ticket.ID,
@@ -750,8 +717,24 @@ func TicketPublicDetailsForm(ticket _model.Ticket) string {
 		FormSelectLabel("Status", "status", []string{string(_model.TicketStatusNew), string(_model.TicketStatusActive), string(_model.TicketStatusOnHold), string(_model.TicketStatusComplete)}, string(ticket.Status)),
 		FormTextAreaLabel("Notes", "notes", 2, ticket.Notes),
 		FormSubmitButton(),
-		FormLoader(),
 	)
+}
+
+func TicketSettingsScript() string {
+	return `
+		<script>
+			qs('#ticket-settings-icon').addEventListener('click', (e) => {
+				qs('#ticket-settings').classList.toggle('hidden')
+				qs('#ticket-settings-icon').classList.toggle('hidden')
+				qs('#ticket-close-settings-icon').classList.toggle('hidden')
+			})
+			qs('#ticket-close-settings-icon').addEventListener('click', (e) => {
+				qs('#ticket-settings').classList.toggle('hidden')
+				qs('#ticket-settings-icon').classList.toggle('hidden')
+				qs('#ticket-close-settings-icon').classList.toggle('hidden')
+			})
+		</script>
+	`
 }
 
 func TicketAssignmentForm(ticket _model.Ticket, manufacturers []_model.Manufacturer, db *gorm.DB) string {

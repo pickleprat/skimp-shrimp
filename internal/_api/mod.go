@@ -412,10 +412,28 @@ func AssignTicket(mux *http.ServeMux, db *gorm.DB) {
 				var ticket _model.Ticket
 				db.First(&ticket, id)
 				ticket.EquipmentID = &uintEquipmentID
+				ticket.Status = _model.TicketStatusActive
 				db.Save(&ticket)
 				http.Redirect(w, r, "/app/ticket/"+id, http.StatusSeeOther)
 			},
 			_middleware.Init, _middleware.ParseForm, _middleware.Auth,
+		)
+	})
+}
+
+func TicketResetEquipment(mux *http.ServeMux, db *gorm.DB) {
+	mux.HandleFunc("GET /app/ticket/{id}/resetEquipment", func(w http.ResponseWriter, r *http.Request) {
+		_middleware.MiddlewareChain(w, r,
+			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
+				id := r.PathValue("id")
+				var ticket _model.Ticket
+				db.First(&ticket, id)
+				ticket.EquipmentID = nil
+				ticket.Status = _model.TicketStatusNew
+				db.Save(&ticket)
+				http.Redirect(w, r, "/app/ticket/"+id, http.StatusSeeOther)
+			},
+			_middleware.Init, _middleware.Auth,
 		)
 	})
 }
