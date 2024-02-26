@@ -143,6 +143,7 @@ func Manufacturer(mux *http.ServeMux, db *gorm.DB) {
 		_middleware.MiddlewareChain(w, r,
 			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 				id := r.PathValue("id")
+				submitRedirect := r.URL.Query().Get("submitRedirect")
 				var manufacturer _model.Manufacturer
 				db.Preload("Equipment").First(&manufacturer, id)
 				b := NewViewBuilder("Repairs Log - App", []string{
@@ -151,7 +152,7 @@ func Manufacturer(mux *http.ServeMux, db *gorm.DB) {
 					_components.Root(
 						_components.CenterContentWrapper(
 							_components.ManufacturerDetails(manufacturer, r.URL.Query().Get("err")),
-							_components.CreateEquipmentForm(r.URL.Query().Get("equipmentErr"), ""),
+							_components.CreateEquipmentForm(r.URL.Query().Get("equipmentErr"), submitRedirect),
 							_components.EquipmentList(manufacturer.Equipment, ""),
 						),
 					),

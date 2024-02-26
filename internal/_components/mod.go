@@ -359,9 +359,9 @@ func ManufacturerDetails(manufacturer _model.Manufacturer, err string) string {
 	)
 }
 
-func CreateEquipmentForm(err string, xclass string) string {
+func CreateEquipmentForm(err string, submitRedirect string) string {
 	return fmt.Sprintf(`
-		<form enctype='multipart/form-data' x-data="{ loading: false }" method='POST' class='flex flex-col p-6 gap-4 w-full  %s'>
+		<form enctype='multipart/form-data' x-data="{ loading: false }" method='POST' class='flex flex-col p-6 gap-4 w-full'>
 			%s%s%s%s
 			<div class='flex flex-col text-xs w-fit rounded gap-2'>
 				<label>Photo</label>
@@ -370,6 +370,7 @@ func CreateEquipmentForm(err string, xclass string) string {
 			</div>
 			<div id='image-preview'></div>
 			%s%s
+			<input type='hidden' name='submitRedirect' value='%s'/>
 		</form>
 		<script>
 			document.getElementById('upload-input').addEventListener('change', (e) => {
@@ -389,13 +390,13 @@ func CreateEquipmentForm(err string, xclass string) string {
 			});
 		</script>
 	`,
-		xclass,
 		FormTitle("Create Equipment"),
 		FormError(err),
 		FormInputLabel("Nickname", "nickname", "", ""),
 		FormInputLabel("Serial Number", "number", "", ""),
 		FormLoader(),
 		FormSubmitButton(),
+		submitRedirect,
 	)
 }
 
@@ -596,7 +597,7 @@ func TicketList(tickets []_model.Ticket) string {
         `
 	} else {
 		return fmt.Sprintf(`
-            <div class='p-6 w-full flex flex-col text-sm'>
+            <div class='p-6 w-full flex flex-col text-sm gap-6'>
 				%s
             </div>
         `, ticketList)
@@ -756,10 +757,10 @@ func TicketPublicDetailsForm(ticket _model.Ticket) string {
 func TicketAssignmentForm(ticket _model.Ticket, manufacturers []_model.Manufacturer, db *gorm.DB) string {
 	manufacturerOptions := fmt.Sprintf(`<a href='/app/manufacturer?submitRedirect=/app/ticket/%d' class='border hover:border-white border-darkgray cursor-pointer bg-black p-2 rounded-full text-sm'><img class='h-[25px] w-[25px]' src='/static/svg/plus-dark.svg'></img></a>`, ticket.ID)
 	for _, manufacturer := range manufacturers {
-		manufacturerOptions += fmt.Sprintf("<div hx-get='/partial/manufacturer/%d/equipmentSelectionList' hx-indicator='#main-loader' hx-target='#equipment-selection-list' hx-swap='outerHTML' class='manufacturer-option border h-fit hover:border-white flex items-center justify-center border-darkgray cursor-pointer bg-black p-2 rounded text-sm' value='%d'>%s</div>", manufacturer.ID, manufacturer.ID, manufacturer.Name)
+		manufacturerOptions += fmt.Sprintf("<div hx-get='/partial/manufacturer/%d/equipmentSelectionList?ticketID=%d' hx-indicator='#main-loader' hx-target='#equipment-selection-list' hx-swap='outerHTML' class='manufacturer-option border h-fit hover:border-white flex items-center justify-center border-darkgray cursor-pointer bg-black p-2 rounded text-sm' value='%d'>%s</div>", manufacturer.ID, ticket.ID, manufacturer.ID, manufacturer.Name)
 	}
 	return fmt.Sprintf(`
-		<form id='ticket-assignment-form' x-data="{ loading: false }" action='/app/ticket/%d/assign' method='POST' class='flex flex-col gap-4 w-full p-6'>
+		<form id='ticket-assignment-form' action='/app/ticket/%d/assign' hx-indicator='#main-loader' method='POST' class='flex flex-col gap-4 w-full p-6'>
 			<input id='equipment-id-input' type='hidden' name='equipmentID' value=''/>
 			<div id='manufacturer-selection-list' class='flex flex-col gap-6'>
 				<h2>Assign Manufacturer</h2>
@@ -768,7 +769,6 @@ func TicketAssignmentForm(ticket _model.Ticket, manufacturers []_model.Manufactu
 				</div>
 			</div>
 			<div id='equipment-selection-list' class='hidden'></div>
-			%s
 			<span id='ticket-assignment-submit' class='hidden'>%s</span>
 		</form>
 		<script>
@@ -780,10 +780,15 @@ func TicketAssignmentForm(ticket _model.Ticket, manufacturers []_model.Manufactu
 				});
 				e.target.classList.remove('bg-black', 'text-white');
 				e.target.classList.add('bg-white', 'text-black');
+				if (document.getElementById('ticket-assignment-submit').classList.contains('hidden')) {
+				
+				} else {
+					document.getElementById('ticket-assignment-submit').classList.add('hidden');
+				}
 			});
 		});
 		</script>
-	`, ticket.ID, manufacturerOptions, FormLoader(), FormSubmitButton())
+	`, ticket.ID, manufacturerOptions, FormSubmitButton())
 }
 
 func MainLoader() string {

@@ -154,19 +154,21 @@ func CreateEquipment(mux *http.ServeMux, db *gorm.DB) {
 				id := r.PathValue("id")
 				name := r.Form.Get("nickname")
 				number := r.Form.Get("number")
+				submitRedirect := r.Form.Get("submitRedirect")
+				redirectURL := _util.ConditionalString(submitRedirect == "", "/app/manufacturer/"+id, submitRedirect)
 				photo, _, err := r.FormFile("photo")
 				if err != nil {
-					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/"+id, "equipmentErr", "photo required"), http.StatusSeeOther)
+					http.Redirect(w, r, _util.URLBuilder(redirectURL, "equipmentErr", "photo required"), http.StatusSeeOther)
 					return
 				}
 				defer photo.Close()
 				if photo == nil {
-					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/"+id, "equipmentErr", "photo required"), http.StatusSeeOther)
+					http.Redirect(w, r, _util.URLBuilder(redirectURL, "equipmentErr", "photo required"), http.StatusSeeOther)
 					return
 				}
 				photoBytes, err := io.ReadAll(photo)
 				if err != nil {
-					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/"+id, "equipmentErr", "photo required"), http.StatusSeeOther)
+					http.Redirect(w, r, _util.URLBuilder(redirectURL, "equipmentErr", "photo required"), http.StatusSeeOther)
 					return
 				}
 				var manufacturer _model.Manufacturer
@@ -180,7 +182,7 @@ func CreateEquipment(mux *http.ServeMux, db *gorm.DB) {
 					QRCodeToken:    qrCodeToken,
 				}
 				db.Create(&equipment)
-				http.Redirect(w, r, "/app/manufacturer/"+id, http.StatusSeeOther)
+				http.Redirect(w, r, redirectURL, http.StatusSeeOther)
 			},
 			_middleware.Init, _middleware.ParseMultipartForm, _middleware.Auth,
 		)
@@ -387,6 +389,33 @@ func UpdateTicketPublicDetails(mux *http.ServeMux, db *gorm.DB) {
 				http.Redirect(w, r, _util.URLBuilder("/app/ticket/"+id, "publicSecurityToken", r.Form.Get("publicSecurityToken")), http.StatusSeeOther)
 			},
 			_middleware.Init, _middleware.ParseMultipartForm,
+		)
+	})
+}
+
+func AssignTicket(mux *http.ServeMux, db *gorm.DB) {
+	mux.HandleFunc("POST /app/ticket/{id}/assign", func(w http.ResponseWriter, r *http.Request) {
+		_middleware.MiddlewareChain(w, r,
+			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
+				id := r.PathValue("id")
+				equipmentID := r.Form.Get("equipmentID")
+				if equipmentID == "" {
+					http.Redirect(w, r, _util.URLBuilder("/app/ticket/"+id, "err", "equipment selection required"), http.StatusSeeOther)
+					return
+				}
+				// convert equipmentID to uint
+				uintEquipmentID, err := _util.ConvertStringToUint(equipmentID)
+				if err != nil {
+					http.Redirect(w, r, _util.URLBuilder("/app/ticket/"+id, "err", "invalid equipment selection"), http.StatusSeeOther)
+					return
+				}
+				var ticket _model.Ticket
+				db.First(&ticket, id)
+				ticket.EquipmentID = &uintEquipmentID
+				db.Save(&ticket)
+				http.Redirect(w, r, "/app/ticket/"+id, http.StatusSeeOther)
+			},
+			_middleware.Init, _middleware.ParseForm, _middleware.Auth,
 		)
 	})
 }

@@ -50,6 +50,7 @@ func main() {
 	_api.UpdateTicket(mux, db)
 	_api.DeleteTicket(mux, db)
 	_api.UpdateTicketPublicDetails(mux, db)
+	_api.AssignTicket(mux, db)
 
 	_partial.EquipmentSelectionList(mux, db)
 
