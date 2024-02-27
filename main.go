@@ -54,6 +54,7 @@ func main() {
 	_api.TicketResetEquipment(mux, db)
 
 	_partial.EquipmentSelectionList(mux, db)
+	_partial.EquipmentByManufacturer(mux, db)
 
 	fmt.Println("Server is running on port " + os.Getenv("PORT"))
 	http.ListenAndServe(":"+os.Getenv("PORT"), mux)

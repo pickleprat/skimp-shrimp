@@ -180,7 +180,7 @@ func Manufacturer(mux *http.ServeMux, db *gorm.DB) {
 							),
 							_util.ConditionalString(
 								form == "create",
-								_components.EquipmentList(manufacturer.Equipment, ""),
+								_components.HxGetLoader("/partial/manufacturer/"+id+"/equipment"),
 								"",
 							),
 						),
@@ -199,6 +199,10 @@ func Equipment(mux *http.ServeMux, db *gorm.DB) {
 		_middleware.MiddlewareChain(w, r,
 			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 				id := r.PathValue("id")
+				form := r.URL.Query().Get("form")
+				if form == "" {
+					form = "update"
+				}
 				var equipment _model.Equipment
 				var manufacturer _model.Manufacturer
 				db.First(&equipment, id)
@@ -208,7 +212,17 @@ func Equipment(mux *http.ServeMux, db *gorm.DB) {
 					_components.MainLoader(),
 					_components.Root(
 						_components.CenterContentWrapper(
-							_components.EquipmentDetails(equipment, manufacturer, r.URL.Query().Get("err")),
+							_components.EquipmentDetails(equipment, manufacturer, form),
+							_util.ConditionalString(
+								form == "update",
+								_components.UpdateEquipmentForm(equipment, r.URL.Query().Get("err"), r.URL.Query().Get("success")),
+								"",
+							),
+							_util.ConditionalString(
+								form == "delete",
+								_components.DeleteEquipmentForm(equipment, r.URL.Query().Get("err"), r.URL.Query().Get("success")),
+								"",
+							),
 						),
 					),
 					_components.Footer(),

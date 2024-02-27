@@ -213,22 +213,27 @@ func UpdateEquipment(mux *http.ServeMux, db *gorm.DB) {
 				id := r.PathValue("id")
 				name := r.Form.Get("nickname")
 				number := r.Form.Get("number")
-
-				// Check if a new photo is provided
 				photo, _, err := r.FormFile("photo")
+				if name == "" || number == "" {
+					http.Redirect(w, r, _util.URLBuilder("/app/equipment/"+id, "err", "all fields required"), http.StatusSeeOther)
+					return
+				}
 				defer func() {
 					if photo != nil {
 						photo.Close()
 					}
 				}()
 				if err != nil && err != http.ErrMissingFile {
-					http.Redirect(w, r, _util.URLBuilder("/app/equipment/"+id, "updateErr", "failed to retrieve file"), http.StatusSeeOther)
+					http.Redirect(w, r, _util.URLBuilder("/app/equipment/"+id, "err", "failed to retrieve file"), http.StatusSeeOther)
 					return
 				}
 
 				var equipment _model.Equipment
 				db.First(&equipment, id)
-
+				if name == equipment.Nickname && number == equipment.SerialNumber && photo == nil {
+					http.Redirect(w, r, _util.URLBuilder("/app/equipment/"+id, "err", "no changes detected"), http.StatusSeeOther)
+					return
+				}
 				// Update only if a new photo is provided
 				if photo != nil {
 					photoBytes, err := io.ReadAll(photo)
@@ -242,7 +247,7 @@ func UpdateEquipment(mux *http.ServeMux, db *gorm.DB) {
 				equipment.Nickname = name
 				equipment.SerialNumber = number
 				db.Save(&equipment)
-				http.Redirect(w, r, "/app/equipment/"+id, http.StatusSeeOther)
+				http.Redirect(w, r, _util.URLBuilder("/app/equipment/"+id, "success", "equipment updated"), http.StatusSeeOther)
 			},
 			_middleware.Init, _middleware.ParseMultipartForm, _middleware.Auth,
 		)
@@ -260,11 +265,11 @@ func DeleteEquipment(mux *http.ServeMux, db *gorm.DB) {
 				var manufacturer _model.Manufacturer
 				db.First(&manufacturer, equipment.ManufacturerID)
 				if name != strings.ToLower(equipment.Nickname) {
-					http.Redirect(w, r, _util.URLBuilder(fmt.Sprintf("/app/equipment/%d", equipment.ID), "err", "invalid delete name provided"), http.StatusSeeOther)
+					http.Redirect(w, r, _util.URLBuilder(fmt.Sprintf("/app/equipment/%d", equipment.ID), "err", "invalid delete name provided", "form", "delete"), http.StatusSeeOther)
 					return
 				}
 				db.Delete(&equipment, id)
-				http.Redirect(w, r, fmt.Sprintf("/app/manufacturer/%d", manufacturer.ID), http.StatusSeeOther)
+				http.Redirect(w, r, fmt.Sprintf(_util.URLBuilder("/app/manufacturer/%d", "success", "equipment deleted"), manufacturer.ID), http.StatusSeeOther)
 			},
 			_middleware.Init, _middleware.ParseForm, _middleware.Auth,
 		)

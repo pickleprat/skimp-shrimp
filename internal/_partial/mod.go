@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"cfasuite/internal/_components"
 	"cfasuite/internal/_middleware"
 	"cfasuite/internal/_model"
 
@@ -65,6 +66,23 @@ func EquipmentSelectionList(mux *http.ServeMux, db *gorm.DB) {
             _middleware.Init, _middleware.ParseForm, _middleware.Auth,
         )
     })
+}
+
+func EquipmentByManufacturer(mux *http.ServeMux, db *gorm.DB) {
+	mux.HandleFunc("GET /partial/manufacturer/{id}/equipment", func(w http.ResponseWriter, r *http.Request) {
+		_middleware.MiddlewareChain(w, r,
+			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
+				id := r.PathValue("id")
+				manufacturer := _model.Manufacturer{}
+				db.First(&manufacturer, id)
+				equipment := []_model.Equipment{}
+				db.Where("manufacturer_id = ?", id).Find(&equipment)
+				component := _components.EquipmentList(equipment)
+				w.Write([]byte(component))
+			},
+			_middleware.Init, _middleware.ParseForm, _middleware.Auth,
+		)
+	})
 }
 
 
