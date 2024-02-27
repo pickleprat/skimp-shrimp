@@ -103,7 +103,7 @@ func FormInputLabel(name string, serverName string, inputType string, value stri
 	return fmt.Sprintf(`
 		<div class='flex flex-col gap-2 w-full'>
 			<label class="text-xs leading-none">%s <span class='text-gray'>%s</span></label>
-			<input name='%s' type='%s' value='%s' autocomplete='off' class="flex p-1 w-full rounded-md border border-darkgray border-input bg-black px-2 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+			<input name='%s' type='%s' value='%s' autocomplete='off' class="flex p-1 w-full rounded-md border border-darkgray border-input bg-black px-2 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" />
 		</div>
 	`, name, spanText, serverName, inputType, value)
 }
@@ -354,9 +354,9 @@ func ManufacturerDetails(manufacturer _model.Manufacturer, err string, form stri
 	)
 }
 
-func CreateEquipmentForm(err string, success string, submitRedirect string, nickname string, serialNumber string) string {
+func CreateEquipmentForm(manufacturer _model.Manufacturer, err string, success string, submitRedirect string, nickname string, serialNumber string) string {
 	return fmt.Sprintf(`
-		<form enctype='multipart/form-data' hx-indicator='#main-loader' method='POST' class='flex flex-col p-6 gap-4 w-full'>
+		<form enctype='multipart/form-data' action='/app/manufacturer/%d' hx-indicator='#main-loader' method='POST' class='flex flex-col p-6 gap-4 w-full'>
 			%s%s%s%s%s
 			<div class='flex flex-col text-xs w-fit rounded gap-2'>
 				<label>Photo</label>
@@ -388,11 +388,12 @@ func CreateEquipmentForm(err string, success string, submitRedirect string, nick
 			});
 		</script>
 	`,
+		manufacturer.ID,
 		FormTitle("Create Equipment"),
 		FormError(err),
 		FormSuccess(success),
-		FormInputLabel("Nickname", "nickname", "", nickname),
-		FormInputLabel("Serial Number", "number", "", serialNumber),
+		FormInputLabel("Nickname", "nickname", "text", nickname),
+		FormInputLabel("Serial Number", "number", "text", serialNumber),
 		FormSubmitButton(),
 		submitRedirect,
 	)

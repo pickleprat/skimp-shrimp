@@ -161,6 +161,7 @@ func CreateEquipment(mux *http.ServeMux, db *gorm.DB) {
 				fmt.Println(r.Form)
 				id := r.PathValue("id")
 				name := r.Form.Get("nickname")
+				fmt.Println(name)
 				number := r.Form.Get("number")
 				submitRedirect := r.Form.Get("submitRedirect")
 				redirectURL := _util.ConditionalString(

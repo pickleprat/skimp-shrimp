@@ -165,7 +165,7 @@ func Manufacturer(mux *http.ServeMux, db *gorm.DB) {
 							_components.ManufacturerDetails(manufacturer, r.URL.Query().Get("err"), r.URL.Query().Get("form")),
 							_util.ConditionalString(
 								form == "create",
-								_components.CreateEquipmentForm(r.URL.Query().Get("err"), r.URL.Query().Get("success"), submitRedirect, r.URL.Query().Get("nickname"), r.URL.Query().Get("serialNumber")),
+								_components.CreateEquipmentForm(manufacturer, r.URL.Query().Get("err"), r.URL.Query().Get("success"), submitRedirect, r.URL.Query().Get("nickname"), r.URL.Query().Get("serialNumber")),
 								"",
 							),
 							_util.ConditionalString(
