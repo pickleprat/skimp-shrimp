@@ -132,7 +132,7 @@ func ManufacturerForm(mux *http.ServeMux, db *gorm.DB) {
 					_components.MainLoader(),
 					_components.Root(
 						_components.CenterContentWrapper(
-							_components.CreateManufacturerForm(r.URL.Query().Get("err"), r.URL.Query().Get("name"), r.URL.Query().Get("phone"), r.URL.Query().Get("email"), submitRedirect),
+							_components.CreateManufacturerForm(r.URL.Query().Get("err"), r.URL.Query().Get("success"), r.URL.Query().Get("name"), r.URL.Query().Get("phone"), r.URL.Query().Get("email"), submitRedirect),
 							_components.ManufacturerList(manufacturers, ""),
 						),
 					),
@@ -150,6 +150,10 @@ func Manufacturer(mux *http.ServeMux, db *gorm.DB) {
 		_middleware.MiddlewareChain(w, r,
 			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 				id := r.PathValue("id")
+				form := r.URL.Query().Get("form")
+				if form == "" {
+					form = "create"
+				}
 				submitRedirect := r.URL.Query().Get("submitRedirect")
 				var manufacturer _model.Manufacturer
 				db.Preload("Equipment").First(&manufacturer, id)
@@ -158,9 +162,27 @@ func Manufacturer(mux *http.ServeMux, db *gorm.DB) {
 					_components.MainLoader(),
 					_components.Root(
 						_components.CenterContentWrapper(
-							_components.ManufacturerDetails(manufacturer, r.URL.Query().Get("err")),
-							_components.CreateEquipmentForm(r.URL.Query().Get("equipmentErr"), submitRedirect),
-							_components.EquipmentList(manufacturer.Equipment, ""),
+							_components.ManufacturerDetails(manufacturer, r.URL.Query().Get("err"), r.URL.Query().Get("form")),
+							_util.ConditionalString(
+								form == "create",
+								_components.CreateEquipmentForm(r.URL.Query().Get("err"), r.URL.Query().Get("success"), submitRedirect, r.URL.Query().Get("nickname"), r.URL.Query().Get("serialNumber")),
+								"",
+							),
+							_util.ConditionalString(
+								form == "update",
+								_components.UpdateManufacturerForm(manufacturer, r.URL.Query().Get("err"), r.URL.Query().Get("success")),
+								"",
+							),
+							_util.ConditionalString(
+								form == "delete",
+								_components.DeleteManufacturerForm(manufacturer, r.URL.Query().Get("err")),
+								"",
+							),
+							_util.ConditionalString(
+								form == "create",
+								_components.EquipmentList(manufacturer.Equipment, ""),
+								"",
+							),
 						),
 					),
 					_components.Footer(),
@@ -245,6 +267,7 @@ func EquipmentTicket(mux *http.ServeMux, db *gorm.DB) {
 				db.First(&manufacturer, equipment.ManufacturerID)
 				b := NewViewBuilder("Repairs Log - App", []string{
 					_components.Banner(true, _components.AppNavMenu(r.URL.Path)),
+					_components.MainLoader(),
 					_components.Root(
 						_components.CenterContentWrapper(
 							_components.EquipmentDetails(equipment, manufacturer, r.URL.Query().Get("err")),
@@ -271,6 +294,7 @@ func TicketForm(mux *http.ServeMux, db *gorm.DB) {
 				}
 				b := NewViewBuilder("Repairs Log - Public Tickets", []string{
 					_components.Banner(false, ""),
+					_components.MainLoader(),
 					_components.Root(
 						_components.CenterContentWrapper(
 							_components.CreateTicketForm(r, token),
@@ -319,6 +343,7 @@ func Tickets(mux *http.ServeMux, db *gorm.DB) {
 
 				b := NewViewBuilder("Repairs Log - Tickets", []string{
 					_components.Banner(true, _components.AppNavMenu(r.URL.Path)),
+					_components.MainLoader(),
 					_components.Root(
 						_components.CenterContentWrapper(
 							_components.CreateTicketForm(r, os.Getenv("ADMIN_REDIRECT_TOKEN")),

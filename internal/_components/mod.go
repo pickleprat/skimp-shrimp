@@ -179,14 +179,6 @@ func FormTitle(title string) string {
 	`, title)
 }
 
-func FormLoader() string {
-	return `
-		<div x-show='loading' x-cloak class='flex items-center justify-center mt-4'>
-			<div class='h-10 w-10 rounded-full border-2 border-gray border-t-white animate-spin'></div>
-		</div>
-	`
-}
-
 func FormTextAreaLabel(name string, serverName string, rows int, value string) string {
 	return fmt.Sprintf(`
         <div class='flex flex-col gap-2 w-full'>
@@ -216,21 +208,33 @@ func FormSelectLabel(name string, serverName string, options []string, selectedV
     `, name, serverName, optionHTML.String())
 }
 
-func LoginForm(err string, username string, password string) string {
+func LinkButton(href string, text string, active bool) string {
+	var activeClass string
+	if active {
+		activeClass = "bg-white text-black"
+	} else {
+		activeClass = "bg-black text-white"
+	}
 	return fmt.Sprintf(`
-		<form x-data="{ loading: false }" method='POST' class='flex flex-col p-6 gap-4 w-full'>
-			%s%s%s%s%s%s
-		</form>
-	`, FormTitle("Login"), FormError(err), FormInputLabel("Username", "username", "", username), FormInputLabel("Password", "password", "password", password), FormLoader(), FormSubmitButton())
+		<a href='%s' hx-indicator='#main-loader' class='cursor-pointer w-fit text-center rounded py-1 px-4 border border-white %s'>%s</a>
+	`, href, activeClass, text)
 }
 
-func CreateManufacturerForm(err string, name string, phone string, email string, submitRedirect string) string {
+func LoginForm(err string, username string, password string) string {
 	return fmt.Sprintf(`
-		<form x-data="{ loading: false }" method='POST' action='/app/manufacturer' class='flex flex-col p-6 gap-4 w-full'>
+		<form hx-indicator='#main-loader' method='POST' class='flex flex-col p-6 gap-4 w-full'>
+			%s%s%s%s%s
+		</form>
+	`, FormTitle("Login"), FormError(err), FormInputLabel("Username", "username", "", username), FormInputLabel("Password", "password", "password", password), FormSubmitButton())
+}
+
+func CreateManufacturerForm(err string, success string, name string, phone string, email string, submitRedirect string) string {
+	return fmt.Sprintf(`
+		<form hx-indicator='#main-loader' method='POST' action='/app/manufacturer' class='flex flex-col p-6 gap-4 w-full'>
 			<input type='hidden' name='submitRedirect' value='%s'/>
 			%s%s%s%s%s%s%s
 		</form>
-	`, submitRedirect, FormTitle("Create Manufacturer"), FormError(err), FormInputLabel("Name", "name", "", name), FormInputLabel("Phone", "phone", "", phone), FormInputLabel("Email", "email", "", email), FormLoader(), FormSubmitButton())
+	`, submitRedirect, FormTitle("Create Manufacturer"), FormError(err), FormSuccess(success), FormInputLabel("Name", "name", "", name), FormInputLabel("Phone", "phone", "", phone), FormInputLabel("Email", "email", "", email), FormSubmitButton())
 }
 
 func ManufacturerList(manufacturers []_model.Manufacturer, xclass string) string {
@@ -269,20 +273,20 @@ func ManufacturerList(manufacturers []_model.Manufacturer, xclass string) string
 	}
 }
 
-func UpdateManufacturerForm(manufacturer _model.Manufacturer, err string) string {
+func UpdateManufacturerForm(manufacturer _model.Manufacturer, err string, success string) string {
 	updateAction := fmt.Sprintf("/app/manufacturer/%d/update", manufacturer.ID)
 	return fmt.Sprintf(`
-		<form x-data="{ loading: false }" action='%s' method='POST' class='flex flex-col gap-4 w-full'>
+		<form hx-indicator='#main-loader' action='%s' method='POST' class='flex flex-col gap-4 w-full p-6'>
 			%s%s%s%s%s%s%s
 		</form>
 	`,
 		updateAction,
 		FormTitle("Update Manufacturer"),
 		FormError(err),
+		FormSuccess(success),
 		FormInputLabel("Name", "name", "", manufacturer.Name),
 		FormInputLabel("Phone", "phone", "", manufacturer.Phone),
 		FormInputLabel("Email", "email", "", manufacturer.Email),
-		FormLoader(),
 		FormSubmitButton(),
 	)
 }
@@ -290,16 +294,29 @@ func UpdateManufacturerForm(manufacturer _model.Manufacturer, err string) string
 func DeleteManufacturerForm(manufacturer _model.Manufacturer, err string) string {
 	deleteAction := fmt.Sprintf("/app/manufacturer/%d/delete", manufacturer.ID)
 	return fmt.Sprintf(`
-		<form x-data="{ loading: false }" action='%s' method='POST' class='flex flex-col gap-4 w-full'>
+		<form hx-indicator='#main-loader' action='%s' method='POST' class='flex flex-col gap-4 w-full p-6'>
 			%s%s%s%s
 		</form>
 	`, deleteAction, FormTitle("Delete Manufacturer"), FormError(err), FormInputLabel("Type '"+manufacturer.Name+"' to delete", "name", "", ""), FormDeleteButton())
 
 }
 
-func ManufacturerDetails(manufacturer _model.Manufacturer, err string) string {
+func ManufacturerDetails(manufacturer _model.Manufacturer, err string, form string) string {
+	isCreateEquipment := false
+	isUpdateManufacturer := false
+	isDeleteManufacturer := false
+	switch form {
+		case "create", "":
+			isCreateEquipment = true
+
+		case "update":
+			isUpdateManufacturer = true
+		case "delete":
+			isDeleteManufacturer = true
+	}
+
 	return fmt.Sprintf(`
-		<div class='p-6 w-full flex flex-col gap-4'>
+		<div class='p-6 w-full flex flex-col gap-6'>
 			<div class='flex flex-row justify-between'>
 				<h2>Manufacturer Details</h2>
 				%s%s
@@ -309,43 +326,21 @@ func ManufacturerDetails(manufacturer _model.Manufacturer, err string) string {
 				<p><strong>Phone:</strong> %s</p>
 				<p><strong>Email:</strong> %s</p>
 			</div>
-			<div id='hidden-settings-section' class='text-xs hidden flex flex-row gap-2'>
-				<div id='manufacturer-update-button' class='cursor-pointer rounded py-1 px-2 border border-black bg-white text-black'>Update</div>
-				<div id='manufacturer-delete-button' class='cursor-pointer rounded py-1 px-2 border border-black bg-red'>Delete</div>
-			</div>
-			<div id='manufacturer-delete-message'>
-				%s
-			</div>
-			<div id='update-manufacturer-form' class='hidden mt-2'>
-				%s
-			</div>
-			<div id='delete-manufacturer-form' class='hidden mt-2'>
-				%s
+			<div id='hidden-settings-section' class='text-xs flex flex-col gap-4 hidden'>
+				%s%s%s
 			</div>
 		</div>
 		<script>
-			document.getElementById('manufacturer-settings-icon').addEventListener('click', () => {
-				document.getElementById('hidden-settings-section').classList.toggle('hidden')
-				document.getElementById('manufacturer-close-settings-icon').classList.toggle('hidden')
-				document.getElementById('manufacturer-settings-icon').classList.toggle('hidden')
-				document.getElementById('manufacturer-delete-message').classList.add('hidden')
+			qs('#manufacturer-settings-icon').addEventListener('click', () => {
+				qs('#hidden-settings-section').classList.toggle('hidden')
+				qs('#manufacturer-settings-icon').classList.toggle('hidden')
+				qs('#manufacturer-close-settings-icon').classList.toggle('hidden')
 			})
-			document.getElementById('manufacturer-close-settings-icon').addEventListener('click', () => {
-				document.getElementById('hidden-settings-section').classList.toggle('hidden')
-				document.getElementById('manufacturer-close-settings-icon').classList.toggle('hidden')
-				document.getElementById('manufacturer-settings-icon').classList.toggle('hidden')
-				document.getElementById('delete-manufacturer-form').classList.add('hidden')
-				document.getElementById('update-manufacturer-form').classList.add('hidden')
+			qs('#manufacturer-close-settings-icon').addEventListener('click', () => {
+				qs('#hidden-settings-section').classList.toggle('hidden')
+				qs('#manufacturer-settings-icon').classList.toggle('hidden')
+				qs('#manufacturer-close-settings-icon').classList.toggle('hidden')
 			})
-			document.getElementById('manufacturer-update-button').addEventListener('click', () => {
-				document.getElementById('update-manufacturer-form').classList.toggle('hidden')
-				document.getElementById('delete-manufacturer-form').classList.add('hidden')
-			})
-			document.getElementById('manufacturer-delete-button').addEventListener('click', () => {
-				document.getElementById('delete-manufacturer-form').classList.toggle('hidden')
-				document.getElementById('update-manufacturer-form').classList.add('hidden')
-			})
-
 		</script>
 	`,
 		SvgIcon("/static/svg/gear-dark.svg", "sm", "id='manufacturer-settings-icon'", ""),
@@ -353,26 +348,29 @@ func ManufacturerDetails(manufacturer _model.Manufacturer, err string) string {
 		manufacturer.Name,
 		manufacturer.Phone,
 		manufacturer.Email,
-		ErrorMessage(err),
-		UpdateManufacturerForm(manufacturer, ""),
-		DeleteManufacturerForm(manufacturer, ""),
+		LinkButton(fmt.Sprintf("/app/manufacturer/%d?form=create", manufacturer.ID), "Create Equipment", isCreateEquipment),
+		LinkButton(fmt.Sprintf("/app/manufacturer/%d?form=update", manufacturer.ID), "Update Manufacturer", isUpdateManufacturer),
+		LinkButton(fmt.Sprintf("/app/manufacturer/%d?form=delete", manufacturer.ID), "Delete Manufacturer", isDeleteManufacturer),
 	)
 }
 
-func CreateEquipmentForm(err string, submitRedirect string) string {
+func CreateEquipmentForm(err string, success string, submitRedirect string, nickname string, serialNumber string) string {
 	return fmt.Sprintf(`
-		<form enctype='multipart/form-data' x-data="{ loading: false }" method='POST' class='flex flex-col p-6 gap-4 w-full'>
-			%s%s%s%s
+		<form enctype='multipart/form-data' hx-indicator='#main-loader' method='POST' class='flex flex-col p-6 gap-4 w-full'>
+			%s%s%s%s%s
 			<div class='flex flex-col text-xs w-fit rounded gap-2'>
 				<label>Photo</label>
-				<button type='button' x-on:click="$refs.uploadInput.click()" class='text-left border border-gray hover:border-lightgray p-2 rounded'>Upload Photo</button>
-				<input name='photo' id='upload-input' x-ref='uploadInput' type='file' class='hidden'/>
+				<button id='upload-submit' type='button' class='text-left border border-gray hover:border-lightgray p-2 rounded'>Upload Photo</button>
+				<input name='photo' id='upload-input'  type='file' class='hidden'/>
 			</div>
 			<div id='image-preview'></div>
-			%s%s
+			%s
 			<input type='hidden' name='submitRedirect' value='%s'/>
 		</form>
 		<script>
+			qs('#upload-submit').addEventListener('click', () => {
+				qs('#upload-input').click()
+			})
 			document.getElementById('upload-input').addEventListener('change', (e) => {
 				const file = e.target.files[0];
 				if (file) {
@@ -392,9 +390,9 @@ func CreateEquipmentForm(err string, submitRedirect string) string {
 	`,
 		FormTitle("Create Equipment"),
 		FormError(err),
-		FormInputLabel("Nickname", "nickname", "", ""),
-		FormInputLabel("Serial Number", "number", "", ""),
-		FormLoader(),
+		FormSuccess(success),
+		FormInputLabel("Nickname", "nickname", "", nickname),
+		FormInputLabel("Serial Number", "number", "", serialNumber),
 		FormSubmitButton(),
 		submitRedirect,
 	)
@@ -522,12 +520,12 @@ func EquipmentDetails(equipment _model.Equipment, manufacturer _model.Manufactur
 
 func UpdateEquipmentForm(equipment _model.Equipment) string {
 	return fmt.Sprintf(`
-		<form enctype='multipart/form-data' method='POST' action='/app/equipment/%d/update' x-data="{ loading: false }" class='gap-4 grid w-full rounded bg-black'>
+		<form enctype='multipart/form-data' method='POST' action='/app/equipment/%d/update' hx-indicator='#main-loader' class='gap-4 grid w-full rounded bg-black'>
 			<div class='flex justify-between'>
 				%s
 			</div>
 			<div class='flex flex-col gap-4'>
-				%s%s%s%s%s
+				%s%s%s%s
 			</div>
 		</form>
 	`,
@@ -536,14 +534,13 @@ func UpdateEquipmentForm(equipment _model.Equipment) string {
 		FormInputLabel("Nickname", "nickname", "text", equipment.Nickname),
 		FormInputLabel("Serial Number", "number", "text", equipment.SerialNumber),
 		FormPhotoUpload(),
-		FormLoader(),
 		FormSubmitButton(),
 	)
 }
 
 func DeleteEquipmentForm(equipment _model.Equipment) string {
 	return fmt.Sprintf(`
-		<form x-data="{ loading: false }" action='/app/equipment/%d/delete' method='POST' class='flex flex-col gap-4 w-full'>
+		<form hx-indicator='#main-loader' action='/app/equipment/%d/delete' method='POST' class='flex flex-col gap-4 w-full'>
 			%s%s%s
 		</form>
 	`, equipment.ID, FormTitle("Delete Equipment"), FormInputLabel("Type '"+equipment.Nickname+"' to delete", "name", "", ""), FormDeleteButton())
@@ -565,11 +562,11 @@ func EquipmentQrCodeDownload(equipment _model.Equipment) string {
 
 func CreateTicketForm(r *http.Request, token string) string {
 	return fmt.Sprintf(`
-		<form enctype='multipart/form-data' action='/app/ticket/public' method='POST' x-data="{ loading: false }" method='POST' class='flex flex-col p-6 gap-4 w-full'>
-			%s%s%s%s%s%s%s%s%s%s
+		<form enctype='multipart/form-data' action='/app/ticket/public' method='POST' hx-indicator='#main-loader' method='POST' class='flex flex-col p-6 gap-4 w-full'>
+			%s%s%s%s%s%s%s%s%s
 			<input type='hidden' name='publicSecurityToken' value='%s'/>
 		</form>
-	`, FormTitle("Create Tickets"), FormError(r.URL.Query().Get("err")), FormSuccess(r.URL.Query().Get("success")), FormInputLabel("What is your name?", "creator", "text", r.URL.Query().Get("creator")), FormInputLabel("What item needs repaired?", "item", "", r.URL.Query().Get("item")), FormTextAreaLabel("Describe the Problem", "problem", 2, r.URL.Query().Get("problem")), FormSelectLabel("Location", "location", []string{"Southroads", "Utica"}, _util.StringWithDefault(r.URL.Query().Get("location"), "Southroads")), FormPhotoUpload(), FormSubmitButton(), FormLoader(), token)
+	`, FormTitle("Create Tickets"), FormError(r.URL.Query().Get("err")), FormSuccess(r.URL.Query().Get("success")), FormInputLabel("What is your name?", "creator", "text", r.URL.Query().Get("creator")), FormInputLabel("What item needs repaired?", "item", "", r.URL.Query().Get("item")), FormTextAreaLabel("Describe the Problem", "problem", 2, r.URL.Query().Get("problem")), FormSelectLabel("Location", "location", []string{"Southroads", "Utica"}, _util.StringWithDefault(r.URL.Query().Get("location"), "Southroads")), FormPhotoUpload(), FormSubmitButton(), token)
 }
 
 func TicketList(tickets []_model.Ticket) string {
@@ -677,7 +674,7 @@ func TicketDetails(ticket _model.Ticket, err string) string {
 
 func UpdateTicketForm(ticket _model.Ticket) string {
 	return fmt.Sprintf(`
-		<form id='update-ticket-form' enctype='multipart/form-data' method='POST' action='/app/ticket/%d/update' class='gap-4 grid w-full rounded bg-black p-6'>
+		<form id='update-ticket-form' hx-indicator='#main-loader' enctype='multipart/form-data' method='POST' action='/app/ticket/%d/update' class='gap-4 grid w-full rounded bg-black p-6'>
 			<div class='flex justify-between'>
 				%s
 			</div>
@@ -698,7 +695,7 @@ func UpdateTicketForm(ticket _model.Ticket) string {
 
 func DeleteTicketForm(ticket _model.Ticket) string {
 	return fmt.Sprintf(`
-		<form id='delete-ticket-form' action='/app/ticket/%d/delete' method='POST' class='flex flex-col gap-4 w-full p-6'>
+		<form id='delete-ticket-form' hx-indicator='#main-loader' action='/app/ticket/%d/delete' method='POST' class='flex flex-col gap-4 w-full p-6'>
 			%s%s%s
 		</form>
 	`, ticket.ID, FormTitle("Delete Ticket"), FormInputLabel("Type 'yes' to delete", "keyword", "", ""), FormDeleteButton())

@@ -20,6 +20,7 @@ module.exports = {
           'playful': ['Chelsea Market', 'cursive'],
         },
         screens: {
+          'default': '0px',
           'xs': '480px',    // Extra small screens, like smartphones
           'sm': '640px',    // Small screens, like smartphones
           'md': '768px',    // Medium screens, like tablets
