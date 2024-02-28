@@ -311,7 +311,7 @@ func TicketForm(mux *http.ServeMux, db *gorm.DB) {
 					_components.MainLoader(),
 					_components.Root(
 						_components.CenterContentWrapper(
-							_components.CreateTicketForm(r, token),
+							_components.CreateTicketForm(r, token, "/app/ticket/public"),
 						),
 					),
 					_components.Footer(),
@@ -360,7 +360,7 @@ func Tickets(mux *http.ServeMux, db *gorm.DB) {
 					_components.MainLoader(),
 					_components.Root(
 						_components.CenterContentWrapper(
-							_components.CreateTicketForm(r, os.Getenv("ADMIN_REDIRECT_TOKEN")),
+							_components.CreateTicketForm(r, "", "/app/ticket/admin"),
 							_components.TicketViewOptions(ticketFilter),
 							_components.TicketList(tickets),
 						),
@@ -399,15 +399,15 @@ func Ticket(mux *http.ServeMux, db *gorm.DB) {
 					_components.Root(
 						_components.CenterContentWrapper(
 							_components.TicketDetails(ticket, r.URL.Query().Get("err")),
-							_components.TicketSettings(ticket),
+							_components.TicketSettings(ticket, form),
 							_util.ConditionalString(
 								form == "update",
-								_components.UpdateTicketForm(ticket),
+								_components.UpdateTicketForm(ticket, r.URL.Query().Get("err"), r.URL.Query().Get("success")),
 								"",
 							),
 							_util.ConditionalString(
 								form == "delete",
-								_components.DeleteTicketForm(ticket),
+								_components.DeleteTicketForm(ticket, r.URL.Query().Get("err")),
 								"",
 							),
 							_util.ConditionalString(
@@ -417,13 +417,12 @@ func Ticket(mux *http.ServeMux, db *gorm.DB) {
 							),
 							_util.ConditionalString(
 								form == "public",
-								_components.TicketPublicDetailsForm(ticket),
+								_components.TicketPublicDetailsForm(ticket, r.URL.Query().Get("err"), r.URL.Query().Get("success")),
 								"",
 							),
 						),
 					),
 					_components.Footer(),
-					_components.TicketSettingsScript(),
 				})
 				w.Write(b.Build())
 			},

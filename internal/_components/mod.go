@@ -216,7 +216,7 @@ func LinkButton(href string, text string, active bool) string {
 		activeClass = "bg-black text-white"
 	}
 	return fmt.Sprintf(`
-		<a href='%s' hx-indicator='#main-loader' class='cursor-pointer w-fit text-center rounded py-1 px-4 border border-white %s'>%s</a>
+		<a href='%s' hx-indicator='#main-loader' class='cursor-pointer w-fit text-center rounded py-2 px-4 border border-white %s'>%s</a>
 	`, href, activeClass, text)
 }
 
@@ -510,20 +510,20 @@ func EquipmentQrCodeDownload(equipment _model.Equipment) string {
 			<div id='qrcode-download-icon' href='/app/equipment/%d/downloadticketqr'>%s</div>
 		</div>
 		<script>
-			document.getElementById('qrcode-download-icon').addEventListener('click', () => {
+			document.getElementById('Act-download-icon').addEventListener('click', () => {
 				window.location.href = '/app/equipment/%d/downloadticketqr'
 			})
 		</script>
 	`, equipment.ID, SvgIcon("/static/svg/download-dark.svg", "sm", "", ""), equipment.ID)
 }
 
-func CreateTicketForm(r *http.Request, token string) string {
+func CreateTicketForm(r *http.Request, token string, action string) string {
 	return fmt.Sprintf(`
-		<form enctype='multipart/form-data' action='/app/ticket/public' method='POST' hx-indicator='#main-loader' method='POST' class='flex flex-col p-6 gap-4 w-full'>
-			%s%s%s%s%s%s%s%s%s
+		<form action='%s' method='POST' hx-indicator='#main-loader' method='POST' class='flex flex-col p-6 gap-4 w-full'>
+			%s%s%s%s%s%s%s%s
 			<input type='hidden' name='publicSecurityToken' value='%s'/>
 		</form>
-	`, FormTitle("Create Tickets"), FormError(r.URL.Query().Get("err")), FormSuccess(r.URL.Query().Get("success")), FormInputLabel("What is your name?", "creator", "text", r.URL.Query().Get("creator")), FormInputLabel("What item needs repaired?", "item", "", r.URL.Query().Get("item")), FormTextAreaLabel("Describe the Problem", "problem", 2, r.URL.Query().Get("problem")), FormSelectLabel("Location", "location", []string{"Southroads", "Utica"}, _util.StringWithDefault(r.URL.Query().Get("location"), "Southroads")), FormPhotoUpload(), FormSubmitButton(), token)
+	`, action, FormTitle("Create Tickets"), FormError(r.URL.Query().Get("err")), FormSuccess(r.URL.Query().Get("success")), FormInputLabel("What is your name?", "creator", "text", r.URL.Query().Get("creator")), FormInputLabel("What item needs repaired?", "item", "", r.URL.Query().Get("item")), FormTextAreaLabel("Describe the Problem", "problem", 2, r.URL.Query().Get("problem")), FormSelectLabel("Location", "location", []string{"Southroads", "Utica"}, _util.StringWithDefault(r.URL.Query().Get("location"), "Southroads")), FormSubmitButton(), token)
 }
 
 func TicketList(tickets []_model.Ticket) string {
@@ -566,7 +566,7 @@ func ActiveLink(href string, text string, isActive bool) string {
 		xclass = "text-white bg-black"
 	}
 	return fmt.Sprintf(`
-		<a href='%s' hx-swap='innerHTML show:no-scroll' class='ticket-view-option p-2 border border-gray rounded hover:border-white %s'>%s</a>
+		<a href='%s' hx-indicator='#main-loader' hx-swap='innerHTML show:no-scroll' class='ticket-view-option p-2 border border-gray rounded hover:border-white %s'>%s</a>
 	`, href, xclass, text)
 }
 
@@ -590,82 +590,93 @@ func TicketViewOptions(ticketFilter string) string {
 	`, ActiveLink("/app/ticket?ticketFilter=new", "New Tickets", isNew), ActiveLink("/app/ticket?ticketFilter=active", "Active Tickets", isActive), ActiveLink("/app/ticket?ticketFilter=complete", "Completed Tickets", isComplete))
 }
 
-func TicketSettings(ticket _model.Ticket) string {
+func TicketSettings(ticket _model.Ticket, form string) string {
 	resetEquipmentButton := ""
-	if ticket.EquipmentID != nil {
-		resetEquipmentButton = fmt.Sprintf(`<a id='ticket-reset-equipment-button' href='/app/ticket/%d/resetEquipment' hx-indicator='#main-loader' class='cursor-pointer text-center rounded w-fit py-1 px-4 border border-black bg-green text-black text-sm'>Reset Equipment Association</a>`, ticket.ID)
-	}
 	assignEquipmentButton := ""
+	publicDetailsButton := ""
+	isAssignmentForm := false
+	isUpdateForm := false
+	isDeleteForm := false
+	isPublicForm := false
+	switch form {
+		case "assign":
+			isAssignmentForm = true
+		case "public":
+			isPublicForm = true
+		case "update":
+			isUpdateForm = true
+		case "delete":
+			isDeleteForm = true
+	}
 	if ticket.EquipmentID == nil {
-		assignEquipmentButton = fmt.Sprintf(`<a href='/app/ticket/%d?form=assign' hx-indicator='#main-loader' class='cursor-pointer text-center rounded w-fit py-1 px-4 border border-black bg-blue text-white text-sm'>Assign Equipment</a>`, ticket.ID)
+		assignEquipmentButton = LinkButton(fmt.Sprintf("/app/ticket/%d?form=assign", ticket.ID), "Assign Equipment", isAssignmentForm)
+	} else {
+		publicDetailsButton = LinkButton(fmt.Sprintf("/app/ticket/%d?form=public", ticket.ID), "Update Public Details", isPublicForm)
+		resetEquipmentButton = LinkButton(fmt.Sprintf("/app/ticket/%d/resetEquipment", ticket.ID), "Reset Equipment Association", false)
 	}
 	return fmt.Sprintf(`
-			<div id='ticket-settings' class='text-sm flex flex-col gap-4 hidden p-6'>
-				<a href='/app/ticket/%d?form=update' hx-indicator='#main-loader' id='ticket-update-button' class='cursor-pointer w-fit text-center rounded py-1 px-4 border border-black text-black bg-white'>Update Private Details</a>
-				%s
-				%s
-				<a href='/app/ticket/%d?form=delete' hx-indicator='#main-loader' id='ticket-delete-button' class='cursor-pointer w-fit text-center rounded py-1 px-4 border border-black bg-red'>Delete Ticket</a>				
+			<div class='p-6 w-full flex flex-col gap-4 text-xs'>
+				%s%s%s%s%s
 			</div>
 		`,
-		ticket.ID, resetEquipmentButton, assignEquipmentButton, ticket.ID,
+		assignEquipmentButton,
+		publicDetailsButton,
+		LinkButton(fmt.Sprintf("/app/ticket/%d?form=update", ticket.ID), "Update Private Details", isUpdateForm),
+		LinkButton(fmt.Sprintf("/app/ticket/%d?form=delete", ticket.ID), "Delete Ticket", isDeleteForm),
+		resetEquipmentButton,
 	)
+		
 }
 
 func TicketDetails(ticket _model.Ticket, err string) string {
-	ticketPhotoBase64 := base64.StdEncoding.EncodeToString(ticket.Photo)
-	return fmt.Sprintf(`
+	return `
 			<div class='grid grid-cols-2 p-6 gap-6'>
-				<img src='data:image/jpeg;base64,%s' class='w-full h-auto' alt='%s'/>
-				<div class='flex flex-col gap-6'>
-					<div id='ticket-settings-icon' class='place-self-end'>%s</div>
-					<div id='ticket-close-settings-icon' class='place-self-end hidden'>%s</div>
-				</div>
+				<h2>Ticket Details</h2>
 			</div>
-		`,
-		ticketPhotoBase64,
-		ticket.Item,
-		SvgIcon("/static/svg/gear-dark.svg", "sm", "", ""),
-		SvgIcon("/static/svg/x-dark.svg", "sm", "", ""),
-	)
+		`
 }
 
-func UpdateTicketForm(ticket _model.Ticket) string {
+func UpdateTicketForm(ticket _model.Ticket, err string, success string) string {
 	return fmt.Sprintf(`
-		<form id='update-ticket-form' hx-indicator='#main-loader' enctype='multipart/form-data' method='POST' action='/app/ticket/%d/update' class='gap-4 grid w-full rounded bg-black p-6'>
+		<form id='update-ticket-form' hx-swap="innerHTML scroll:no-show" hx-indicator='#main-loader' method='POST' action='/app/ticket/%d/update' class='gap-4 grid w-full rounded bg-black p-6'>
 			<div class='flex justify-between'>
 				%s
 			</div>
 			<div class='flex flex-col gap-4'>
-				%s%s%s%s%s
+				%s%s%s%s%s%s%s
 			</div>
 		</form>
 	`,
 		ticket.ID,
 		FormTitle("Update Ticket"),
+		FormError(err),
+		FormSuccess(success),
 		FormInputLabel("Creator", "creator", "text", ticket.Creator),
 		FormInputLabel("Item Description", "item", "text", ticket.Item),
 		FormTextAreaLabel("Problem", "problem", 2, ticket.Problem),
-		FormPhotoUpload(),
+		FormSelectLabel("Location", "location", []string{"Southroads", "Utica"}, ticket.Location),
 		FormSubmitButton(),
 	)
 }
 
-func DeleteTicketForm(ticket _model.Ticket) string {
+func DeleteTicketForm(ticket _model.Ticket, err string) string {
 	return fmt.Sprintf(`
 		<form id='delete-ticket-form' hx-indicator='#main-loader' action='/app/ticket/%d/delete' method='POST' class='flex flex-col gap-4 w-full p-6'>
-			%s%s%s
+			%s%s%s%s
 		</form>
-	`, ticket.ID, FormTitle("Delete Ticket"), FormInputLabel("Type 'yes' to delete", "keyword", "", ""), FormDeleteButton())
+	`, ticket.ID, FormTitle("Delete Ticket"), FormError(err), FormInputLabel("Type 'yes' to delete", "keyword", "", ""), FormDeleteButton())
 }
 
-func TicketPublicDetailsForm(ticket _model.Ticket) string {
+func TicketPublicDetailsForm(ticket _model.Ticket, err string, success string) string {
 	return fmt.Sprintf(`
-		<form id='ticket-public-details' action='/app/ticket/%d/publicdetails' method='POST' class='flex flex-col gap-4 w-full p-6'>
-			%s%s%s%s%s%s
+		<form id='ticket-public-details' hx-indicator='#main-loader' hx-swap='innerHTML scroll:no-show' action='/app/ticket/%d/publicdetails' method='POST' class='flex flex-col gap-4 w-full p-6'>
+			%s%s%s%s%s%s%s%s
 		</form>
 	`,
 		ticket.ID,
 		FormTitle("Ticket Public Details"),
+		FormError(err),
+		FormSuccess(success),
 		FormInputLabel("Owner", "owner", "text", ticket.Owner),
 		FormSelectLabel("Priority", "priority", []string{string(_model.TicketPriorityUnspecified), string(_model.TicketPriorityLow), string(_model.TicketPriorityInconvenient), string(_model.TicketPriorityUrgent)}, string(ticket.Priority)),
 		FormSelectLabel("Status", "status", []string{string(_model.TicketStatusNew), string(_model.TicketStatusActive), string(_model.TicketStatusOnHold), string(_model.TicketStatusComplete)}, string(ticket.Status)),
@@ -674,40 +685,31 @@ func TicketPublicDetailsForm(ticket _model.Ticket) string {
 	)
 }
 
-func TicketSettingsScript() string {
-	return `
-		<script>
-			qs('#ticket-settings-icon').addEventListener('click', (e) => {
-				qs('#ticket-settings').classList.toggle('hidden')
-				qs('#ticket-settings-icon').classList.toggle('hidden')
-				qs('#ticket-close-settings-icon').classList.toggle('hidden')
-			})
-			qs('#ticket-close-settings-icon').addEventListener('click', (e) => {
-				qs('#ticket-settings').classList.toggle('hidden')
-				qs('#ticket-settings-icon').classList.toggle('hidden')
-				qs('#ticket-close-settings-icon').classList.toggle('hidden')
-			})
-		</script>
-	`
-}
-
 func TicketAssignmentForm(ticket _model.Ticket, manufacturers []_model.Manufacturer, db *gorm.DB) string {
-	manufacturerOptions := fmt.Sprintf(`<a href='/app/manufacturer?submitRedirect=/app/ticket/%d' class='border hover:border-white border-darkgray cursor-pointer bg-black p-2 rounded-full text-sm'><img class='h-[25px] w-[25px]' src='/static/svg/plus-dark.svg'></img></a>`, ticket.ID)
+	manufacturerOptions := ""
 	for _, manufacturer := range manufacturers {
-		manufacturerOptions += fmt.Sprintf("<div hx-get='/partial/manufacturer/%d/equipmentSelectionList?ticketID=%d' hx-indicator='#main-loader' hx-target='#equipment-selection-list' hx-swap='outerHTML' class='manufacturer-option border h-fit hover:border-white flex items-center justify-center border-darkgray cursor-pointer bg-black p-2 rounded text-sm' value='%d'>%s</div>", manufacturer.ID, ticket.ID, manufacturer.ID, manufacturer.Name)
+		manufacturerOptions += fmt.Sprintf("<div hx-get='/partial/manufacturer/%d/equipmentSelectionList?ticketID=%d' hx-indicator='#main-loader' hx-target='#equipment-selection-list' hx-swap='outerHTML' class='manufacturer-option border h-fit hover:border-white flex items-center justify-center border-darkgray cursor-pointer bg-black p-2 rounded text-xs' value='%d'>%s</div>", manufacturer.ID, ticket.ID, manufacturer.ID, manufacturer.Name)
 	}
 	return fmt.Sprintf(`
-		<form id='ticket-assignment-form' action='/app/ticket/%d/assign' hx-indicator='#main-loader' method='POST' class='flex flex-col gap-4 w-full p-6'>
+		<form id='ticket-assignment-form' action='/app/ticket/%d/assign' hx-indicator='#main-loader' method='POST' class='flex flex-col gap-6 w-full p-6'>
 			<input id='equipment-id-input' type='hidden' name='equipmentID' value=''/>
 			<div id='manufacturer-selection-list' class='flex flex-col gap-6'>
-				<h2>Assign Manufacturer</h2>
-				<div class='flex flex-wrap gap-4'>
+				<div class='flex flex-row justify-between items-center'>
+					<h2>Assign Manufacturer</h2>
+					<a href='/app/manufacturer?submitRedirect=/app/ticket/%d' class='border hover:border-white border-darkgray cursor-pointer bg-black p-2 rounded-full text-sm'><img class='h-[25px] w-[25px]' src='/static/svg/plus-dark.svg'></img></a>
+				</div>
+				<div class='flex flex-wrap gap-4 text-xs'>
 					%s
 				</div>
+				<div class='hidden'>
+					<input id='equipment-selection-hidden-submit' type='submit' class='hidden'/>
+				</div>
 			</div>
+			</form>
 			<div id='equipment-selection-list' class='hidden'></div>
-			<span id='ticket-assignment-submit' class='hidden'>%s</span>
-		</form>
+		<span id='ticket-assignment-submit' class='hidden flex p-6'>
+			<input type='submit' class='flex w-full bg-white text-black mt-4 items-center justify-center whitespace-nowrap rounded-md text-xs font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2' type='submit' value='Assign'/>
+		</span>
 		<script>
 		document.querySelectorAll('.manufacturer-option').forEach((option) => {
 			option.addEventListener('click', (e) => {
@@ -724,8 +726,11 @@ func TicketAssignmentForm(ticket _model.Ticket, manufacturers []_model.Manufactu
 				}
 			});
 		});
+		qs("#ticket-assignment-submit").addEventListener('click', () => {
+			document.getElementById('equipment-selection-hidden-submit').click();
+		})
 		</script>
-	`, ticket.ID, manufacturerOptions, FormSubmitButton())
+	`, ticket.ID, ticket.ID, manufacturerOptions)
 }
 
 func MainLoader() string {

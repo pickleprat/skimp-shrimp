@@ -45,7 +45,6 @@ type Ticket struct {
 	Item        string
 	Problem     string
 	Location    string
-	Photo       []byte
 	Priority    TicketPriority
 	Status      TicketStatus
 	Notes       string

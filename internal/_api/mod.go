@@ -276,40 +276,21 @@ func DeleteEquipment(mux *http.ServeMux, db *gorm.DB) {
 	})
 }
 
-func CreateTicket(mux *http.ServeMux, db *gorm.DB) {
+func CreateTicketPublic(mux *http.ServeMux, db *gorm.DB) {
 	mux.HandleFunc("POST /app/ticket/public", func(w http.ResponseWriter, r *http.Request) {
 		_middleware.MiddlewareChain(w, r,
 			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 				securityToken := r.Form.Get("publicSecurityToken")
-				redirectURL := "/app/ticket/public"
-				if securityToken == os.Getenv("ADMIN_REDIRECT_TOKEN") {
-					redirectURL = "/app/ticket"
-				}
-				if redirectURL == "/app/ticket" {
-					_middleware.Auth(customContext, w, r)
-					securityToken = ""
+				if securityToken != os.Getenv("PUBLIC_SECURITY_TOKEN") {
+					http.Error(w, "invalid security token", http.StatusUnauthorized)
+					return
 				}
 				creator := r.Form.Get("creator")
 				item := r.Form.Get("item")
 				problem := r.Form.Get("problem")
 				location := r.Form.Get("location")
 				if creator == "" || item == "" || problem == "" || location == "" {
-					http.Redirect(w, r, _util.URLBuilder(redirectURL, "publicSecurityToken", securityToken, "err", "all fields required", "creator", creator, "item", item, "problem", problem, "location", location), http.StatusSeeOther)
-					return
-				}
-				photo, _, err := r.FormFile("photo")
-				if err != nil {
-					http.Redirect(w, r, _util.URLBuilder(redirectURL, "publicSecurityToken", securityToken, "err", "photo required", "creator", creator, "item", item, "problem", problem, "location", location), http.StatusSeeOther)
-					return
-				}
-				defer photo.Close()
-				if photo == nil {
-					http.Redirect(w, r, _util.URLBuilder(redirectURL, "publicSecurityToken", securityToken, "err", "photo required", "creator", creator, "item", item, "problem", problem, "location", location), http.StatusSeeOther)
-					return
-				}
-				photoBytes, err := io.ReadAll(photo)
-				if err != nil {
-					http.Redirect(w, r, _util.URLBuilder(redirectURL, "publicSecurityToken", securityToken, "err", "photo required", "creator", creator, "item", item, "problem", problem, "location", location), http.StatusSeeOther)
+					http.Redirect(w, r, _util.URLBuilder("/app/ticket/public", "publicSecurityToken", securityToken, "err", "all fields required", "creator", creator, "item", item, "problem", problem, "location", location), http.StatusSeeOther)
 					return
 				}
 				ticket := _model.Ticket{
@@ -317,16 +298,46 @@ func CreateTicket(mux *http.ServeMux, db *gorm.DB) {
 					Item:     item,
 					Problem:  problem,
 					Location: location,
-					Photo:    photoBytes,
 					Priority: _model.TicketPriorityUnspecified,
 					Status:   _model.TicketStatusNew,
 					Notes:    "",
 					Owner:    "",
 				}
 				db.Create(&ticket)
-				http.Redirect(w, r, _util.URLBuilder(redirectURL, "publicSecurityToken", securityToken, "success", "your ticket has been created, thank you!"), http.StatusSeeOther)
+				http.Redirect(w, r, _util.URLBuilder("/app/ticket/public", "publicSecurityToken", securityToken, "success", "your ticket has been created, thank you!"), http.StatusSeeOther)
 			},
-			_middleware.Init, _middleware.ParseMultipartForm,
+			_middleware.Init, _middleware.ParseForm,
+		)
+	})
+
+}
+
+func CreateTicketAdmin(mux *http.ServeMux, db *gorm.DB) {
+	mux.HandleFunc("POST /app/ticket/admin", func(w http.ResponseWriter, r *http.Request) {
+		_middleware.MiddlewareChain(w, r,
+			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
+				creator := r.Form.Get("creator")
+				item := r.Form.Get("item")
+				problem := r.Form.Get("problem")
+				location := r.Form.Get("location")
+				if creator == "" || item == "" || problem == "" || location == "" {
+					http.Redirect(w, r, _util.URLBuilder("/app/ticket", "err", "all fields required", "creator", creator, "item", item, "problem", problem, "location", location), http.StatusSeeOther)
+					return
+				}
+				ticket := _model.Ticket{
+					Creator:  creator,
+					Item:     item,
+					Problem:  problem,
+					Location: location,
+					Priority: _model.TicketPriorityUnspecified,
+					Status:   _model.TicketStatusNew,
+					Notes:    "",
+					Owner:    "",
+				}
+				db.Create(&ticket)
+				http.Redirect(w, r, _util.URLBuilder("/app/ticket", "success", "your ticket has been created, thank you!"), http.StatusSeeOther)
+			},
+			_middleware.Init, _middleware.ParseMultipartForm, _middleware.Auth,
 		)
 	})
 }
@@ -340,32 +351,22 @@ func UpdateTicket(mux *http.ServeMux, db *gorm.DB) {
 				item := r.Form.Get("item")
 				problem := r.Form.Get("problem")
 				location := r.Form.Get("location")
-				photo, _, err := r.FormFile("photo")
-				defer func() {
-					if photo != nil {
-						photo.Close()
-					}
-				}()
-				if err != nil && err != http.ErrMissingFile {
-					http.Redirect(w, r, _util.URLBuilder("/app/ticket/"+id, "err", "failed to retrieve file"), http.StatusSeeOther)
+				if creator == "" || item == "" || problem == "" || location == "" {
+					http.Redirect(w, r, _util.URLBuilder("/app/ticket/"+id, "err", "all fields required", "form", "update"), http.StatusSeeOther)
 					return
 				}
 				var ticket _model.Ticket
 				db.First(&ticket, id)
-				if photo != nil {
-					photoBytes, err := io.ReadAll(photo)
-					if err != nil {
-						http.Error(w, "Failed to read file", http.StatusBadRequest)
-						return
-					}
-					ticket.Photo = photoBytes
+				if creator == ticket.Creator && item == ticket.Item && problem == ticket.Problem && location == ticket.Location {
+					http.Redirect(w, r, _util.URLBuilder("/app/ticket/"+id, "err", "no changes detected", "form", "update"), http.StatusSeeOther)
+					return
 				}
 				ticket.Creator = creator
 				ticket.Item = item
 				ticket.Problem = problem
 				ticket.Location = location
 				db.Save(&ticket)
-				http.Redirect(w, r, "/app/ticket/"+id, http.StatusSeeOther)
+				http.Redirect(w, r, _util.URLBuilder("/app/ticket/"+id, "form", "update", "success", "ticket updated"), http.StatusSeeOther)
 			},
 			_middleware.Init, _middleware.ParseMultipartForm, _middleware.Auth,
 		)
@@ -379,13 +380,13 @@ func DeleteTicket(mux *http.ServeMux, db *gorm.DB) {
 				id := r.PathValue("id")
 				keyword := strings.ToLower(r.Form.Get("keyword"))
 				if keyword != "yes" {
-					http.Redirect(w, r, _util.URLBuilder("/app/ticket/"+id, "err", "invalid delete keyword provided"), http.StatusSeeOther)
+					http.Redirect(w, r, _util.URLBuilder("/app/ticket/"+id, "form", "delete", "err", "invalid delete keyword provided"), http.StatusSeeOther)
 					return
 				}
 				var ticket _model.Ticket
 				db.First(&ticket, id)
 				db.Delete(&ticket, id)
-				http.Redirect(w, r, "/app/ticket", http.StatusSeeOther)
+				http.Redirect(w, r, _util.URLBuilder("/app/ticket", "success", "ticket deleted"), http.StatusSeeOther)
 			},
 			_middleware.Init, _middleware.ParseForm, _middleware.Auth,
 		)
@@ -403,12 +404,16 @@ func UpdateTicketPublicDetails(mux *http.ServeMux, db *gorm.DB) {
 				notes := r.Form.Get("notes")
 				var ticket _model.Ticket
 				db.First(&ticket, id)
+				if owner == ticket.Owner && priority == string(ticket.Priority) && status == string(ticket.Status) && notes == ticket.Notes {
+					http.Redirect(w, r, _util.URLBuilder("/app/ticket/"+id, "form", "public", "err", "no changes detected"), http.StatusSeeOther)
+					return
+				}
 				ticket.Owner = owner
 				ticket.Priority = _model.TicketPriority(priority) // Convert priority to _model.TicketPriority type
 				ticket.Status = _model.TicketStatus(status)       // Convert status to _model.TicketStatus type
 				ticket.Notes = notes
 				db.Save(&ticket)
-				http.Redirect(w, r, _util.URLBuilder("/app/ticket/"+id, "publicSecurityToken", r.Form.Get("publicSecurityToken")), http.StatusSeeOther)
+				http.Redirect(w, r, _util.URLBuilder("/app/ticket/"+id, "form", "public", "success", "public details updated"), http.StatusSeeOther)
 			},
 			_middleware.Init, _middleware.ParseMultipartForm,
 		)
