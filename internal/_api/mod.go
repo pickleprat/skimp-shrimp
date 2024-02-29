@@ -198,7 +198,7 @@ func CreateEquipment(mux *http.ServeMux, db *gorm.DB) {
 					QRCodeToken:    qrCodeToken,
 				}
 				db.Create(&equipment)
-				http.Redirect(w, r, _util.URLBuilder(redirectURL, "success", "equipment created", "form", "create"), http.StatusSeeOther)
+				http.Redirect(w, r, _util.URLBuilder(redirectURL, "success", "equipment created"), http.StatusSeeOther)
 			},
 			_middleware.Init, _middleware.ParseForm, _middleware.ParseMultipartForm, _middleware.Auth,
 		)
