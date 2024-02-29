@@ -216,7 +216,7 @@ func LinkButton(href string, text string, active bool) string {
 		activeClass = "bg-black text-white"
 	}
 	return fmt.Sprintf(`
-		<a href='%s' hx-indicator='#main-loader' class='cursor-pointer w-fit text-center rounded py-2 px-4 border border-white %s'>%s</a>
+		<a href='%s' hx-indicator='#main-loader' hx-history='false' class='cursor-pointer w-fit text-center rounded py-2 px-4 border border-white %s'>%s</a>
 	`, href, activeClass, text)
 }
 
@@ -493,9 +493,49 @@ func UpdateEquipmentForm(equipment _model.Equipment, err string, success string)
 				%s
 			</div>
 			<div class='flex flex-col gap-4'>
-				%s%s%s%s%s%s
+				%s%s%s%s
+				<div class='flex flex-col text-xs w-fit rounded gap-2'>
+					<label>Photo</label>
+					<button id='upload-submit' type='button' class='text-left border border-gray hover:border-lightgray p-2 rounded'>Upload Photo</button>
+					<input name='photo' id='upload-input'  type='file' class='hidden'/>
+				</div>
+				<div id='image-preview-wrapper'></div>
+				<div>%s</div>
 			</div>
 		</form>
+		<script>
+			qs('#upload-submit').addEventListener('click', () => {
+				qs('#upload-input').click();
+			});
+			qs('#upload-input').addEventListener('change', (uploadEvent) => {
+				const file = uploadEvent.target.files[0];
+				if (!file) {
+					return
+				}
+				const reader = new FileReader();
+				reader.readAsDataURL(file);
+				reader.onload = (readerEvent) => {
+					console.log('loaded reader event')
+					const img = document.createElement('img');
+					img.src = readerEvent.target.result;
+					img.onload = () => {
+						console.log('loaded image element')
+						qs('#image-preview-wrapper').innerHTML = '';
+						qs('#image-preview-wrapper').appendChild(img);
+						const canvas = document.createElement('canvas');
+						canvas.width = 200;
+						const scaleSize = 200 / img.width;
+						canvas.height = img.height * scaleSize;
+						const ctx = canvas.getContext('2d');
+						ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+						const srcEncoded = ctx.canvas.toDataURL('image/jpeg', 0.7);
+						img.src = srcEncoded;
+						img.classList.add('rounded-lg');
+						img.onload = null
+					}
+				}
+			});
+		</script>
 	`,
 		equipment.ID,
 		FormTitle("Update Equipment"),
@@ -503,7 +543,6 @@ func UpdateEquipmentForm(equipment _model.Equipment, err string, success string)
 		FormSuccess(success),
 		FormInputLabel("Nickname", "nickname", "text", equipment.Nickname),
 		FormInputLabel("Serial Number", "number", "text", equipment.SerialNumber),
-		FormPhotoUpload(),
 		FormSubmitButton(),
 	)
 }
