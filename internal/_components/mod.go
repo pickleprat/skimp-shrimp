@@ -348,7 +348,7 @@ func CreateEquipmentForm(manufacturer _model.Manufacturer, err string, success s
 				<button id='upload-submit' type='button' class='text-left border border-gray hover:border-lightgray p-2 rounded'>Upload Photo</button>
 				<input name='photo' id='upload-input'  type='file' class='hidden'/>
 			</div>
-			<div id='image-preview'></div>
+			<div id='image-preview' class='rounded-lg'></div>
 			%s
 			<input type='hidden' name='submitRedirect' value='%s'/>
 		</form>
@@ -365,7 +365,20 @@ func CreateEquipmentForm(manufacturer _model.Manufacturer, err string, success s
 					reader.onload = () => {
 						imgElement.src = reader.result;
 						document.getElementById('image-preview').innerHTML = '';
-						document.getElementById('image-preview').appendChild(imgElement);
+						imgElement.onload = (imageElementEvent) => {
+							const canvas = document.createElement('canvas');
+							const MAX_WIDTH = 200;
+							const scaleSize = MAX_WIDTH / imageElementEvent.target.width;
+							canvas.width = MAX_WIDTH;
+							canvas.height = imageElementEvent.target.height * scaleSize;
+							const ctx = canvas.getContext('2d');
+							ctx.drawImage(imageElementEvent.target, 0, 0, canvas.width, canvas.height);
+							const srcEncoded = ctx.canvas.toDataURL(imageElementEvent.target, 'image/jpeg', 0.7);
+							document.getElementById('image-preview').innerHTML = '';
+							imgElement.src = srcEncoded;
+							imgElement.classList.add('rounded-lg')
+							document.getElementById('image-preview').appendChild(imgElement);
+						}
 					};
 		
 					reader.readAsDataURL(file);
