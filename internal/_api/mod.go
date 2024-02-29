@@ -158,7 +158,6 @@ func CreateEquipment(mux *http.ServeMux, db *gorm.DB) {
 	mux.HandleFunc("POST /app/manufacturer/{id}", func(w http.ResponseWriter, r *http.Request) {
 		_middleware.MiddlewareChain(w, r,
 			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
-				fmt.Println(r.Form)
 				id := r.PathValue("id")
 				name := r.Form.Get("nickname")
 				number := r.Form.Get("number")
@@ -199,7 +198,7 @@ func CreateEquipment(mux *http.ServeMux, db *gorm.DB) {
 					QRCodeToken:    qrCodeToken,
 				}
 				db.Create(&equipment)
-				http.Redirect(w, r, _util.URLBuilder(redirectURL, "success", "equipment created", "form", "assign"), http.StatusSeeOther)
+				http.Redirect(w, r, _util.URLBuilder(redirectURL, "success", "equipment created", "form", "create"), http.StatusSeeOther)
 			},
 			_middleware.Init, _middleware.ParseForm, _middleware.ParseMultipartForm, _middleware.Auth,
 		)

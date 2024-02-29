@@ -341,47 +341,47 @@ func ManufacturerDetails(manufacturer _model.Manufacturer, err string, form stri
 
 func CreateEquipmentForm(manufacturer _model.Manufacturer, err string, success string, submitRedirect string, nickname string, serialNumber string) string {
 	return fmt.Sprintf(`
-		<form enctype='multipart/form-data' action='/app/manufacturer/%d' hx-indicator='#main-loader' method='POST' class='flex flex-col p-6 gap-4 w-full'>
+		<form id='create-equipment-form' enctype='multipart/form-data' action='/app/manufacturer/%d' hx-indicator='#main-loader' method='POST' class='flex flex-col p-6 gap-4 w-full'>
 			%s%s%s%s%s
 			<div class='flex flex-col text-xs w-fit rounded gap-2'>
 				<label>Photo</label>
 				<button id='upload-submit' type='button' class='text-left border border-gray hover:border-lightgray p-2 rounded'>Upload Photo</button>
 				<input name='photo' id='upload-input'  type='file' class='hidden'/>
 			</div>
-			<div id='image-preview' class='rounded-lg'></div>
-			%s
+			<div id='image-preview-wrapper'></div>
+			<div>%s</div>
 			<input type='hidden' name='submitRedirect' value='%s'/>
 		</form>
 		<script>
 			qs('#upload-submit').addEventListener('click', () => {
-				qs('#upload-input').click()
-			})
-			document.getElementById('upload-input').addEventListener('change', (e) => {
-				const file = e.target.files[0];
-				if (file) {
-					const reader = new FileReader();
-					const imgElement = document.createElement('img');
-					imgElement.alt = 'Image Preview';
-					reader.onload = () => {
-						imgElement.src = reader.result;
-						document.getElementById('image-preview').innerHTML = '';
-						imgElement.onload = (imageElementEvent) => {
-							const canvas = document.createElement('canvas');
-							const MAX_WIDTH = 200;
-							const scaleSize = MAX_WIDTH / imageElementEvent.target.width;
-							canvas.width = MAX_WIDTH;
-							canvas.height = imageElementEvent.target.height * scaleSize;
-							const ctx = canvas.getContext('2d');
-							ctx.drawImage(imageElementEvent.target, 0, 0, canvas.width, canvas.height);
-							const srcEncoded = ctx.canvas.toDataURL(imageElementEvent.target, 'image/jpeg', 0.7);
-							document.getElementById('image-preview').innerHTML = '';
-							imgElement.src = srcEncoded;
-							imgElement.classList.add('rounded-lg')
-							document.getElementById('image-preview').appendChild(imgElement);
-						}
-					};
-		
-					reader.readAsDataURL(file);
+				qs('#upload-input').click();
+			});
+			qs('#upload-input').addEventListener('change', (uploadEvent) => {
+				const file = uploadEvent.target.files[0];
+				if (!file) {
+					return
+				}
+				const reader = new FileReader();
+				reader.readAsDataURL(file);
+				reader.onload = (readerEvent) => {
+					console.log('loaded reader event')
+					const img = document.createElement('img');
+					img.src = readerEvent.target.result;
+					img.onload = () => {
+						console.log('loaded image element')
+						qs('#image-preview-wrapper').innerHTML = '';
+						qs('#image-preview-wrapper').appendChild(img);
+						const canvas = document.createElement('canvas');
+						canvas.width = 200;
+						const scaleSize = 200 / img.width;
+						canvas.height = img.height * scaleSize;
+						const ctx = canvas.getContext('2d');
+						ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+						const srcEncoded = ctx.canvas.toDataURL('image/jpeg', 0.7);
+						img.src = srcEncoded;
+						img.classList.add('rounded-lg');
+						img.onload = null
+					}
 				}
 			});
 		</script>

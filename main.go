@@ -56,6 +56,7 @@ func main() {
 
 	_partial.EquipmentSelectionList(mux, db)
 	_partial.EquipmentByManufacturer(mux, db)
+	_partial.Div(mux)
 
 	fmt.Println("Server is running on port " + os.Getenv("PORT"))
 	http.ListenAndServe(":"+os.Getenv("PORT"), mux)
