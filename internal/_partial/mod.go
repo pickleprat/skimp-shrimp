@@ -27,9 +27,9 @@ func EquipmentSelectionList(mux *http.ServeMux, db *gorm.DB) {
                     // Convert photo from bytes to base64
                     photoBase64 := base64.StdEncoding.EncodeToString(e.Photo)
                     // Embed photo as data URI within img tag
-                    photoTag := fmt.Sprintf(`<img src="data:image/jpeg;base64,%s" alt="%s" class='w-[100px]'>`, photoBase64, e.Nickname)
+                    photoTag := fmt.Sprintf(`<img src="data:image/jpeg;base64,%s" alt="%s" class='w-full'>`, photoBase64, e.Nickname)
                     option := fmt.Sprintf(`
-                        <div value='%d' class='equipment-option border hover:border-white border-darkgray cursor-pointer bg-black p-2 rounded text-sm'>
+                        <div value='%d' class='equipment-option border hover:border-white border-darkgray cursor-pointer bg-black p-2 rounded text-sm flex items-center flex-col'>
                             %s%s
                         </div>`, e.ID, photoTag, e.Nickname)
                     equipmentOptions += option
@@ -51,7 +51,7 @@ func EquipmentSelectionList(mux *http.ServeMux, db *gorm.DB) {
 								<h2>Assign Equipment</h2>
 								<a href='/app/manufacturer/%d?submitRedirect=/app/ticket/%s' class='p-2 hover:border-white border border-darkgray rounded-full h-fit'><img class='h-[25px] w-[25px]' src='/static/svg/plus-dark.svg' /></a>
 							</div>
-							<div class='flex flex-wrap gap-4'>
+							<div class='grid grid-cols-3 md:grid-cols-4 gap-4'>
 								%s
 							</div>
 						</div>

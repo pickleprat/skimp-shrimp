@@ -31,7 +31,7 @@ func Login(mux *http.ServeMux, db *gorm.DB) {
 						Expires:  time.Now().Add(24 * time.Hour),
 						HttpOnly: true,
 					})
-					http.Redirect(w, r, "/app/ticket", http.StatusSeeOther)
+					http.Redirect(w, r, "/app/ticket/view", http.StatusSeeOther)
 					return
 				}
 				http.Redirect(w, r, _util.URLBuilder("/", "err", "invalid credentials", "username", username), http.StatusSeeOther)
@@ -59,7 +59,7 @@ func Logout(mux *http.ServeMux, db *gorm.DB) {
 }
 
 func CreateManufacturer(mux *http.ServeMux, db *gorm.DB) {
-	mux.HandleFunc("POST /app/manufacturer", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("POST /form/manufacturer/create", func(w http.ResponseWriter, r *http.Request) {
 		_middleware.MiddlewareChain(w, r,
 			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 				name := r.Form.Get("name")
@@ -67,15 +67,15 @@ func CreateManufacturer(mux *http.ServeMux, db *gorm.DB) {
 				email := r.Form.Get("email")
 				submitRedirect := r.Form.Get("submitRedirect")
 				if name == "" || phone == "" || email == "" {
-					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer", "err", "all fields required", "name", name, "phone", phone, "email", email, "submitRedirect", submitRedirect), http.StatusSeeOther)
+					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/create", "err", "all fields required", "name", name, "phone", phone, "email", email, "submitRedirect", submitRedirect), http.StatusSeeOther)
 					return
 				}
 				if _util.IsValidPhoneNumber(phone) == false {
-					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer", "err", "invalid phone format", "name", name, "phone", phone, "email", email, "submitRedirect", submitRedirect), http.StatusSeeOther)
+					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/create", "err", "invalid phone format", "name", name, "phone", phone, "email", email, "submitRedirect", submitRedirect), http.StatusSeeOther)
 					return
 				}
 				if _util.IsValidEmail(email) == false {
-					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer", "err", "invalid email format", "name", name, "phone", phone, "email", email, "submitRedirect", submitRedirect), http.StatusSeeOther)
+					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/create", "err", "invalid email format", "name", name, "phone", phone, "email", email, "submitRedirect", submitRedirect), http.StatusSeeOther)
 					return
 				}
 				manufacturer := _model.Manufacturer{
@@ -86,7 +86,7 @@ func CreateManufacturer(mux *http.ServeMux, db *gorm.DB) {
 				db.Create(&manufacturer)
 				redirectURL := _util.ConditionalString(
 					submitRedirect == "", 
-					_util.URLBuilder("/app/manufacturer", "success", "manufacturer created"), 
+					_util.URLBuilder("/app/manufacturer/create", "success", "manufacturer created"), 
 					_util.URLBuilder(submitRedirect, "success", "manufacturer created"),
 				)
 				http.Redirect(w, r, redirectURL, http.StatusSeeOther)
@@ -312,7 +312,7 @@ func CreateTicketPublic(mux *http.ServeMux, db *gorm.DB) {
 }
 
 func CreateTicketAdmin(mux *http.ServeMux, db *gorm.DB) {
-	mux.HandleFunc("POST /app/ticket/admin", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("POST /form/ticket/admin", func(w http.ResponseWriter, r *http.Request) {
 		_middleware.MiddlewareChain(w, r,
 			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 				creator := r.Form.Get("creator")
@@ -320,7 +320,7 @@ func CreateTicketAdmin(mux *http.ServeMux, db *gorm.DB) {
 				problem := r.Form.Get("problem")
 				location := r.Form.Get("location")
 				if creator == "" || item == "" || problem == "" || location == "" {
-					http.Redirect(w, r, _util.URLBuilder("/app/ticket", "err", "all fields required", "creator", creator, "item", item, "problem", problem, "location", location), http.StatusSeeOther)
+					http.Redirect(w, r, _util.URLBuilder("/app/ticket/create", "err", "all fields required", "creator", creator, "item", item, "problem", problem, "location", location), http.StatusSeeOther)
 					return
 				}
 				ticket := _model.Ticket{
@@ -334,7 +334,7 @@ func CreateTicketAdmin(mux *http.ServeMux, db *gorm.DB) {
 					Owner:    "",
 				}
 				db.Create(&ticket)
-				http.Redirect(w, r, _util.URLBuilder("/app/ticket", "success", "your ticket has been created, thank you!"), http.StatusSeeOther)
+				http.Redirect(w, r, _util.URLBuilder("/app/ticket/create", "success", "your ticket has been created, thank you!"), http.StatusSeeOther)
 			},
 			_middleware.Init, _middleware.ParseMultipartForm, _middleware.Auth,
 		)

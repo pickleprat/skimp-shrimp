@@ -30,6 +30,15 @@ func Banner(hasIcon bool, menu string) string {
 	`, bars, x, menu)
 }
 
+func SimpleTopNav(navButtons ...string) string {
+	navButtonsHTML := strings.Join(navButtons, "")
+	return fmt.Sprintf(`
+		<nav class='flex flex-wrap gap-4 p-6'>
+			%s
+		</nav>
+	`, navButtonsHTML)
+}
+
 func Root(components ...string) string {
 	content := strings.Join(components, "")
 	return fmt.Sprintf("<main id='root' class='grid place-items-center p-4'>%s</main>", content)
@@ -70,6 +79,12 @@ func AppNavMenu(currentPath string) string {
 
 func SvgIcon(src string, size string, xattr string, xclass string) string {
 	var svgSize string
+	if size == "xxs" {
+		svgSize = "h-2 w-2"
+	}
+	if size == "xs" {
+		svgSize = "h-4 w-4"
+	}
 	if size == "sm" {
 		svgSize = "h-6 w-6"
 	}
@@ -216,7 +231,7 @@ func LinkButton(href string, text string, active bool) string {
 		activeClass = "bg-black text-white"
 	}
 	return fmt.Sprintf(`
-		<a href='%s' hx-indicator='#main-loader' hx-history='false' class='cursor-pointer w-fit text-center rounded py-2 px-4 border border-white %s'>%s</a>
+		<a href='%s' hx-indicator='#main-loader' hx-history='false' class='cursor-pointer w-fit text-center rounded py-2 px-4 text-xs border border-white %s'>%s</a>
 	`, href, activeClass, text)
 }
 
@@ -230,17 +245,17 @@ func LoginForm(err string, username string, password string) string {
 
 func CreateManufacturerForm(err string, success string, name string, phone string, email string, submitRedirect string) string {
 	return fmt.Sprintf(`
-		<form hx-indicator='#main-loader' method='POST' action='/app/manufacturer' class='flex flex-col p-6 gap-4 w-full'>
+		<form hx-indicator='#main-loader' method='POST' action='/form/manufacturer/create' class='flex flex-col p-6 gap-4 w-full'>
 			<input type='hidden' name='submitRedirect' value='%s'/>
 			%s%s%s%s%s%s%s
 		</form>
-	`, submitRedirect, FormTitle("Create Manufacturer"), FormError(err), FormSuccess(success), FormInputLabel("Name", "name", "", name), FormInputLabel("Phone", "phone", "", phone), FormInputLabel("Email", "email", "", email), FormSubmitButton())
+	`, submitRedirect, FormTitle("Create Manufacturers"), FormError(err), FormSuccess(success), FormInputLabel("Name", "name", "", name), FormInputLabel("Phone", "phone", "", phone), FormInputLabel("Email", "email", "", email), FormSubmitButton())
 }
 
 func ManufacturerList(manufacturers []_model.Manufacturer, xclass string) string {
 	manufacturerList := ""
 	for _, manufacturer := range manufacturers {
-		href := fmt.Sprintf("/app/manufacturer/%d", manufacturer.ID)
+		href := fmt.Sprintf("/app/manufacturer/%d/view", manufacturer.ID)
 		manufacturerList += fmt.Sprintf(`
 			<tr>
 				<td>
@@ -580,20 +595,29 @@ func CreateTicketForm(r *http.Request, token string, action string) string {
 
 func TicketList(tickets []_model.Ticket) string {
 	ticketList := ""
-	for _, ticket := range tickets {
+	for index, ticket := range tickets {
+		xclass := ""
+		if index == 0 {
+			xclass = "border-t border-t-darkgray"
+		}
 		ticketList += fmt.Sprintf(`
-			<a href='/app/ticket/%d' class='flex flex-col border rounded border-gray text-xs'>
-				<div class='flex border-b border-gray p-2 rounded-t'>
-					<div class='font-bold text-sm'>%s</div>			
+			<div href='/app/ticket/%d' class='ticket-item flex %s flex-col gap-6 p-4 border-b border-b-darkgray justify-between'>
+				<div class='toggle-section flex flex-row justify-between w-full items-center'>
+					<div class='flex flex-col'>
+						<div class='font-bold text-lg'>%s</div>			
+						<div class='text-xs'>%s</div>
+					</div>
+					<a href='/app/ticket/%d/view' hx-indicator='#main-loader' class='border rounded-full border-darkgray px-2 py-1 text-xs flex items-center hover:bg-white hover:text-black'>view</a>
 				</div>
-				<div class='p-2'>
-					<div class=''>Creator: %s</div>
-					<div class=''>Location: %s</div>
-				</div>
-				<div class='p-2'>Problem: %s</div>
-			</a>
+			</div>
 
-        `, ticket.ID, ticket.Item, ticket.Creator, ticket.Location, ticket.Problem)
+        `, 
+			ticket.ID, 
+			xclass, 
+			ticket.Item, 
+			ticket.Problem, 
+			ticket.ID,
+		)
 	}
 	if len(tickets) == 0 {
 		return `
@@ -603,7 +627,7 @@ func TicketList(tickets []_model.Ticket) string {
         `
 	} else {
 		return fmt.Sprintf(`
-            <div class='p-6 w-full flex flex-col text-sm gap-6'>
+            <div class='w-full flex flex-col text-sm p-6'>
 				%s
             </div>
         `, ticketList)

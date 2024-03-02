@@ -7,6 +7,7 @@ module.exports = {
           'swoop': "url('/public/svg/swoop.svg')",
         },
         colors: {
+            "black": "#030303",
             "red": "#E51636",
             "white": "#FFFFFF",
             "blue": "#0000ff",

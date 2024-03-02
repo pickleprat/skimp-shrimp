@@ -120,20 +120,25 @@ func Home(mux *http.ServeMux, db *gorm.DB) {
 	})
 }
 
-func ManufacturerForm(mux *http.ServeMux, db *gorm.DB) {
-	mux.HandleFunc("GET /app/manufacturer", func(w http.ResponseWriter, r *http.Request) {
+func CreateManufacturers(mux *http.ServeMux, db *gorm.DB) {
+	mux.HandleFunc("GET /app/manufacturer/create", func(w http.ResponseWriter, r *http.Request) {
 		_middleware.MiddlewareChain(w, r,
 			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 				var manufacturers []_model.Manufacturer
 				submitRedirect := r.URL.Query().Get("submitRedirect")
 				db.Find(&manufacturers)
-				b := NewViewBuilder("Repairs Log - App", []string{
+				b := NewViewBuilder("Repairs Log - Create Manufacturers", []string{
 					_components.Banner(true, _components.AppNavMenu(r.URL.Path)),
 					_components.MainLoader(),
 					_components.Root(
 						_components.CenterContentWrapper(
+							_components.SimpleTopNav(
+								_components.LinkButton("/app/ticket/view", "View Tickets", false),
+								_components.LinkButton("/app/ticket/create", "Create Tickets", false),
+								_components.LinkButton("/app/manufacturer/view", "View Manufacturers", false),
+								_components.LinkButton("/app/manufacturer/create", "Create Manufacturers", true),
+							),
 							_components.CreateManufacturerForm(r.URL.Query().Get("err"), r.URL.Query().Get("success"), r.URL.Query().Get("name"), r.URL.Query().Get("phone"), r.URL.Query().Get("email"), submitRedirect),
-							_components.ManufacturerList(manufacturers, ""),
 						),
 					),
 					_components.Footer(),
@@ -145,8 +150,38 @@ func ManufacturerForm(mux *http.ServeMux, db *gorm.DB) {
 	})
 }
 
+func ViewManufacturers(mux *http.ServeMux, db *gorm.DB) {
+    mux.HandleFunc("GET /app/manufacturer/view", func(w http.ResponseWriter, r *http.Request) {
+        _middleware.MiddlewareChain(w, r,
+            func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
+                var manufacturers []_model.Manufacturer
+                // Sorting manufacturers alphabetically by name (case-insensitive)
+                db.Order("LOWER(name)").Find(&manufacturers)
+                b := NewViewBuilder("Repairs Log - View Manufacturers", []string{
+                    _components.Banner(true, _components.AppNavMenu(r.URL.Path)),
+                    _components.MainLoader(),
+                    _components.Root(
+                        _components.CenterContentWrapper(
+                            _components.SimpleTopNav(
+                                _components.LinkButton("/app/ticket/view", "View Tickets", false),
+                                _components.LinkButton("/app/ticket/create", "Create Tickets", false),
+                                _components.LinkButton("/app/manufacturer/view", "View Manufacturers", true),
+                                _components.LinkButton("/app/manufacturer/create", "Create Manufacturers", false),
+                            ),
+                            _components.ManufacturerList(manufacturers, r.URL.Query().Get("err")),
+                        ),
+                    ),
+                    _components.Footer(),
+                })
+                w.Write(b.Build())
+            },
+            _middleware.Init, _middleware.Auth,
+        )
+    })
+}
+
 func Manufacturer(mux *http.ServeMux, db *gorm.DB) {
-	mux.HandleFunc("GET /app/manufacturer/{id}", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET /app/manufacturer/{id}/view", func(w http.ResponseWriter, r *http.Request) {
 		_middleware.MiddlewareChain(w, r,
 			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 				id := r.PathValue("id")
@@ -323,59 +358,8 @@ func TicketForm(mux *http.ServeMux, db *gorm.DB) {
 	})
 }
 
-func Tickets(mux *http.ServeMux, db *gorm.DB) {
-	mux.HandleFunc("GET /app/ticket", func(w http.ResponseWriter, r *http.Request) {
-		_middleware.MiddlewareChain(w, r,
-			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
-				var tickets []_model.Ticket
-				ticketFilter := r.URL.Query().Get("ticketFilter")
-
-				switch ticketFilter {
-				case "", "new":
-					// Filter tickets with status "new"
-					if err := db.Where("status = ?", string(_model.TicketStatusNew)).Find(&tickets).Error; err != nil {
-						http.Error(w, err.Error(), http.StatusInternalServerError)
-						return
-					}
-				case "active", "onhold":
-					// Filter tickets with status "active" or "onhold"
-					if err := db.Where("status IN (?, ?)", string(_model.TicketStatusActive), string(_model.TicketStatusOnHold)).Find(&tickets).Error; err != nil {
-						http.Error(w, err.Error(), http.StatusInternalServerError)
-						return
-					}
-				case "complete":
-					// Filter tickets with status "complete"
-					if err := db.Where("status = ?", string(_model.TicketStatusComplete)).Find(&tickets).Error; err != nil {
-						http.Error(w, err.Error(), http.StatusInternalServerError)
-						return
-					}
-				default:
-					// Handle invalid ticketFilter value
-					http.Error(w, "Invalid ticket filter", http.StatusBadRequest)
-					return
-				}
-
-				b := NewViewBuilder("Repairs Log - Tickets", []string{
-					_components.Banner(true, _components.AppNavMenu(r.URL.Path)),
-					_components.MainLoader(),
-					_components.Root(
-						_components.CenterContentWrapper(
-							_components.CreateTicketForm(r, "", "/app/ticket/admin"),
-							_components.TicketViewOptions(ticketFilter),
-							_components.TicketList(tickets),
-						),
-					),
-					_components.Footer(),
-				})
-				w.Write(b.Build())
-			},
-			_middleware.Init, _middleware.Auth,
-		)
-	})
-}
-
-func Ticket(mux *http.ServeMux, db *gorm.DB) {
-	mux.HandleFunc("GET /app/ticket/{id}", func(w http.ResponseWriter, r *http.Request) {
+func AdminViewTicket(mux *http.ServeMux, db *gorm.DB) {
+	mux.HandleFunc("GET /app/ticket/{id}/view", func(w http.ResponseWriter, r *http.Request) {
 		_middleware.MiddlewareChain(w, r,
 			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 				var ticket _model.Ticket
@@ -430,3 +414,65 @@ func Ticket(mux *http.ServeMux, db *gorm.DB) {
 		)
 	})
 }
+
+func AdminCreateTickets(mux *http.ServeMux, db *gorm.DB) {
+	mux.HandleFunc("GET /app/ticket/create", func(w http.ResponseWriter, r *http.Request) {
+		_middleware.MiddlewareChain(w, r,
+			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
+				var manufacturers []_model.Manufacturer
+				db.Find(&manufacturers)
+				b := NewViewBuilder("Repairs Log - Create Tickets", []string{
+					_components.Banner(true, _components.AppNavMenu(r.URL.Path)),
+					_components.MainLoader(),
+					_components.Root(
+						_components.CenterContentWrapper(
+							_components.SimpleTopNav(
+								_components.LinkButton("/app/ticket/view", "View Tickets", false),
+								_components.LinkButton("/app/ticket/create", "Create Tickets", true),
+								_components.LinkButton("/app/manufacturer/view", "View Manufacturers", false),
+								_components.LinkButton("/app/manufacturer/create", "Create Manufacturers", false),
+							),
+							_components.CreateTicketForm(r, "", "/form/ticket/admin"),
+						),
+					),
+					_components.Footer(),
+				})
+				w.Write(b.Build())
+			},
+			_middleware.Init, _middleware.Auth,
+		)
+	})
+}
+
+func AdminViewTickets(mux *http.ServeMux, db *gorm.DB) {
+    mux.HandleFunc("GET /app/ticket/view", func(w http.ResponseWriter, r *http.Request) {
+        _middleware.MiddlewareChain(w, r,
+            func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
+                var tickets []_model.Ticket
+                if err := db.Order("created_at DESC").Find(&tickets).Error; err != nil {
+                    http.Error(w, err.Error(), http.StatusInternalServerError)
+                    return
+                }
+                b := NewViewBuilder("Repairs Log - View Tickets", []string{
+                    _components.Banner(true, _components.AppNavMenu(r.URL.Path)),
+                    _components.MainLoader(),
+					_components.Root(
+						_components.CenterContentWrapper(
+							_components.SimpleTopNav(
+								_components.LinkButton("/app/ticket/view", "View Tickets", true),
+								_components.LinkButton("/app/ticket/create", "Create Tickets", false),
+								_components.LinkButton("/app/manufacturer/view", "View Manufacturers", false),
+								_components.LinkButton("/app/manufacturer/create", "Create Manufacturers", false),
+							),
+							_components.TicketList(tickets),
+						),
+					),
+                    _components.Footer(),
+                })
+                w.Write(b.Build())
+            },
+            _middleware.Init, _middleware.Auth,
+        )
+    })
+}
+
