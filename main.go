@@ -29,12 +29,15 @@ func main() {
 
 	_view.ServeStaticFilesAndFavicon(mux)
 	_view.Home(mux, db)
-	_view.Manufacturer(mux, db)
 	_view.Equipment(mux, db)
 	_view.GetEquipmentQRCode(mux, db)
 	_view.EquipmentTicket(mux, db)
 	_view.TicketForm(mux, db)
 	
+	_view.CreateEquipment(mux, db)
+	_view.ViewManufacturer(mux, db)
+	_view.DeleteManufacturer(mux, db)
+	_view.ViewEquipment(mux, db)
 	_view.CreateManufacturers(mux, db)
 	_view.ViewManufacturers(mux, db)
 	_view.AdminViewTicket(mux, db)

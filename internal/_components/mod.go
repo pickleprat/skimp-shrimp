@@ -231,7 +231,7 @@ func LinkButton(href string, text string, active bool) string {
 		activeClass = "bg-black text-white"
 	}
 	return fmt.Sprintf(`
-		<a href='%s' hx-indicator='#main-loader' hx-history='false' class='cursor-pointer w-fit text-center rounded py-2 px-4 text-xs border border-white %s'>%s</a>
+		<a href='%s' hx-indicator='#main-loader' hx-history='false' class='cursor-pointer w-fit text-center rounded py-2 px-4 text-xs border border-darkgray hover:border-white %s'>%s</a>
 	`, href, activeClass, text)
 }
 
@@ -255,7 +255,7 @@ func CreateManufacturerForm(err string, success string, name string, phone strin
 func ManufacturerList(manufacturers []_model.Manufacturer, xclass string) string {
 	manufacturerList := ""
 	for _, manufacturer := range manufacturers {
-		href := fmt.Sprintf("/app/manufacturer/%d/view", manufacturer.ID)
+		href := fmt.Sprintf("/app/manufacturer/%d/update", manufacturer.ID)
 		manufacturerList += fmt.Sprintf(`
 			<tr>
 				<td>
@@ -316,47 +316,9 @@ func DeleteManufacturerForm(manufacturer _model.Manufacturer, err string) string
 
 }
 
-func ManufacturerDetails(manufacturer _model.Manufacturer, err string, form string) string {
-	isCreateEquipment := false
-	isUpdateManufacturer := false
-	isDeleteManufacturer := false
-	switch form {
-		case "create", "":
-			isCreateEquipment = true
-
-		case "update":
-			isUpdateManufacturer = true
-		case "delete":
-			isDeleteManufacturer = true
-	}
-
-	return fmt.Sprintf(`
-		<div class='p-6 w-full flex flex-col gap-6'>
-			<div class='flex flex-row justify-between'>
-				<h2>Manufacturer Details</h2>
-			</div>
-			<div class='text-xs'>
-				<p><strong>Name:</strong> %s</p>
-				<p><strong>Phone:</strong> %s</p>
-				<p><strong>Email:</strong> %s</p>
-			</div>
-			<div id='hidden-settings-section' class='text-xs flex flex-col gap-4'>
-				%s%s%s
-			</div>
-		</div>
-	`,
-		manufacturer.Name,
-		manufacturer.Phone,
-		manufacturer.Email,
-		LinkButton(fmt.Sprintf("/app/manufacturer/%d?form=create", manufacturer.ID), "Create Equipment", isCreateEquipment),
-		LinkButton(fmt.Sprintf("/app/manufacturer/%d?form=update", manufacturer.ID), "Update Manufacturer", isUpdateManufacturer),
-		LinkButton(fmt.Sprintf("/app/manufacturer/%d?form=delete", manufacturer.ID), "Delete Manufacturer", isDeleteManufacturer),
-	)
-}
-
 func CreateEquipmentForm(manufacturer _model.Manufacturer, err string, success string, submitRedirect string, nickname string, serialNumber string) string {
 	return fmt.Sprintf(`
-		<form id='create-equipment-form' enctype='multipart/form-data' action='/app/manufacturer/%d' hx-indicator='#main-loader' method='POST' class='flex flex-col p-6 gap-4 w-full'>
+		<form id='create-equipment-form' enctype='multipart/form-data' action='/form/manufacturer/%d/equipment/create' hx-indicator='#main-loader' method='POST' class='flex flex-col p-6 gap-4 w-full'>
 			%s%s%s%s%s
 			<div class='flex flex-col text-xs w-fit rounded gap-2'>
 				<label>Photo</label>
@@ -438,9 +400,9 @@ func EquipmentList(equipment []_model.Equipment) string {
         `
 	} else {
 		return fmt.Sprintf(`
-            <div class='p-6 w-full flex flex-wrap gap-6'>
+			<div class='grid grid-cols-3 md:grid-cols-4 gap-4 p-6'>
 				%s
-            </div>
+			</div>
         `, equipmentList)
 	}
 }

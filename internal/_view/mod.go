@@ -135,7 +135,7 @@ func CreateManufacturers(mux *http.ServeMux, db *gorm.DB) {
 							_components.SimpleTopNav(
 								_components.LinkButton("/app/ticket/view", "View Tickets", false),
 								_components.LinkButton("/app/ticket/create", "Create Tickets", false),
-								_components.LinkButton("/app/manufacturer/view", "View Manufacturers", false),
+								_components.LinkButton("/app/manufacturer/view", "All Manufacturers", false),
 								_components.LinkButton("/app/manufacturer/create", "Create Manufacturers", true),
 							),
 							_components.CreateManufacturerForm(r.URL.Query().Get("err"), r.URL.Query().Get("success"), r.URL.Query().Get("name"), r.URL.Query().Get("phone"), r.URL.Query().Get("email"), submitRedirect),
@@ -165,7 +165,7 @@ func ViewManufacturers(mux *http.ServeMux, db *gorm.DB) {
                             _components.SimpleTopNav(
                                 _components.LinkButton("/app/ticket/view", "View Tickets", false),
                                 _components.LinkButton("/app/ticket/create", "Create Tickets", false),
-                                _components.LinkButton("/app/manufacturer/view", "View Manufacturers", true),
+                                _components.LinkButton("/app/manufacturer/view", "All Manufacturers", true),
                                 _components.LinkButton("/app/manufacturer/create", "Create Manufacturers", false),
                             ),
                             _components.ManufacturerList(manufacturers, r.URL.Query().Get("err")),
@@ -180,44 +180,128 @@ func ViewManufacturers(mux *http.ServeMux, db *gorm.DB) {
     })
 }
 
-func Manufacturer(mux *http.ServeMux, db *gorm.DB) {
-	mux.HandleFunc("GET /app/manufacturer/{id}/view", func(w http.ResponseWriter, r *http.Request) {
+func ViewManufacturer(mux *http.ServeMux, db *gorm.DB) {
+	mux.HandleFunc("GET /app/manufacturer/{id}/update", func(w http.ResponseWriter, r *http.Request) {
 		_middleware.MiddlewareChain(w, r,
 			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 				id := r.PathValue("id")
-				form := r.URL.Query().Get("form")
-				if form == "" {
-					form = "create"
-				}
-				submitRedirect := r.URL.Query().Get("submitRedirect")
 				var manufacturer _model.Manufacturer
-				db.Preload("Equipment").First(&manufacturer, id)
-				b := NewViewBuilder("Repairs Log - App", []string{
+				db.First(&manufacturer, id)
+				b := NewViewBuilder("Repairs Log - " + manufacturer.Name, []string{
 					_components.Banner(true, _components.AppNavMenu(r.URL.Path)),
 					_components.MainLoader(),
 					_components.Root(
 						_components.CenterContentWrapper(
-							_components.ManufacturerDetails(manufacturer, r.URL.Query().Get("err"), r.URL.Query().Get("form")),
-							_util.ConditionalString(
-								form == "create",
-								_components.CreateEquipmentForm(manufacturer, r.URL.Query().Get("err"), r.URL.Query().Get("success"), submitRedirect, r.URL.Query().Get("nickname"), r.URL.Query().Get("serialNumber")),
-								"",
+							_components.SimpleTopNav(
+								_components.LinkButton("/app/manufacturer/view", "Back", false),
+								_components.LinkButton("/app/manufacturer/"+ id +"/update", "Update", true),
+                                _components.LinkButton("/app/manufacturer/"+ id +"/delete", "Delete", false),
+								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/equipment/create", manufacturer.ID), "Create Equipment", false),
+								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/equipment/view", manufacturer.ID), "View Equipment", false),
+                            ),
+							_components.UpdateManufacturerForm(manufacturer, r.URL.Query().Get("err"), r.URL.Query().Get("success")),
+						),
+					),
+					_components.Footer(),
+				})
+				w.Write(b.Build())
+			},
+			_middleware.Init, _middleware.Auth,
+		)
+	})
+}
+
+func DeleteManufacturer(mux *http.ServeMux, db *gorm.DB) {
+	mux.HandleFunc("GET /app/manufacturer/{id}/delete", func(w http.ResponseWriter, r *http.Request) {
+		_middleware.MiddlewareChain(w, r,
+			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
+				id := r.PathValue("id")
+				var manufacturer _model.Manufacturer
+				db.First(&manufacturer, id)
+				b := NewViewBuilder("Repairs Log - " + manufacturer.Name, []string{
+					_components.Banner(true, _components.AppNavMenu(r.URL.Path)),
+					_components.MainLoader(),
+					_components.Root(
+						_components.CenterContentWrapper(
+							_components.SimpleTopNav(
+								_components.LinkButton("/app/manufacturer/view", "Back", false),
+								_components.LinkButton("/app/manufacturer/"+ id +"/update", "Update", false),
+								_components.LinkButton("/app/manufacturer/"+ id +"/delete", "Delete", true),
+								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/equipment/create", manufacturer.ID), "Create Equipment", false),
+								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/equipment/view", manufacturer.ID), "View Equipment", false),
 							),
-							_util.ConditionalString(
-								form == "update",
-								_components.UpdateManufacturerForm(manufacturer, r.URL.Query().Get("err"), r.URL.Query().Get("success")),
-								"",
+							_components.DeleteManufacturerForm(manufacturer, r.URL.Query().Get("err")),
+						),
+					),
+					_components.Footer(),
+				})
+				w.Write(b.Build())
+			},
+			_middleware.Init, _middleware.Auth,
+		)
+	})
+}
+
+func CreateEquipment(mux *http.ServeMux, db *gorm.DB) {
+	mux.HandleFunc("GET /app/manufacturer/{id}/equipment/create", func(w http.ResponseWriter, r *http.Request) {
+		_middleware.MiddlewareChain(w, r,
+			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
+				id := r.PathValue("id")
+				var manufacturer _model.Manufacturer
+				db.First(&manufacturer, id)
+				b := NewViewBuilder("Repairs Log - Create Equipment", []string{
+					_components.Banner(true, _components.AppNavMenu(r.URL.Path)),
+					_components.MainLoader(),
+					_components.Root(
+						_components.CenterContentWrapper(
+							_components.SimpleTopNav(
+                                _components.LinkButton("/app/manufacturer/view", "Back", false),
+                                _components.LinkButton("/app/manufacturer/"+ id +"/update", "Update", false),
+                                _components.LinkButton("/app/manufacturer/"+ id +"/delete", "Delete", false),
+								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/equipment/create", manufacturer.ID), "Create Equipment", true),
+								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/equipment/view", manufacturer.ID), "View Equipment", false),
+                            ),
+							_components.CreateEquipmentForm(
+								manufacturer, 
+								r.URL.Query().Get("err"), 
+								r.URL.Query().Get("success"),
+								r.URL.Query().Get("submitRedirect"),
+								r.URL.Query().Get("nickname"),
+								r.URL.Query().Get("serialNumber"),
 							),
-							_util.ConditionalString(
-								form == "delete",
-								_components.DeleteManufacturerForm(manufacturer, r.URL.Query().Get("err")),
-								"",
+						),
+					),
+					_components.Footer(),
+				})
+				w.Write(b.Build())
+			},
+			_middleware.Init, _middleware.Auth,
+		)
+	})
+}
+
+func ViewEquipment(mux *http.ServeMux, db *gorm.DB) {
+	mux.HandleFunc("GET /app/manufacturer/{id}/equipment/view", func(w http.ResponseWriter, r *http.Request) {
+		_middleware.MiddlewareChain(w, r,
+			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
+				id := r.PathValue("id")
+				var manufacturer _model.Manufacturer
+				var equipment []_model.Equipment
+				db.First(&manufacturer, id)
+				db.Where("manufacturer_id = ?", manufacturer.ID).Find(&equipment)
+				b := NewViewBuilder("Repairs Log - View Equipment", []string{
+					_components.Banner(true, _components.AppNavMenu(r.URL.Path)),
+					_components.MainLoader(),
+					_components.Root(
+						_components.CenterContentWrapper(
+							_components.SimpleTopNav(
+								_components.LinkButton("/app/manufacturer/view", "Back", false),
+								_components.LinkButton("/app/manufacturer/"+ id +"/update", "Update", false),
+                                _components.LinkButton("/app/manufacturer/"+ id +"/delete", "Delete", false),
+								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/equipment/create", manufacturer.ID), "Create Equipment", false),
+								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/equipment/view", manufacturer.ID), "View Equipment", true),
 							),
-							_util.ConditionalString(
-								form == "create",
-								_components.HxGetLoader("/partial/manufacturer/"+id+"/equipment"),
-								"",
-							),
+							_components.EquipmentList(equipment),
 						),
 					),
 					_components.Footer(),
@@ -429,7 +513,7 @@ func AdminCreateTickets(mux *http.ServeMux, db *gorm.DB) {
 							_components.SimpleTopNav(
 								_components.LinkButton("/app/ticket/view", "View Tickets", false),
 								_components.LinkButton("/app/ticket/create", "Create Tickets", true),
-								_components.LinkButton("/app/manufacturer/view", "View Manufacturers", false),
+								_components.LinkButton("/app/manufacturer/view", "All Manufacturers", false),
 								_components.LinkButton("/app/manufacturer/create", "Create Manufacturers", false),
 							),
 							_components.CreateTicketForm(r, "", "/form/ticket/admin"),
@@ -461,7 +545,7 @@ func AdminViewTickets(mux *http.ServeMux, db *gorm.DB) {
 							_components.SimpleTopNav(
 								_components.LinkButton("/app/ticket/view", "View Tickets", true),
 								_components.LinkButton("/app/ticket/create", "Create Tickets", false),
-								_components.LinkButton("/app/manufacturer/view", "View Manufacturers", false),
+								_components.LinkButton("/app/manufacturer/view", "All Manufacturers", false),
 								_components.LinkButton("/app/manufacturer/create", "Create Manufacturers", false),
 							),
 							_components.TicketList(tickets),

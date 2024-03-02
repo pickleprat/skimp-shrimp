@@ -155,7 +155,7 @@ func UpdateManufacturer(mux *http.ServeMux, db *gorm.DB) {
 }
 
 func CreateEquipment(mux *http.ServeMux, db *gorm.DB) {
-	mux.HandleFunc("POST /app/manufacturer/{id}", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("POST /form/manufacturer/{id}/equipment/create", func(w http.ResponseWriter, r *http.Request) {
 		_middleware.MiddlewareChain(w, r,
 			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 				id := r.PathValue("id")
@@ -164,27 +164,26 @@ func CreateEquipment(mux *http.ServeMux, db *gorm.DB) {
 				submitRedirect := r.Form.Get("submitRedirect")
 				redirectURL := _util.ConditionalString(
 					submitRedirect == "", 
-					"/app/manufacturer/"+id, 
+					fmt.Sprintf("/app/manufacturer/%s/equipment/create", id), 
 					submitRedirect,
 				)
-				fmt.Println(redirectURL)
 				if name == "" || number == "" {
-					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/"+id, "err", "all fields required", "nickname", name, "serialNumber", number, "submitRedirect", submitRedirect), http.StatusSeeOther)
+					http.Redirect(w, r, _util.URLBuilder(redirectURL, "err", "all fields required", "nickname", name, "serialNumber", number, "submitRedirect", submitRedirect), http.StatusSeeOther)
 					return
 				}
 				photo, _, err := r.FormFile("photo")
 				if err != nil {
-					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/"+id, "err", "photo required", "nickname", name, "serialNumber", number, "submitRedirect", submitRedirect), http.StatusSeeOther)
+					http.Redirect(w, r, _util.URLBuilder(redirectURL, "err", "photo required", "nickname", name, "serialNumber", number, "submitRedirect", submitRedirect), http.StatusSeeOther)
 					return
 				}
 				defer photo.Close()
 				if photo == nil {
-					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/"+id, "err", "photo required", "nickname", name, "serialNumber", number, "submitRedirect", submitRedirect), http.StatusSeeOther)
+					http.Redirect(w, r, _util.URLBuilder(redirectURL, "err", "photo required", "nickname", name, "serialNumber", number, "submitRedirect", submitRedirect), http.StatusSeeOther)
 					return
 				}
 				photoBytes, err := io.ReadAll(photo)
 				if err != nil {
-					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/"+id, "err", "photo required", "nickname", name, "serialNumber", number, "submitRedirect", submitRedirect), http.StatusSeeOther)
+					http.Redirect(w, r, _util.URLBuilder(redirectURL, "err", "photo required", "nickname", name, "serialNumber", number, "submitRedirect", submitRedirect), http.StatusSeeOther)
 					return
 				}
 				var manufacturer _model.Manufacturer
