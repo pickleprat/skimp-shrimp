@@ -28,21 +28,29 @@ func main() {
 	db.AutoMigrate(&_model.Ticket{})
 
 	_view.ServeStaticFilesAndFavicon(mux)
-	_view.Home(mux, db)
-	_view.Equipment(mux, db)
-	_view.GetEquipmentQRCode(mux, db)
-	_view.EquipmentTicket(mux, db)
-	_view.TicketForm(mux, db)
 	
-	_view.CreateEquipment(mux, db)
-	_view.ViewManufacturer(mux, db)
+	// public views
+	_view.Login(mux, db)
+	_view.PublicCreateTicket(mux, db)
+	
+	// admin home
+	_view.AdminHome(mux, db)
+
+	// admin equipment views
+	_view.UpdateEquipment(mux, db)
+	_view.DeleteEquipment(mux, db)
+
+	// admin manufacturer views
+	_view.Manufacturer(mux, db)
+	_view.UpdateManufacturer(mux, db)
 	_view.DeleteManufacturer(mux, db)
-	_view.ViewEquipment(mux, db)
 	_view.CreateManufacturers(mux, db)
-	_view.ViewManufacturers(mux, db)
+
+	// admin ticket views
 	_view.AdminViewTicket(mux, db)
 	_view.AdminCreateTickets(mux, db)
-	_view.AdminViewTickets(mux, db)
+	_view.AdminUpdateTicket(mux, db)
+	_view.AdminDeleteTicket(mux, db)
 
 	_api.Login(mux, db)
 	_api.Logout(mux, db)
@@ -56,15 +64,21 @@ func main() {
 	_api.CreateTicketAdmin(mux, db)
 	_api.UpdateTicket(mux, db)
 	_api.DeleteTicket(mux, db)
-	_api.UpdateTicketPublicDetails(mux, db)
 	_api.AssignTicket(mux, db)
 	_api.TicketResetEquipment(mux, db)
 
+	// partials
 	_partial.EquipmentSelectionList(mux, db)
 	_partial.EquipmentByManufacturer(mux, db)
 	_partial.Div(mux)
+	_partial.ManufactuerList(mux, db)
+	_partial.TicketList(mux, db)
+	_partial.ResetEquipmentLink(mux, db)
 
 	fmt.Println("Server is running on port " + os.Getenv("PORT"))
-	http.ListenAndServe(":"+os.Getenv("PORT"), mux)
+	err = http.ListenAndServe(":"+os.Getenv("PORT"), mux)
+	if err != nil {
+		fmt.Println(err)
+	}
 
 }

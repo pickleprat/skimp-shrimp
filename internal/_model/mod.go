@@ -17,7 +17,6 @@ type Equipment struct {
 	Photo          []byte
 	ManufacturerID uint
 	Manufacturer   Manufacturer `gorm:"constraint:OnDelete:CASCADE;"`
-	QRCodeToken    string
 	Tickets        []Ticket `gorm:"constraint:OnDelete:CASCADE;"` // Add the foreign key constraint
 }
 
