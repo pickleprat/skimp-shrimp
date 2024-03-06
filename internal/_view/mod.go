@@ -247,6 +247,7 @@ func Manufacturer(mux *http.ServeMux, db *gorm.DB) {
 								r.URL.Query().Get("submitRedirect"),
 								r.URL.Query().Get("nickname"),
 								r.URL.Query().Get("serialNumber"),
+								r.URL.Query().Get("modelNumber"),
 							),
 							_components.HxGetLoader(
 								fmt.Sprintf("/partial/manufacturer/%d/equipment", manufacturer.ID),
@@ -550,7 +551,7 @@ func AdminCreateTickets(mux *http.ServeMux, db *gorm.DB) {
 							),
                             _components.CreateTicketForm(r, "", "/form/ticket/admin"),
 							_components.TicketSearchForm(),
-                            _components.HxGetLoader("/partial/ticketList?status=new&priority=unspecified"),
+                            _components.HxGetLoader("/partial/ticketList?status=new&priority=low"),
                         ),
                     ),
                     _components.BottomSpacer(),

@@ -14,6 +14,7 @@ type Equipment struct {
 	gorm.Model
 	Nickname       string
 	SerialNumber   string
+	ModelNumber    string
 	Photo          []byte
 	ManufacturerID uint
 	Manufacturer   Manufacturer `gorm:"constraint:OnDelete:CASCADE;"`
@@ -35,7 +36,6 @@ const (
 	TicketPriorityUrgent       TicketPriority = "urgent"
 	TicketPriorityMedium TicketPriority = "medium"
 	TicketPriorityLow          TicketPriority = "low"
-	TicketPriorityUnspecified  TicketPriority = "unspecified"
 )
 
 type Ticket struct {

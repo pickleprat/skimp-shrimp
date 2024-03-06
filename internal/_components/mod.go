@@ -364,10 +364,10 @@ func DeleteManufacturerForm(manufacturer _model.Manufacturer, err string) string
 
 }
 
-func CreateEquipmentForm(manufacturer _model.Manufacturer, err string, success string, submitRedirect string, nickname string, serialNumber string) string {
+func CreateEquipmentForm(manufacturer _model.Manufacturer, err string, success string, submitRedirect string, nickname string, serialNumber string, modelNumber string) string {
 	return fmt.Sprintf(`
 		<form id='create-equipment-form' enctype='multipart/form-data' method="POST" action='/form/manufacturer/%d/createEquipment' hx-indicator='#main-loader' method='POST' class='flex flex-col p-6 gap-4 w-full'>
-			%s%s%s%s%s
+			%s%s%s%s%s%s
 			<div class='flex flex-col text-xs w-fit rounded gap-2'>
 				<label>Photo</label>
 				<button id='upload-submit' type='button' class='text-left border border-gray hover:border-lightgray p-2 rounded'>Upload Photo</button>
@@ -416,7 +416,8 @@ func CreateEquipmentForm(manufacturer _model.Manufacturer, err string, success s
 		FormError(err),
 		FormSuccess(success),
 		FormInputLabel("Nickname", "nickname", "text", nickname),
-		FormInputLabel("Serial Number", "number", "text", serialNumber),
+		FormInputLabel("Serial Number", "serialNumber", "text", serialNumber),
+		FormInputLabel("Model Number", "modelNumber", "text", modelNumber),
 		FormSubmitButton(),
 		submitRedirect,
 	)
@@ -449,15 +450,16 @@ func EquipmentDetails(equipment _model.Equipment, manufacturer _model.Manufactur
 			<h2 class='text-lg'>Equipment - %s</h2>
 			<div class='flex flex-col gap-4'>
 				<div class='text-xs'>
-					<p class=''>Serial Number: %s</p>
 					<p class=''>Manufacturer: %s</p>
+					<p class=''>Serial Number: %s</p>
+					<p class=''>Model Number: %s</p>
 				</div>
 				<div id='image-preview-wrapper'>
 					<img src="data:image/jpeg;base64,%s" class="w-[200px] rounded-lg" alt="%s" />
 				</div>
 			</div>
 		</div>
-	`, equipment.Nickname, equipment.SerialNumber, manufacturer.Name, equipmentPhotoBase64, equipment.Nickname)
+	`, equipment.Nickname, manufacturer.Name, equipment.SerialNumber, equipment.ModelNumber, equipmentPhotoBase64, equipment.Nickname)
 
 }
 
@@ -519,7 +521,7 @@ func UpdateEquipmentForm(equipment _model.Equipment, err string, success string)
 				%s
 			</div>
 			<div class='flex flex-col gap-4'>
-				%s%s%s%s
+				%s%s%s%s%s
 				<div class='flex flex-col text-xs w-fit rounded gap-2'>
 					<label>Photo</label>
 					<button id='upload-submit' type='button' class='text-left border border-gray hover:border-lightgray p-2 rounded'>Upload Photo</button>
@@ -565,7 +567,8 @@ func UpdateEquipmentForm(equipment _model.Equipment, err string, success string)
 		FormError(err),
 		FormSuccess(success),
 		FormInputLabel("Nickname", "nickname", "text", equipment.Nickname),
-		FormInputLabel("Serial Number", "number", "text", equipment.SerialNumber),
+		FormInputLabel("Serial Number", "serialNumber", "text", equipment.SerialNumber),
+		FormInputLabel("Model Number", "modelNumber", "text", equipment.ModelNumber),
 		FormSubmitButton(),
 	)
 }
@@ -692,7 +695,6 @@ func TicketSearchForm() string {
 					<div class='priority-button cursor-pointer px-2 py-1 bg-white text-black rounded border border-darkgray text-xs'>%s</div>
 					<div class='priority-button cursor-pointer px-2 py-1 rounded border border-darkgray text-xs'>%s</div>
 					<div class='priority-button cursor-pointer px-2 py-1 rounded border border-darkgray text-xs'>%s</div>
-					<div class='priority-button cursor-pointer px-2 py-1 rounded border border-darkgray text-xs'>%s</div>
 					<div class='priority-button cursor-pointer px-2 py-1 rounded border border-darkgray text-xs'>all</div>
 				</div>
 			</div>
@@ -795,8 +797,7 @@ func TicketSearchForm() string {
 		</script>
 	`, 
 		_model.TicketStatusNew,
-		_model.TicketPriorityUnspecified,
-		_model.TicketPriorityUnspecified, 
+		_model.TicketPriorityLow,
 		_model.TicketPriorityLow, 
 		_model.TicketPriorityMedium, 
 		_model.TicketPriorityUrgent, 
@@ -1104,7 +1105,7 @@ func UpdateTicketForm(ticket _model.Ticket, err string, success string) string {
 		FormTextAreaLabel("Problem", "problem", 2, ticket.Problem),
 		FormSelectLabel("Location", "location", []string{"Southroads", "Utica"}, ticket.Location),
 		FormInputLabel("Owner", "owner", "text", ticket.Owner),
-		FormSelectLabel("Priority", "priority", []string{string(_model.TicketPriorityUnspecified), string(_model.TicketPriorityLow), string(_model.TicketPriorityMedium), string(_model.TicketPriorityUrgent)}, string(ticket.Priority)),
+		FormSelectLabel("Priority", "priority", []string{string(_model.TicketPriorityLow), string(_model.TicketPriorityMedium), string(_model.TicketPriorityUrgent)}, string(ticket.Priority)),
 		FormSelectLabel("Status", "status", []string{string(_model.TicketStatusNew), string(_model.TicketStatusActive), string(_model.TicketStatusOnHold), string(_model.TicketStatusComplete)}, string(ticket.Status)),
 		FormTextAreaLabel("Notes", "notes", 2, ticket.Notes),
 		FormSubmitButton(),

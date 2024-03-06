@@ -151,33 +151,34 @@ func CreateEquipment(mux *http.ServeMux, db *gorm.DB) {
 			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 				id := r.PathValue("id")
 				name := r.Form.Get("nickname")
-				number := r.Form.Get("number")
-				submitRedirect := r.Form.Get("submitRedirect")
+				serialNumber := r.Form.Get("serialNumber")
+				modelNumber := r.Form.Get("modelNumber")
 				redirectURL := "/app/manufacturer/" + id 
-				if name == "" || number == "" {
-					http.Redirect(w, r, _util.URLBuilder(redirectURL, "err", "all fields required", "nickname", name, "serialNumber", number, "submitRedirect", submitRedirect), http.StatusSeeOther)
+				if name == "" || serialNumber == "" || modelNumber == "" {
+					http.Redirect(w, r, _util.URLBuilder(redirectURL, "err", "all fields required", "nickname", name, "serialNumber", serialNumber, "modelNumber", modelNumber), http.StatusSeeOther)
 					return
 				}
 				photo, _, err := r.FormFile("photo")
 				if err != nil {
-					http.Redirect(w, r, _util.URLBuilder(redirectURL, "err", "photo required", "nickname", name, "serialNumber", number, "submitRedirect", submitRedirect), http.StatusSeeOther)
+					http.Redirect(w, r, _util.URLBuilder(redirectURL, "err", "photo required", "nickname", name, "serialNumber", serialNumber, "modelNumber", modelNumber), http.StatusSeeOther)
 					return
 				}
 				defer photo.Close()
 				if photo == nil {
-					http.Redirect(w, r, _util.URLBuilder(redirectURL, "err", "photo required", "nickname", name, "serialNumber", number, "submitRedirect", submitRedirect), http.StatusSeeOther)
+					http.Redirect(w, r, _util.URLBuilder(redirectURL, "err", "photo required", "nickname", name, "serialNumber", serialNumber, "modelNumber", modelNumber), http.StatusSeeOther)
 					return
 				}
 				photoBytes, err := io.ReadAll(photo)
 				if err != nil {
-					http.Redirect(w, r, _util.URLBuilder(redirectURL, "err", "photo required", "nickname", name, "serialNumber", number, "submitRedirect", submitRedirect), http.StatusSeeOther)
+					http.Redirect(w, r, _util.URLBuilder(redirectURL, "err", "photo required", "nickname", name, "serialNumber", serialNumber, "modelNumber", modelNumber), http.StatusSeeOther)
 					return
 				}
 				var manufacturer _model.Manufacturer
 				db.First(&manufacturer, id)
 				equipment := _model.Equipment{
 					Nickname:       name,
-					SerialNumber:   number,
+					SerialNumber:   serialNumber,
+					ModelNumber:    modelNumber,
 					Photo:          photoBytes,
 					ManufacturerID: manufacturer.ID,
 				}
@@ -195,9 +196,10 @@ func UpdateEquipment(mux *http.ServeMux, db *gorm.DB) {
 			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 				id := r.PathValue("id")
 				name := r.Form.Get("nickname")
-				number := r.Form.Get("number")
+				serialNumber := r.Form.Get("serialNumber")
+				modelNumber := r.Form.Get("modelNumber")
 				photo, _, err := r.FormFile("photo")
-				if name == "" || number == "" {
+				if name == "" || serialNumber == "" || modelNumber == "" {
 					http.Redirect(w, r, _util.URLBuilder("/app/equipment/"+id, "err", "all fields required"), http.StatusSeeOther)
 					return
 				}
@@ -213,7 +215,7 @@ func UpdateEquipment(mux *http.ServeMux, db *gorm.DB) {
 
 				var equipment _model.Equipment
 				db.First(&equipment, id)
-				if name == equipment.Nickname && number == equipment.SerialNumber && photo == nil {
+				if name == equipment.Nickname && serialNumber == equipment.SerialNumber && modelNumber == equipment.ModelNumber && photo == nil {
 					http.Redirect(w, r, _util.URLBuilder("/app/equipment/"+id, "err", "no changes detected"), http.StatusSeeOther)
 					return
 				}
@@ -228,7 +230,8 @@ func UpdateEquipment(mux *http.ServeMux, db *gorm.DB) {
 				}
 
 				equipment.Nickname = name
-				equipment.SerialNumber = number
+				equipment.SerialNumber = serialNumber
+				equipment.ModelNumber = modelNumber
 				db.Save(&equipment)
 				http.Redirect(w, r, _util.URLBuilder("/app/equipment/"+id, "success", "equipment updated"), http.StatusSeeOther)
 			},
@@ -281,7 +284,7 @@ func CreateTicketPublic(mux *http.ServeMux, db *gorm.DB) {
 					Item:     item,
 					Problem:  problem,
 					Location: location,
-					Priority: _model.TicketPriorityUnspecified,
+					Priority: _model.TicketPriorityLow,
 					Status:   _model.TicketStatusNew,
 					Notes:    "",
 					Owner:    "",
@@ -311,7 +314,7 @@ func CreateTicketAdmin(mux *http.ServeMux, db *gorm.DB) {
 					Item:     item,
 					Problem:  problem,
 					Location: location,
-					Priority: _model.TicketPriorityUnspecified,
+					Priority: _model.TicketPriorityLow,
 					Status:   _model.TicketStatusNew,
 					Notes:    "",
 					Owner:    "",
