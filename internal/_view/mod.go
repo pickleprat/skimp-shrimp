@@ -102,14 +102,14 @@ func Login(mux *http.ServeMux, db *gorm.DB) {
 		_middleware.MiddlewareChain(w, r,
 			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 				b := NewViewBuilder("Repairs Log - Login", []string{
-					_components.Banner(false, ""),
 					_components.MainLoader(),
 					_components.Root(
 						_components.CenterContentWrapper(
+							_components.Banner("Repairs Log", ""),
 							_components.LoginForm(r.URL.Query().Get("err"), r.URL.Query().Get("username"), r.URL.Query().Get("password")),
 						),
 					),
-					_components.Footer(),
+					_components.BottomSpacer(),
 				})
 				w.Write(b.Build())
 			},
@@ -123,15 +123,16 @@ func AdminHome(mux *http.ServeMux, db *gorm.DB) {
 		_middleware.MiddlewareChain(w, r,
 			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 				b := NewViewBuilder("Repairs Log - Home", []string{
-					_components.DynamicBanner("Repairs Log"),
 					_components.MainLoader(),
 					_components.Root(
 						_components.CenterContentWrapper(
-							_components.SimpleTopNav(
-								_components.NavLink("Home", "/app", true),
-								_components.NavLink("Manufacturers", "/app/manufacturer", false),
-								_components.NavLink("Tickets", "/app/ticket", false),
-								_components.NavLink("Logout", "/logout", false),
+							_components.Banner("Repairs Log", 
+								_components.SimpleTopNav(
+									_components.NavLink("Home", "/app", true),
+									_components.NavLink("Manufacturers", "/app/manufacturer", false),
+									_components.NavLink("Tickets", "/app/ticket", false),
+									_components.NavLink("Logout", "/logout", false),
+								),
 							),
 							_components.TitleAndText("Welcome Home!", "Repairs Log is an application intended to help track equipment repairs over a long period of time. To start, you can begin registering manufacturers for your business."),
 							_components.TitleAndText("Manufacturers", "Everything starts with manufacturers. In business, we often need to reach out to a manufacturer to assist with a repair, to order a part, or to get advice. Now you can spend less time searching for their contact info and more time building your business."),
@@ -156,13 +157,14 @@ func CreateManufacturers(mux *http.ServeMux, db *gorm.DB) {
 				submitRedirect := r.URL.Query().Get("submitRedirect")
 				db.Find(&manufacturers)
 				b := NewViewBuilder("Repairs Log - Manufacturers", []string{
-					_components.DynamicBanner("Manufacturers"),
 					_components.MainLoader(),
 					_components.Root(
 						_components.CenterContentWrapper(
+							_components.Banner("Repairs Log", 
 							_components.BreadCrumbs(
-								_components.NavLink("Home", "/app", false),
-								_components.NavLink("Manufacturers", "/app/manufacturer", true),
+									_components.NavLink("Home", "/app", false),
+									_components.NavLink("Manufacturers", "/app/manufacturer", true),
+								),
 							),
 							_components.CreateManufacturerForm(r.URL.Query().Get("err"), r.URL.Query().Get("success"), r.URL.Query().Get("name"), r.URL.Query().Get("phone"), r.URL.Query().Get("email"), submitRedirect),
 							`
@@ -222,16 +224,17 @@ func Manufacturer(mux *http.ServeMux, db *gorm.DB) {
 				db.First(&manufacturer, id)
 				db.Where("manufacturer_id = ?", manufacturer.ID).Find(&equipment)
 				b := NewViewBuilder("Repairs Log - " + manufacturer.Name, []string{
-					_components.DynamicBanner(manufacturer.Name),
 					_components.MainLoader(),
 					_components.Root(
 						_components.CenterContentWrapper(
-							_components.BreadCrumbs(
-								_components.NavLink("Home", "/app", false),
-								_components.NavLink("Manufacturers", "/app/manufacturer", false),
-								_components.NavLink("Equipment", fmt.Sprintf("/app/manufacturer/%d", manufacturer.ID), true),
+							_components.Banner("Repairs Log", 
+								_components.BreadCrumbs(
+									_components.NavLink("Home", "/app", false),
+									_components.NavLink("Manufacturers", "/app/manufacturer", false),
+									_components.NavLink("Equipment", fmt.Sprintf("/app/manufacturer/%d", manufacturer.ID), true),
+								),
 							),
-							_components.SimpleTopNav(
+							_components.TopNav(
 								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d", manufacturer.ID), "Equipment", true),
 								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/update", manufacturer.ID), "Update", false),
 								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/delete", manufacturer.ID), "Delete", false),
@@ -267,16 +270,17 @@ func DeleteManufacturer(mux *http.ServeMux, db *gorm.DB) {
 				var manufacturer _model.Manufacturer
 				db.First(&manufacturer, id)
 				b := NewViewBuilder("Repairs Log - " + manufacturer.Name, []string{
-					_components.DynamicBanner("Delete " + manufacturer.Name),
 					_components.MainLoader(),
 					_components.Root(
 						_components.CenterContentWrapper(
-							_components.BreadCrumbs(
-								_components.NavLink("Home", "/app", false),
-								_components.NavLink("Manufacturers", "/app/manufacturer", false),
-								_components.NavLink("Delete", fmt.Sprintf("/app/manufacturer/%d/delete", manufacturer.ID), true),
+							_components.Banner("Repairs Log",
+								_components.BreadCrumbs(
+									_components.NavLink("Home", "/app", false),
+									_components.NavLink("Manufacturers", "/app/manufacturer", false),
+									_components.NavLink("Delete", fmt.Sprintf("/app/manufacturer/%d/delete", manufacturer.ID), true),
+								),
 							),
-							_components.SimpleTopNav(
+							_components.TopNav(
 								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d", manufacturer.ID), "Equipment", false),
 								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/update", manufacturer.ID), "Update", false),
 								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/delete", manufacturer.ID), "Delete", true),
@@ -302,16 +306,17 @@ func UpdateManufacturer(mux *http.ServeMux, db *gorm.DB) {
 				var manufacturer _model.Manufacturer
 				db.First(&manufacturer, id)
 				b := NewViewBuilder("Repairs Log - " + manufacturer.Name, []string{
-					_components.DynamicBanner("Update " + manufacturer.Name),
 					_components.MainLoader(),
 					_components.Root(
 						_components.CenterContentWrapper(
-							_components.BreadCrumbs(
-								_components.NavLink("Home", "/app", false),
-								_components.NavLink("Manufacturers", "/app/manufacturer", false),
-								_components.NavLink("Update", fmt.Sprintf("/app/manufacturer/%d/update", manufacturer.ID), true),
+							_components.Banner("Repairs Log", 
+								_components.BreadCrumbs(
+									_components.NavLink("Home", "/app", false),
+									_components.NavLink("Manufacturers", "/app/manufacturer", false),
+									_components.NavLink("Update", fmt.Sprintf("/app/manufacturer/%d/update", manufacturer.ID), true),
+								),
 							),
-							_components.SimpleTopNav(
+							_components.TopNav(
 								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d", manufacturer.ID), "Equipment", false),
 								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/update", manufacturer.ID), "Update", true),
 								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/delete", manufacturer.ID), "Delete", false),
@@ -339,17 +344,18 @@ func UpdateEquipment(mux *http.ServeMux, db *gorm.DB) {
 				db.First(&equipment, equipmentID)
 				db.First(&manufacturer, equipment.ManufacturerID)
 				b := NewViewBuilder(fmt.Sprintf("Repairs Log - %s", equipment.Nickname), []string{
-					_components.DynamicBanner(equipment.Nickname),
 					_components.MainLoader(),
 					_components.Root(
 						_components.CenterContentWrapper(
-							_components.BreadCrumbs(
-								_components.NavLink("Home", "/app", false),
-								_components.NavLink("Manufacturers", "/app/manufacturer", false),
-								_components.NavLink("Equipment", fmt.Sprintf("/app/manufacturer/%d", manufacturer.ID), false),
-								_components.NavLink("Update", fmt.Sprintf("/app/equipment/%d", equipment.ID), true),
+							_components.Banner("Repairs Log",
+								_components.BreadCrumbs(
+									_components.NavLink("Home", "/app", false),
+									_components.NavLink("Manufacturers", "/app/manufacturer", false),
+									_components.NavLink("Equipment", fmt.Sprintf("/app/manufacturer/%d", manufacturer.ID), false),
+									_components.NavLink("Update", fmt.Sprintf("/app/equipment/%d", equipment.ID), true),
+								),
 							),
-							_components.SimpleTopNav(
+							_components.TopNav(
 								_components.LinkButton(fmt.Sprintf("/app/equipment/%s", equipmentID), "Update", true),
 								_components.LinkButton(fmt.Sprintf("/app/equipment/%s/delete", equipmentID), "Delete", false),
 							),
@@ -376,17 +382,18 @@ func DeleteEquipment(mux *http.ServeMux, db *gorm.DB) {
 				db.First(&equipment, equipmentID)
 				db.First(&manufacturer, equipment.ManufacturerID)
 				b := NewViewBuilder(fmt.Sprintf("Repairs Log - %s", equipment.Nickname), []string{
-					_components.DynamicBanner("Delete " + equipment.Nickname),
 					_components.MainLoader(),
 					_components.Root(
 						_components.CenterContentWrapper(
-							_components.BreadCrumbs(
-								_components.NavLink("Home", "/app", false),
-								_components.NavLink("Manufacturers", "/app/manufacturer", false),
-								_components.NavLink("Equipment", fmt.Sprintf("/app/manufacturer/%d", manufacturer.ID), false),
-								_components.NavLink("Delete", fmt.Sprintf("/app/equipment/%d/delete", equipment.ID), true),
+							_components.Banner("Repairs Log", 
+								_components.BreadCrumbs(
+									_components.NavLink("Home", "/app", false),
+									_components.NavLink("Manufacturers", "/app/manufacturer", false),
+									_components.NavLink("Equipment", fmt.Sprintf("/app/manufacturer/%d", manufacturer.ID), false),
+									_components.NavLink("Delete", fmt.Sprintf("/app/equipment/%d/delete", equipment.ID), true),
+								),
 							),
-							_components.SimpleTopNav(
+							_components.TopNav(
 								_components.LinkButton(fmt.Sprintf("/app/equipment/%s", equipmentID), "Update", false),
 								_components.LinkButton(fmt.Sprintf("/app/equipment/%s/delete", equipmentID), "Delete", true),
 							),
@@ -415,20 +422,58 @@ func PublicCreateTicket(mux *http.ServeMux, db *gorm.DB) {
 					return
 				}
 				b := NewViewBuilder("Repairs Log - Public Tickets", []string{
-					_components.Banner(false, ""),
 					_components.MainLoader(),
 					_components.Root(
 						_components.CenterContentWrapper(
-							_components.CreateTicketForm(r, token, "/app/ticket/public"),
+							_components.Banner("Repairs Log", 
+								_components.SimpleTopNav(
+									_components.NavLink("Create Tickets", _util.URLBuilder("/app/ticket/public", "publicSecurityToken", token), true),
+									_components.NavLink("View Tickets", _util.URLBuilder("/app/ticket/public/view", "publicSecurityToken", token), false),
+								),
+							),
+							_components.CreateTicketForm(r, token, "/form/ticket/public"),
 						),
 					),
-					_components.Footer(),
+					_components.BottomSpacer(),
 				})
 				w.Write(b.Build())
 			},
 			_middleware.Init,
 		)
 	})
+}
+
+func PublicViewTickets(mux *http.ServeMux, db *gorm.DB) {
+	mux.HandleFunc("GET /app/ticket/public/view", func(w http.ResponseWriter, r *http.Request) {
+		_middleware.MiddlewareChain(w, r,
+			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
+				token := r.URL.Query().Get("publicSecurityToken")
+				if token != os.Getenv("PUBLIC_SECURITY_TOKEN") {
+					http.Error(w, "Forbidden", http.StatusForbidden)
+					return
+				}
+				b := NewViewBuilder("Repairs Log - Public Tickets", []string{
+					_components.MainLoader(),
+					_components.Root(
+						_components.CenterContentWrapper(
+							_components.Banner("Repairs Log", 
+								_components.SimpleTopNav(
+									_components.NavLink("Create Tickets", _util.URLBuilder("/app/ticket/public", "publicSecurityToken", token), false),
+									_components.NavLink("View Tickets", _util.URLBuilder("/app/ticket/public/view", "publicSecurityToken", token), true),
+								),
+							),
+							_components.PublicTicketSearchForm(),
+							_components.HxGetLoader(_util.URLBuilder("/partial/publicTicketList", "publicSecurityToken", token)),
+						),
+					),
+					_components.BottomSpacer(),
+				})
+				w.Write(b.Build())
+			},
+			_middleware.Init,
+		)
+	})
+
 }
 
 func AdminViewTicket(mux *http.ServeMux, db *gorm.DB) {
@@ -446,16 +491,17 @@ func AdminViewTicket(mux *http.ServeMux, db *gorm.DB) {
 					db.Find(&manufacturers)
 				}
 				b := NewViewBuilder("Repairs Log - Assign Equipment", []string{
-					_components.DynamicBanner("Assign Equipment"),
 					_components.MainLoader(),
 					_components.Root(
 						_components.CenterContentWrapper(
-							_components.BreadCrumbs(
-								_components.NavLink("Home", "/app", false),
-								_components.NavLink("Tickets", "/app/ticket", false),
-								_components.NavLink("Assign Equipment", fmt.Sprintf("/app/ticket/%d", ticket.ID), true),
+							_components.Banner("Repairs Log",
+								_components.BreadCrumbs(
+									_components.NavLink("Home", "/app", false),
+									_components.NavLink("Tickets", "/app/ticket", false),
+									_components.NavLink("Assign Equipment", fmt.Sprintf("/app/ticket/%d", ticket.ID), true),
+								),
 							),
-							_components.SimpleTopNav(
+							_components.TopNav(
 								_components.LinkButton(fmt.Sprintf("/app/ticket/%d", ticket.ID), "Assign Equipment", true),
 								_components.LinkButton(fmt.Sprintf("/app/ticket/%d/update", ticket.ID), "Update", false),
 								_components.LinkButton(fmt.Sprintf("/app/ticket/%d/delete", ticket.ID), "Delete", false),
@@ -493,14 +539,15 @@ func AdminCreateTickets(mux *http.ServeMux, db *gorm.DB) {
         _middleware.MiddlewareChain(w, r,
             func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
                 b := NewViewBuilder("Repairs Log - Tickets", []string{
-                    _components.DynamicBanner("Tickets"),
-                    _components.MainLoader(),
+					_components.MainLoader(),
                     _components.Root(
-                        _components.CenterContentWrapper(
-                            _components.BreadCrumbs(
-                                _components.NavLink("Home", "/app", false),
-                                _components.NavLink("Tickets", "/app/ticket", true),
-                            ),
+						_components.CenterContentWrapper(
+							_components.Banner("Repairs Log", 
+								_components.BreadCrumbs(
+									_components.NavLink("Home", "/app", false),
+									_components.NavLink("Tickets", "/app/ticket", true),
+								),
+							),
                             _components.CreateTicketForm(r, "", "/form/ticket/admin"),
 							_components.TicketSearchForm(),
                             _components.HxGetLoader("/partial/ticketList?status=new&priority=unspecified"),
@@ -526,17 +573,18 @@ func AdminUpdateTicket(mux *http.ServeMux, db *gorm.DB) {
 					return
 				}
 				b := NewViewBuilder("Repairs Log - Update Ticket", []string{
-					_components.DynamicBanner("Update Ticket"),
 					_components.MainLoader(),
 					_components.Root(
 						_components.CenterContentWrapper(
-							_components.BreadCrumbs(
-								_components.NavLink("Home", "/app", false),
-								_components.NavLink("Tickets", "/app/ticket", false),
-								_components.NavLink("Update", fmt.Sprintf("/app/ticket/%d/update", ticket.ID), true),
+							_components.Banner("Repairs Log", 
+								_components.BreadCrumbs(
+									_components.NavLink("Home", "/app", false),
+									_components.NavLink("Tickets", "/app/ticket", false),
+									_components.NavLink("Update", fmt.Sprintf("/app/ticket/%d/update", ticket.ID), true),
+								),
 							),
-							_components.SimpleTopNav(
-								_components.LinkButton(fmt.Sprintf("/app/ticket/%d", ticket.ID), "Details", false),
+							_components.TopNav(
+								_components.LinkButton(fmt.Sprintf("/app/ticket/%d", ticket.ID), "Assign Equipment", false),
 								_components.LinkButton(fmt.Sprintf("/app/ticket/%d/update", ticket.ID), "Update", true),
 								_components.LinkButton(fmt.Sprintf("/app/ticket/%d/delete", ticket.ID), "Delete", false),
 							),
@@ -563,17 +611,18 @@ func AdminDeleteTicket(mux *http.ServeMux, db *gorm.DB) {
 					return
 				}
 				b := NewViewBuilder("Repairs Log - Delete Ticket", []string{
-					_components.DynamicBanner("Delete Ticket"),
 					_components.MainLoader(),
 					_components.Root(
 						_components.CenterContentWrapper(
-							_components.BreadCrumbs(
-								_components.NavLink("Home", "/app", false),
-								_components.NavLink("Tickets", "/app/ticket", false),
-								_components.NavLink("Delete", fmt.Sprintf("/app/ticket/%d/delete", ticket.ID), true),
+							_components.Banner("Repairs Log", 
+								_components.BreadCrumbs(
+									_components.NavLink("Home", "/app", false),
+									_components.NavLink("Tickets", "/app/ticket", false),
+									_components.NavLink("Delete", fmt.Sprintf("/app/ticket/%d/delete", ticket.ID), true),
+								),
 							),
-							_components.SimpleTopNav(
-								_components.LinkButton(fmt.Sprintf("/app/ticket/%d", ticket.ID), "Details", false),
+							_components.TopNav(
+								_components.LinkButton(fmt.Sprintf("/app/ticket/%d", ticket.ID), "Assign Equipment", false),
 								_components.LinkButton(fmt.Sprintf("/app/ticket/%d/update", ticket.ID), "Update", false),
 								_components.LinkButton(fmt.Sprintf("/app/ticket/%d/delete", ticket.ID), "Delete", true),
 							),

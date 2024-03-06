@@ -32,6 +32,7 @@ func main() {
 	// public views
 	_view.Login(mux, db)
 	_view.PublicCreateTicket(mux, db)
+	_view.PublicViewTickets(mux, db)
 	
 	// admin home
 	_view.AdminHome(mux, db)
@@ -74,6 +75,7 @@ func main() {
 	_partial.ManufactuerList(mux, db)
 	_partial.TicketList(mux, db)
 	_partial.ResetEquipmentLink(mux, db)
+	_partial.PublicTicketList(mux, db)
 
 	fmt.Println("Server is running on port " + os.Getenv("PORT"))
 	err = http.ListenAndServe(":"+os.Getenv("PORT"), mux)

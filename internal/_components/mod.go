@@ -11,23 +11,17 @@ import (
 	"gorm.io/gorm"
 )
 
-func Banner(hasIcon bool, menu string) string {
-	bars := ""
-	x := ""
-	if hasIcon {
-		bars = SvgIcon("/static/svg/bars-dark.svg", "sm", "x-show='!navopen' @click='navopen = !navopen'", "")
-		x = SvgIcon("/static/svg/x-dark.svg", "sm", "x-show='navopen' x-cloak @click='navopen = !navopen'", "")
-	}
+func Banner(title string, breadcrumbs string) string {
 	return fmt.Sprintf(`
-		<header x-data="{ navopen: false }">
-			<div class='flex flex-row justify-between items-center p-6 h-[75px] z-40 bg-black fixed top-0 w-full border-b border-darkgray'>
-				<h2 class='text-xl'>Repairs Log</h2>
-				%s%s
+		<header>
+			<div id='navbar' class='flex flex-col p-6 h-[115px] z-40 bg-black w-full border-darkgray gap-6'>
+				<div class='flex flex-row justify-between items-center'>
+					<h2 class=''>%s</h2>
+				</div>
+				<div id='nav-menu' class=''>%s</div>
 			</div>
-			%s
 		</header>
-		<div class='h-[75px]'></div>
-	`, bars, x, menu)
+	`, title, breadcrumbs)
 }
 
 func BottomSpacer() string {
@@ -58,7 +52,7 @@ func BreadCrumbs(breadcrumbs ...string) string {
 		}
     }
     return fmt.Sprintf(`
-        <nav class='flex flex-wrap items-center gap-4 p-6'>
+        <nav class='flex flex-wrap items-center gap-4'>
             %s
         </nav>
     `, breadcrumbHTML)
@@ -88,6 +82,15 @@ func NavLink(name string, href string, isActive bool) string {
 }
 
 func SimpleTopNav(navButtons ...string) string {
+	navButtonsHTML := strings.Join(navButtons, "")
+	return fmt.Sprintf(`
+		<nav class='flex flex-wrap gap-4'>
+			%s
+		</nav>
+	`, navButtonsHTML)
+}
+
+func TopNav(navButtons ...string) string {
 	navButtonsHTML := strings.Join(navButtons, "")
 	return fmt.Sprintf(`
 		<nav class='flex flex-wrap gap-4 p-6'>
@@ -294,7 +297,7 @@ func LinkButton(href string, text string, active bool) string {
 
 func LoginForm(err string, username string, password string) string {
 	return fmt.Sprintf(`
-		<form hx-indicator='#main-loader' method='POST' class='flex flex-col p-6 gap-4 w-full'>
+		<form hx-indicator='#main-loader' action='/form/login' method='POST' class='flex flex-col p-6 gap-4 w-full'>
 			%s%s%s%s%s
 		</form>
 	`, FormTitle("Login"), FormError(err), FormInputLabel("Username", "username", "", username), FormInputLabel("Password", "password", "password", password), FormSubmitButton())
@@ -333,7 +336,7 @@ func ManufacturerList(manufacturers []_model.Manufacturer) string {
 }
 
 func UpdateManufacturerForm(manufacturer _model.Manufacturer, err string, success string) string {
-	updateAction := fmt.Sprintf("/app/manufacturer/%d/update", manufacturer.ID)
+	updateAction := fmt.Sprintf("/form/manufacturer/%d/update", manufacturer.ID)
 	return fmt.Sprintf(`
 		<form hx-indicator='#main-loader' action='%s' method='POST' class='flex flex-col gap-4 w-full p-6'>
 				%s%s%s%s%s%s%s
@@ -352,7 +355,7 @@ func UpdateManufacturerForm(manufacturer _model.Manufacturer, err string, succes
 }
 
 func DeleteManufacturerForm(manufacturer _model.Manufacturer, err string) string {
-	deleteAction := fmt.Sprintf("/app/manufacturer/%d/delete", manufacturer.ID)
+	deleteAction := fmt.Sprintf("/form/manufacturer/%d/delete", manufacturer.ID)
 	return fmt.Sprintf(`
 		<form hx-indicator='#main-loader' action='%s' method='POST' class='flex flex-col gap-4 w-full p-6'>
 			%s%s%s%s
@@ -363,7 +366,7 @@ func DeleteManufacturerForm(manufacturer _model.Manufacturer, err string) string
 
 func CreateEquipmentForm(manufacturer _model.Manufacturer, err string, success string, submitRedirect string, nickname string, serialNumber string) string {
 	return fmt.Sprintf(`
-		<form id='create-equipment-form' enctype='multipart/form-data' action='/form/manufacturer/%d/equipment/create' hx-indicator='#main-loader' method='POST' class='flex flex-col p-6 gap-4 w-full'>
+		<form id='create-equipment-form' enctype='multipart/form-data' method="POST" action='/form/manufacturer/%d/createEquipment' hx-indicator='#main-loader' method='POST' class='flex flex-col p-6 gap-4 w-full'>
 			%s%s%s%s%s
 			<div class='flex flex-col text-xs w-fit rounded gap-2'>
 				<label>Photo</label>
@@ -462,7 +465,7 @@ func EquipmentList(equipment []_model.Equipment) string {
 	equipmentList := ""
 	for _, eq := range equipment {
 		equipmentList += fmt.Sprintf(`
-            <a href='/app/equipment/%d' hx-indicator='#main-loader' class='border place-self-center flex-grow-0 border-darkgray rounded w-fit p-2 flex flex-col gap-2 hover:border-white' style='align-self: flex-start;'>
+            <a href='/app/equipment/%d' hx-indicator='#main-loader' class='border place-self-start flex-grow-0 border-darkgray rounded w-fit p-2 flex flex-col gap-2 hover:border-white' style='align-self: flex-start;'>
 				<img src='data:image/jpeg;base64,%s' class='w-[100px] rounded-lg' alt='%s' />
 				<div>
 					<p class='text-xs'>%s</p>
@@ -569,7 +572,7 @@ func UpdateEquipmentForm(equipment _model.Equipment, err string, success string)
 
 func DeleteEquipmentForm(equipment _model.Equipment, err string, success string) string {
 	return fmt.Sprintf(`
-		<form hx-indicator='#main-loader' action='/app/equipment/%d/delete' method='POST' class='flex p-6 flex-col gap-4 w-full'>
+		<form hx-indicator='#main-loader' action='/form/equipment/%d/delete' method='POST' class='flex p-6 flex-col gap-4 w-full'>
 			%s%s%s%s%s
 		</form>
 	`, equipment.ID, FormTitle("Delete Equipment"), FormError(err), FormSuccess(success), FormInputLabel("Type '"+equipment.Nickname+"' to delete", "name", "", ""), FormDeleteButton())
@@ -617,6 +620,53 @@ func TicketList(tickets []_model.Ticket) string {
     }
 }
 
+func PublicTicketList(tickets []_model.Ticket) string {
+    ticketList := ""
+    for _, ticket := range tickets {
+		border := ""
+		if ticket.Priority == _model.TicketPriorityLow {
+			border = "border-darkgray"
+		}
+		if ticket.Priority == _model.TicketPriorityMedium {
+			border = "border-yellow-500"
+		}
+		if ticket.Priority == _model.TicketPriorityUrgent {
+			border = "border-red"
+		}
+        ticketList += fmt.Sprintf(`
+            <div class='border %s rounded p-2 text-xs flex flex-col gap-4'>
+                <div class='flex flex-row justify-between'>
+					<div>
+	                    <h2 class='font-bold text-lg'>Creator: %s</h2>
+	                    <h2 class='font-bold text-lg'>Owner: %s</h2>				
+					</div>
+					<div class='text-xs'>
+						<p>%s</p>
+                    	<p>%s</p>
+					</div>
+                </div>
+				<div>
+					<p>Item: %s</p>
+					<p>Problem: %s</p>
+				</div>
+            </div>
+
+        `, border, ticket.Creator, ticket.Owner, ticket.Location, ticket.CreatedAt.Format("01/02/2006"), ticket.Item, ticket.Problem)
+    }
+    if len(tickets) == 0 {
+        return `
+            <div id='ticket-list' class='p-6 w-full'>
+                <p>No tickets found!</p>
+            </div>
+        `
+    } else {
+        return fmt.Sprintf(`
+            <div id='ticket-list' class='w-full flex flex-col p-6 gap-6'>
+                %s
+            </div>
+        `, ticketList)
+    }
+}
 
 
 func ActiveLink(href string, text string, isActive bool) string {
@@ -639,21 +689,21 @@ func TicketSearchForm() string {
 			<div class='flex flex-col gap-2'>
 				<p class='text-xs'>Priority Filter</p>
 				<div class='flex flex-wrap gap-2'>
-					<div class='priority-button px-2 py-1 bg-white text-black rounded border border-darkgray text-xs'>%s</div>
-					<div class='priority-button px-2 py-1 rounded border border-darkgray text-xs'>%s</div>
-					<div class='priority-button px-2 py-1 rounded border border-darkgray text-xs'>%s</div>
-					<div class='priority-button px-2 py-1 rounded border border-darkgray text-xs'>%s</div>
-					<div class='priority-button px-2 py-1 rounded border border-darkgray text-xs'>all</div>
+					<div class='priority-button cursor-pointer px-2 py-1 bg-white text-black rounded border border-darkgray text-xs'>%s</div>
+					<div class='priority-button cursor-pointer px-2 py-1 rounded border border-darkgray text-xs'>%s</div>
+					<div class='priority-button cursor-pointer px-2 py-1 rounded border border-darkgray text-xs'>%s</div>
+					<div class='priority-button cursor-pointer px-2 py-1 rounded border border-darkgray text-xs'>%s</div>
+					<div class='priority-button cursor-pointer px-2 py-1 rounded border border-darkgray text-xs'>all</div>
 				</div>
 			</div>
 			<div class='flex flex-col gap-2'>
 			<p class='text-xs'>Status Filter</p>
 			<div class='flex flex-wrap gap-2'>
-				<div class='status-button px-2 py-1 bg-white text-black rounded border border-darkgray text-xs'>%s</div>
-				<div class='status-button px-2 py-1 rounded border border-darkgray text-xs'>%s</div>
-				<div class='status-button px-2 py-1 rounded border border-darkgray text-xs'>%s</div>
-				<div class='status-button px-2 py-1 rounded border border-darkgray text-xs'>%s</div>
-				<div class='status-button px-2 py-1 rounded border border-darkgray text-xs'>all</div>
+				<div class='status-button cursor-pointer px-2 py-1 bg-white text-black rounded border border-darkgray text-xs'>%s</div>
+				<div class='status-button cursor-pointer px-2 py-1 rounded border border-darkgray text-xs'>%s</div>
+				<div class='status-button cursor-pointer px-2 py-1 rounded border border-darkgray text-xs'>%s</div>
+				<div class='status-button cursor-pointer px-2 py-1 rounded border border-darkgray text-xs'>%s</div>
+				<div class='status-button cursor-pointer px-2 py-1 rounded border border-darkgray text-xs'>all</div>
 			</div>
 		</div>
 			<div id='ticket-search' class='flex justify-between bg-black border border-darkgray p-2 rounded-lg'>
@@ -748,13 +798,106 @@ func TicketSearchForm() string {
 		_model.TicketPriorityUnspecified,
 		_model.TicketPriorityUnspecified, 
 		_model.TicketPriorityLow, 
-		_model.TicketPriorityInconvenient, 
+		_model.TicketPriorityMedium, 
 		_model.TicketPriorityUrgent, 
 		_model.TicketStatusNew, 
 		_model.TicketStatusActive, 
 		_model.TicketStatusComplete, 
 		_model.TicketStatusOnHold,
 	)
+}
+
+func PublicTicketSearchForm() string {
+	return `
+		<form action='/partial/ticketList' method='GET' class="p-6 flex flex-col gap-6">
+			<div id='ticket-search' class='flex justify-between bg-black border border-darkgray p-2 rounded-lg'>
+				<div class='h-6 w-6'>
+					<img src="/static/svg/search-dark.svg">
+				</div>
+				<div class='flex flex-row justify-between items-center w-full'>
+					<input name='search' id='ticket-search-input' type="text" class="pl-4 w-full bg-inherit focus:outline-none" placeholder="Search Tickets...">
+					<div id='ticket-list-indicator' class='hidden animate-spin rounded-full border border-darkgray border-t-white h-6 w-6 p-2'></div>
+				</div>
+			</div>
+		</form>
+		<script>
+			document.body.addEventListener = function() {};
+			document.body.addEventListener('click', (event) => {
+				if (qs('#ticket-search')) {
+					if (!qs('#ticket-search').contains(event.target)) {
+						qs('#ticket-search').classList.remove('border-lightgray');
+					}
+				}
+			});
+			qs('#ticket-search').addEventListener('click', (event) => {
+				event.stopPropagation();
+				qs('#ticket-search').classList.toggle('border-lightgray');
+			});
+			qs('#ticket-search').addEventListener('input', async (event) => {
+				qs('#ticket-list-indicator').classList.remove('hidden');
+				let status = qs('#status-input').value;
+				let priority = qs('#priority-input').value;
+				let search = event.target.value;
+				let path = "/partial/ticketList?status=" + status + "&priority=" + priority + "&search=" + search;
+				let res = await fetch(path, {
+					method: 'GET',
+				});
+				if (res.status !== 200) {
+				}
+				let html = await res.text();
+				qs('#ticket-list').outerHTML = html;
+				qs('#ticket-list-indicator').classList.add('hidden');
+			})
+			document.querySelectorAll('.status-button').forEach(button => {
+				button.addEventListener('click', async () => {
+					document.querySelectorAll('.status-button').forEach(btn => {
+						btn.classList.remove('bg-white', 'text-black');
+						btn.classList.add('bg-black', 'text-white');
+					});
+					button.classList.remove('bg-black', 'text-white');
+					button.classList.add('bg-white', 'text-black');
+					document.getElementById('status-input').value = button.textContent.trim();
+					qs('#ticket-list-indicator').classList.remove('hidden');
+					let status = qs('#status-input').value;
+					let priority = qs('#priority-input').value;
+					let search = qs('#ticket-search-input').value;
+					let path = "/partial/ticketList?status=" + status + "&priority=" + priority + "&search=" + search;
+					let res = await fetch(path, {
+						method: 'GET',
+					});
+					if (res.status !== 200) {
+					}
+					let html = await res.text();
+					qs('#ticket-list').outerHTML = html;
+					qs('#ticket-list-indicator').classList.add('hidden');
+				});
+			});
+			document.querySelectorAll('.priority-button').forEach(button => {
+				button.addEventListener('click', async () => {
+					document.querySelectorAll('.priority-button').forEach(btn => {
+						btn.classList.remove('bg-white', 'text-black');
+						btn.classList.add('bg-black', 'text-white');
+					});
+					button.classList.remove('bg-black', 'text-white');
+					button.classList.add('bg-white', 'text-black');
+					document.getElementById('priority-input').value = button.textContent.trim();
+					qs('#ticket-list-indicator').classList.remove('hidden');
+					let status = qs('#status-input').value;
+					let priority = qs('#priority-input').value;
+					let search = qs('#ticket-search-input').value;
+					let path = "/partial/ticketList?status=" + status + "&priority=" + priority + "&search=" + search;
+					let res = await fetch(path, {
+						method: 'GET',
+					});
+					if (res.status !== 200) {
+					}
+					let html = await res.text();
+					qs('#ticket-list').outerHTML = html;
+					qs('#ticket-list-indicator').classList.add('hidden');
+				});
+			});
+		</script>
+	`
 }
 
 func TicketViewOptions(ticketFilter string) string {
@@ -937,11 +1080,18 @@ func ResetEquipmentLink(ticket _model.Ticket) string {
 func UpdateTicketForm(ticket _model.Ticket, err string, success string) string {
 	return fmt.Sprintf(`
 		<form id='combined-form' hx-indicator='#main-loader' hx-swap='innerHTML scroll:no-show' action='/form/ticket/%d/update' method='POST' class='flex flex-col gap-4 w-full p-6'>
-			<div class='flex justify-between'>
-				%s
-			</div>
-			<div class='flex flex-col gap-4'>
-				%s%s%s%s%s%s%s%s%s%s%s
+			<div class='flex flex-col gap-8'>
+				<div class='flex justify-between'>
+					%s
+				</div>
+				<div class='flex flex-col gap-4'>
+					<h3 class='text-gray'>Creation Details</h3>
+					%s%s%s%s%s%s
+				</div>
+				<div class='flex flex-col gap-4'>
+					<h3 class='text-gray'>Admin Details</h3>
+					%s%s%s%s%s
+				</div>
 			</div>
 		</form>
 	`,
@@ -954,7 +1104,7 @@ func UpdateTicketForm(ticket _model.Ticket, err string, success string) string {
 		FormTextAreaLabel("Problem", "problem", 2, ticket.Problem),
 		FormSelectLabel("Location", "location", []string{"Southroads", "Utica"}, ticket.Location),
 		FormInputLabel("Owner", "owner", "text", ticket.Owner),
-		FormSelectLabel("Priority", "priority", []string{string(_model.TicketPriorityUnspecified), string(_model.TicketPriorityLow), string(_model.TicketPriorityInconvenient), string(_model.TicketPriorityUrgent)}, string(ticket.Priority)),
+		FormSelectLabel("Priority", "priority", []string{string(_model.TicketPriorityUnspecified), string(_model.TicketPriorityLow), string(_model.TicketPriorityMedium), string(_model.TicketPriorityUrgent)}, string(ticket.Priority)),
 		FormSelectLabel("Status", "status", []string{string(_model.TicketStatusNew), string(_model.TicketStatusActive), string(_model.TicketStatusOnHold), string(_model.TicketStatusComplete)}, string(ticket.Status)),
 		FormTextAreaLabel("Notes", "notes", 2, ticket.Notes),
 		FormSubmitButton(),

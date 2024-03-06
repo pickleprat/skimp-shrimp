@@ -33,7 +33,7 @@ type TicketPriority string
 
 const (
 	TicketPriorityUrgent       TicketPriority = "urgent"
-	TicketPriorityInconvenient TicketPriority = "inconvenient"
+	TicketPriorityMedium TicketPriority = "medium"
 	TicketPriorityLow          TicketPriority = "low"
 	TicketPriorityUnspecified  TicketPriority = "unspecified"
 )

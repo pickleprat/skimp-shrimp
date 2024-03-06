@@ -15,11 +15,7 @@ import (
 )
 
 func Login(mux *http.ServeMux, db *gorm.DB) {
-	mux.HandleFunc("POST /", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/" {
-			http.NotFound(w, r)
-			return
-		}
+	mux.HandleFunc("POST /form/login", func(w http.ResponseWriter, r *http.Request) {
 		_middleware.MiddlewareChain(w, r,
 			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 				username := r.Form.Get("username")
@@ -30,6 +26,7 @@ func Login(mux *http.ServeMux, db *gorm.DB) {
 						Value:    os.Getenv("ADMIN_SESSION_TOKEN"),
 						Expires:  time.Now().Add(24 * time.Hour),
 						HttpOnly: true,
+						Path: "/",
 					})
 					http.Redirect(w, r, "/app", http.StatusSeeOther)
 					return
@@ -65,17 +62,16 @@ func CreateManufacturer(mux *http.ServeMux, db *gorm.DB) {
 				name := r.Form.Get("name")
 				phone := r.Form.Get("phone")
 				email := r.Form.Get("email")
-				submitRedirect := r.Form.Get("submitRedirect")
 				if name == "" || phone == "" || email == "" {
-					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/create", "err", "all fields required", "name", name, "phone", phone, "email", email, "submitRedirect", submitRedirect), http.StatusSeeOther)
+					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer", "err", "all fields required", "name", name, "phone", phone, "email", email), http.StatusSeeOther)
 					return
 				}
 				if _util.IsValidPhoneNumber(phone) == false {
-					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/create", "err", "invalid phone format", "name", name, "phone", phone, "email", email, "submitRedirect", submitRedirect), http.StatusSeeOther)
+					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer", "err", "invalid phone format", "name", name, "phone", phone, "email", email), http.StatusSeeOther)
 					return
 				}
 				if _util.IsValidEmail(email) == false {
-					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/create", "err", "invalid email format", "name", name, "phone", phone, "email", email, "submitRedirect", submitRedirect), http.StatusSeeOther)
+					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer", "err", "invalid email format", "name", name, "phone", phone, "email", email), http.StatusSeeOther)
 					return
 				}
 				manufacturer := _model.Manufacturer{
@@ -84,12 +80,7 @@ func CreateManufacturer(mux *http.ServeMux, db *gorm.DB) {
 					Email: email,
 				}
 				db.Create(&manufacturer)
-				redirectURL := _util.ConditionalString(
-					submitRedirect == "", 
-					_util.URLBuilder("/app/manufacturer/create", "success", "manufacturer created"), 
-					_util.URLBuilder(submitRedirect, "success", "manufacturer created"),
-				)
-				http.Redirect(w, r, redirectURL, http.StatusSeeOther)
+				http.Redirect(w, r, _util.URLBuilder("/app/manufacturer", "success", "manufacturer created"), http.StatusSeeOther)
 			},
 			_middleware.Init, _middleware.Auth, _middleware.ParseForm,
 		)
@@ -97,7 +88,7 @@ func CreateManufacturer(mux *http.ServeMux, db *gorm.DB) {
 }
 
 func DeleteManufacturer(mux *http.ServeMux, db *gorm.DB) {
-	mux.HandleFunc("POST /app/manufacturer/{id}/delete", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("POST /form/manufacturer/{id}/delete", func(w http.ResponseWriter, r *http.Request) {
 		_middleware.MiddlewareChain(w, r,
 			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 				id := r.PathValue("id")
@@ -105,7 +96,7 @@ func DeleteManufacturer(mux *http.ServeMux, db *gorm.DB) {
 				var manufacturer _model.Manufacturer
 				db.First(&manufacturer, id)
 				if name != strings.ToLower(manufacturer.Name) {
-					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/"+id, "err", "invalid delete name provided", "form", "delete"), http.StatusSeeOther)
+					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/"+id+"/delete", "err", "invalid delete name provided", "form", "delete"), http.StatusSeeOther)
 					return
 
 				}
@@ -118,7 +109,7 @@ func DeleteManufacturer(mux *http.ServeMux, db *gorm.DB) {
 }
 
 func UpdateManufacturer(mux *http.ServeMux, db *gorm.DB) {
-	mux.HandleFunc("POST /app/manufacturer/{id}/update", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("POST /form/manufacturer/{id}/update", func(w http.ResponseWriter, r *http.Request) {
 		_middleware.MiddlewareChain(w, r,
 			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 				id := r.PathValue("id")
@@ -126,28 +117,28 @@ func UpdateManufacturer(mux *http.ServeMux, db *gorm.DB) {
 				phone := r.Form.Get("phone")
 				email := r.Form.Get("email")
 				if name == "" || phone == "" || email == "" {
-					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/"+id, "err", "all fields required", "form", "update"), http.StatusSeeOther)
+					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/"+id+"/update", "err", "all fields required", "form", "update"), http.StatusSeeOther)
 					return
 				}
 				if _util.IsValidPhoneNumber(phone) == false {
-					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/"+id, "err", "invalid phone format", "form", "update"), http.StatusSeeOther)
+					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/"+id+"/update", "err", "invalid phone format", "form", "update"), http.StatusSeeOther)
 					return
 				}
 				if _util.IsValidEmail(email) == false {
-					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/"+id, "err", "invalid email format", "form", "update"), http.StatusSeeOther)
+					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/"+id+"/update", "err", "invalid email format", "form", "update"), http.StatusSeeOther)
 					return
 				}
 				var manufacturer _model.Manufacturer
 				db.First(&manufacturer, id)
 				if name == manufacturer.Name && phone == manufacturer.Phone && email == manufacturer.Email {
-					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/"+id, "err", "no changes detected", "form", "update"), http.StatusSeeOther)
+					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/"+id+"/update", "err", "no changes detected", "form", "update"), http.StatusSeeOther)
 					return
 				}
 				manufacturer.Name = name
 				manufacturer.Phone = phone
 				manufacturer.Email = email
 				db.Save(&manufacturer)
-				http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/"+id, "success", "manufacturer updated", "form", "update"), http.StatusSeeOther)
+				http.Redirect(w, r, _util.URLBuilder("/app/manufacturer/"+id+"/update", "success", "manufacturer updated", "form", "update"), http.StatusSeeOther)
 			},
 			_middleware.Init, _middleware.ParseForm, _middleware.Auth,
 		)
@@ -155,18 +146,14 @@ func UpdateManufacturer(mux *http.ServeMux, db *gorm.DB) {
 }
 
 func CreateEquipment(mux *http.ServeMux, db *gorm.DB) {
-	mux.HandleFunc("POST /form/manufacturer/{id}/equipment/create", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("POST /form/manufacturer/{id}/createEquipment", func(w http.ResponseWriter, r *http.Request) {
 		_middleware.MiddlewareChain(w, r,
 			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 				id := r.PathValue("id")
 				name := r.Form.Get("nickname")
 				number := r.Form.Get("number")
 				submitRedirect := r.Form.Get("submitRedirect")
-				redirectURL := _util.ConditionalString(
-					submitRedirect == "", 
-					fmt.Sprintf("/app/manufacturer/%s/equipment/create", id), 
-					submitRedirect,
-				)
+				redirectURL := "/app/manufacturer/" + id 
 				if name == "" || number == "" {
 					http.Redirect(w, r, _util.URLBuilder(redirectURL, "err", "all fields required", "nickname", name, "serialNumber", number, "submitRedirect", submitRedirect), http.StatusSeeOther)
 					return
@@ -211,7 +198,7 @@ func UpdateEquipment(mux *http.ServeMux, db *gorm.DB) {
 				number := r.Form.Get("number")
 				photo, _, err := r.FormFile("photo")
 				if name == "" || number == "" {
-					http.Redirect(w, r, _util.URLBuilder("/app/equipment/"+id+"/update", "err", "all fields required"), http.StatusSeeOther)
+					http.Redirect(w, r, _util.URLBuilder("/app/equipment/"+id, "err", "all fields required"), http.StatusSeeOther)
 					return
 				}
 				defer func() {
@@ -220,14 +207,14 @@ func UpdateEquipment(mux *http.ServeMux, db *gorm.DB) {
 					}
 				}()
 				if err != nil && err != http.ErrMissingFile {
-					http.Redirect(w, r, _util.URLBuilder("/app/equipment/"+id+"/update", "err", "failed to retrieve file"), http.StatusSeeOther)
+					http.Redirect(w, r, _util.URLBuilder("/app/equipment/"+id, "err", "failed to retrieve file"), http.StatusSeeOther)
 					return
 				}
 
 				var equipment _model.Equipment
 				db.First(&equipment, id)
 				if name == equipment.Nickname && number == equipment.SerialNumber && photo == nil {
-					http.Redirect(w, r, _util.URLBuilder("/app/equipment/"+id+"/update", "err", "no changes detected"), http.StatusSeeOther)
+					http.Redirect(w, r, _util.URLBuilder("/app/equipment/"+id, "err", "no changes detected"), http.StatusSeeOther)
 					return
 				}
 				// Update only if a new photo is provided
@@ -243,7 +230,7 @@ func UpdateEquipment(mux *http.ServeMux, db *gorm.DB) {
 				equipment.Nickname = name
 				equipment.SerialNumber = number
 				db.Save(&equipment)
-				http.Redirect(w, r, _util.URLBuilder("/app/equipment/"+id+"/update", "success", "equipment updated"), http.StatusSeeOther)
+				http.Redirect(w, r, _util.URLBuilder("/app/equipment/"+id, "success", "equipment updated"), http.StatusSeeOther)
 			},
 			_middleware.Init, _middleware.ParseMultipartForm, _middleware.Auth,
 		)
@@ -251,7 +238,7 @@ func UpdateEquipment(mux *http.ServeMux, db *gorm.DB) {
 }
 
 func DeleteEquipment(mux *http.ServeMux, db *gorm.DB) {
-	mux.HandleFunc("POST /app/equipment/{id}/delete", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("POST /form/equipment/{id}/delete", func(w http.ResponseWriter, r *http.Request) {
 		_middleware.MiddlewareChain(w, r,
 			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 				id := r.PathValue("id")
@@ -265,7 +252,7 @@ func DeleteEquipment(mux *http.ServeMux, db *gorm.DB) {
 					return
 				}
 				db.Delete(&equipment, id)
-				http.Redirect(w, r, fmt.Sprintf(_util.URLBuilder("/app/manufacturer/%d/equipment/create", "success", "equipment deleted"), manufacturer.ID), http.StatusSeeOther)
+				http.Redirect(w, r, fmt.Sprintf(_util.URLBuilder("/app/manufacturer/%d", "success", "equipment deleted"), manufacturer.ID), http.StatusSeeOther)
 			},
 			_middleware.Init, _middleware.ParseForm, _middleware.Auth,
 		)
@@ -273,7 +260,7 @@ func DeleteEquipment(mux *http.ServeMux, db *gorm.DB) {
 }
 
 func CreateTicketPublic(mux *http.ServeMux, db *gorm.DB) {
-	mux.HandleFunc("POST /app/ticket/public", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("POST /form/ticket/public", func(w http.ResponseWriter, r *http.Request) {
 		_middleware.MiddlewareChain(w, r,
 			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 				securityToken := r.Form.Get("publicSecurityToken")
@@ -305,7 +292,6 @@ func CreateTicketPublic(mux *http.ServeMux, db *gorm.DB) {
 			_middleware.Init, _middleware.ParseForm,
 		)
 	})
-
 }
 
 func CreateTicketAdmin(mux *http.ServeMux, db *gorm.DB) {

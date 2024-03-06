@@ -156,6 +156,24 @@ func TicketList(mux *http.ServeMux, db *gorm.DB) {
     })
 }
 
+func PublicTicketList(mux *http.ServeMux, db *gorm.DB) {
+    mux.HandleFunc("GET /partial/publicTicketList", func(w http.ResponseWriter, r *http.Request) {
+        _middleware.MiddlewareChain(w, r,
+            func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
+                // search := strings.ToLower(r.Form.Get("search"))
+                tickets := []_model.Ticket{}
+                query := db.Where("status IN (?)", []_model.TicketStatus{_model.TicketStatusActive, _model.TicketStatusOnHold})
+                query.Where("creator <> '' AND item <> '' AND problem <> '' AND location <> '' AND priority <> '' AND notes <> '' AND owner <> ''")
+                query.Find(&tickets)
+                component := _components.PublicTicketList(tickets)
+                w.Write([]byte(component))
+            },
+            _middleware.Init, _middleware.ParseForm, _middleware.Auth,
+        )
+    })
+}
+
+
 
 func ResetEquipmentLink(mux *http.ServeMux, db *gorm.DB) {
 	mux.HandleFunc("GET /partial/resetEquipmentLink/{ticketID}", func(w http.ResponseWriter, r *http.Request) {
