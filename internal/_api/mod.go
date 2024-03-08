@@ -179,6 +179,7 @@ func CreateEquipment(mux *http.ServeMux, db *gorm.DB) {
 					Nickname:       name,
 					SerialNumber:   serialNumber,
 					ModelNumber:    modelNumber,
+					Archived: 	 	false,
 					Photo:          photoBytes,
 					ManufacturerID: manufacturer.ID,
 				}
@@ -198,6 +199,7 @@ func UpdateEquipment(mux *http.ServeMux, db *gorm.DB) {
 				name := r.Form.Get("nickname")
 				serialNumber := r.Form.Get("serialNumber")
 				modelNumber := r.Form.Get("modelNumber")
+				archived := r.Form.Get("archived")
 				photo, _, err := r.FormFile("photo")
 				if name == "" || serialNumber == "" || modelNumber == "" {
 					http.Redirect(w, r, _util.URLBuilder("/app/equipment/"+id, "err", "all fields required"), http.StatusSeeOther)
@@ -215,7 +217,13 @@ func UpdateEquipment(mux *http.ServeMux, db *gorm.DB) {
 
 				var equipment _model.Equipment
 				db.First(&equipment, id)
-				if name == equipment.Nickname && serialNumber == equipment.SerialNumber && modelNumber == equipment.ModelNumber && photo == nil {
+				var archivedString string
+				if equipment.Archived {
+					archivedString = "true"
+				} else {
+					archivedString = "false"
+				}
+				if name == equipment.Nickname && serialNumber == equipment.SerialNumber && modelNumber == equipment.ModelNumber && archived == archivedString && photo == nil {
 					http.Redirect(w, r, _util.URLBuilder("/app/equipment/"+id, "err", "no changes detected"), http.StatusSeeOther)
 					return
 				}
@@ -232,6 +240,7 @@ func UpdateEquipment(mux *http.ServeMux, db *gorm.DB) {
 				equipment.Nickname = name
 				equipment.SerialNumber = serialNumber
 				equipment.ModelNumber = modelNumber
+				equipment.Archived = archived == "true"
 				db.Save(&equipment)
 				http.Redirect(w, r, _util.URLBuilder("/app/equipment/"+id, "success", "equipment updated"), http.StatusSeeOther)
 			},
@@ -290,7 +299,7 @@ func CreateTicketPublic(mux *http.ServeMux, db *gorm.DB) {
 					Owner:    "",
 				}
 				db.Create(&ticket)
-				http.Redirect(w, r, _util.URLBuilder("/app/ticket/public", "publicSecurityToken", securityToken, "success", "your ticket has been created, thank you!"), http.StatusSeeOther)
+				http.Redirect(w, r, _util.URLBuilder("/app/ticket/public", "publicSecurityToken", securityToken, "success", "your ticket is created and is up for review | tu boleto ha sido creado y está listo para su revisión "), http.StatusSeeOther)
 			},
 			_middleware.Init, _middleware.ParseForm,
 		)

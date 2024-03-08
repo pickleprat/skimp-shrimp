@@ -15,6 +15,7 @@ type Equipment struct {
 	Nickname       string
 	SerialNumber   string
 	ModelNumber    string
+	Archived 	   bool
 	Photo          []byte
 	ManufacturerID uint
 	Manufacturer   Manufacturer `gorm:"constraint:OnDelete:CASCADE;"`

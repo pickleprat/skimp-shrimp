@@ -21,7 +21,7 @@ func EquipmentSelectionList(mux *http.ServeMux, db *gorm.DB) {
                 manufacturer := _model.Manufacturer{}
                 db.First(&manufacturer, id)
                 equipment := []_model.Equipment{}
-                db.Where("manufacturer_id = ?", id).Find(&equipment)
+				db.Where("manufacturer_id = ? AND archived = ?", id, false).Find(&equipment)
                 equipmentOptions := ""
                 for _, e := range equipment {
                     // Convert photo from bytes to base64
@@ -85,11 +85,17 @@ func EquipmentByManufacturer(mux *http.ServeMux, db *gorm.DB) {
 		_middleware.MiddlewareChain(w, r,
 			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 				id := r.PathValue("id")
+				archived := r.URL.Query().Get("archived")
 				manufacturer := _model.Manufacturer{}
 				db.First(&manufacturer, id)
 				equipment := []_model.Equipment{}
-				db.Where("manufacturer_id = ?", id).Find(&equipment)
-				component := _components.EquipmentList(equipment)
+				if archived == "true" {
+					db.Where("manufacturer_id = ? AND archived = ?", id, true).Find(&equipment)
+					w.Write([]byte(_components.EquipmentList("Archived Equipment", equipment)))
+					return
+				}
+				db.Where("manufacturer_id = ? AND archived = ?", id, false).Find(&equipment)
+				component := _components.EquipmentList("Registered Equipment", equipment)
 				w.Write([]byte(component))
 			},
 			_middleware.Init, _middleware.ParseForm, _middleware.Auth,
@@ -147,6 +153,9 @@ func TicketList(mux *http.ServeMux, db *gorm.DB) {
                 if search != "" {
                     query = query.Where("LOWER(creator) LIKE ? OR LOWER(item) LIKE ? OR LOWER(problem) LIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%")
                 }
+                // Add this line to order the tickets by creation date, newest first
+                query = query.Order("created_at DESC")
+                
                 query.Find(&tickets)
                 component := _components.TicketList(tickets)
                 w.Write([]byte(component))
@@ -156,22 +165,41 @@ func TicketList(mux *http.ServeMux, db *gorm.DB) {
     })
 }
 
+
 func PublicTicketList(mux *http.ServeMux, db *gorm.DB) {
     mux.HandleFunc("GET /partial/publicTicketList", func(w http.ResponseWriter, r *http.Request) {
-        _middleware.MiddlewareChain(w, r,
-            func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
-                // search := strings.ToLower(r.Form.Get("search"))
-                tickets := []_model.Ticket{}
-                query := db.Where("status IN (?)", []_model.TicketStatus{_model.TicketStatusActive, _model.TicketStatusOnHold})
-                query.Where("creator <> '' AND item <> '' AND problem <> '' AND location <> '' AND priority <> '' AND notes <> '' AND owner <> ''")
-                query.Find(&tickets)
-                component := _components.PublicTicketList(tickets)
-                w.Write([]byte(component))
-            },
-            _middleware.Init, _middleware.ParseForm, _middleware.Auth,
-        )
+        // Ensure middleware and other necessary functions are called properly.
+        _middleware.MiddlewareChain(w, r, func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
+            tickets := []_model.Ticket{}
+            priority := r.URL.Query().Get("priority") // Correctly retrieve the priority query parameter
+
+            // Base query to ensure all fields are filled out and status is not "complete".
+            query := db.Where("creator <> '' AND item <> '' AND problem <> '' AND location <> '' AND notes <> '' AND owner <> ''").
+                Where("status <> ?", _model.TicketStatusComplete)
+
+            // Modify query based on priority.
+            if priority != "" && priority != "all" {
+                query = query.Where("priority = ?", priority)
+            }
+
+            // Add order by clause to sort by priority.
+            // This approach uses a CASE statement in raw SQL to sort priorities correctly.
+            query = query.Order(`
+                CASE 
+                WHEN priority = 'urgent' THEN 1
+                WHEN priority = 'medium' THEN 2
+                WHEN priority = 'low' THEN 3
+                END
+            `)
+
+            query.Find(&tickets)
+            component := _components.PublicTicketList(tickets)
+            w.Write([]byte(component))
+        }, _middleware.Init, _middleware.ParseForm, _middleware.Auth)
     })
 }
+
+
 
 
 

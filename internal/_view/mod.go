@@ -236,6 +236,7 @@ func Manufacturer(mux *http.ServeMux, db *gorm.DB) {
 							),
 							_components.TopNav(
 								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d", manufacturer.ID), "Equipment", true),
+								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/archive", manufacturer.ID), "Archived Equipment", false),
 								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/update", manufacturer.ID), "Update", false),
 								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/delete", manufacturer.ID), "Delete", false),
 							),
@@ -251,6 +252,47 @@ func Manufacturer(mux *http.ServeMux, db *gorm.DB) {
 							),
 							_components.HxGetLoader(
 								fmt.Sprintf("/partial/manufacturer/%d/equipment", manufacturer.ID),
+							),
+						),
+					),
+					_components.BottomSpacer(),
+				})
+				w.Write(b.Build())
+			},
+			_middleware.Init, _middleware.Auth,
+		)
+	})
+}
+
+func EquipmentArchive(mux *http.ServeMux, db *gorm.DB) {
+	mux.HandleFunc("GET /app/manufacturer/{id}/archive", func(w http.ResponseWriter, r *http.Request) {
+		_middleware.MiddlewareChain(w, r,
+			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
+				id := r.PathValue("id")
+				var manufacturer _model.Manufacturer
+				var equipment []_model.Equipment
+				db.First(&manufacturer, id)
+				db.Where("manufacturer_id = ?", manufacturer.ID).Find(&equipment)
+				b := NewViewBuilder("Repairs Log - " + manufacturer.Name, []string{
+					_components.MainLoader(),
+					_components.Root(
+						_components.CenterContentWrapper(
+							_components.Banner("Repairs Log", 
+								_components.BreadCrumbs(
+									_components.NavLink("Home", "/app", false),
+									_components.NavLink("Manufacturers", "/app/manufacturer", false),
+									_components.NavLink("Equipment Archive", fmt.Sprintf("/app/manufacturer/%d/archive", manufacturer.ID), true),
+								),
+							),
+							_components.TopNav(
+								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d", manufacturer.ID), "Equipment", false),
+								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/archive", manufacturer.ID), "Archived Equipment", true),
+								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/update", manufacturer.ID), "Update", false),
+								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/delete", manufacturer.ID), "Delete", false),
+							),
+							_components.ManufacturerDetails(manufacturer),
+							_components.HxGetLoader(
+								fmt.Sprintf("/partial/manufacturer/%d/equipment?archived=true", manufacturer.ID),
 							),
 						),
 					),
@@ -283,6 +325,7 @@ func DeleteManufacturer(mux *http.ServeMux, db *gorm.DB) {
 							),
 							_components.TopNav(
 								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d", manufacturer.ID), "Equipment", false),
+								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/archive", manufacturer.ID), "Archived Equipment", false),
 								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/update", manufacturer.ID), "Update", false),
 								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/delete", manufacturer.ID), "Delete", true),
 							),
@@ -319,6 +362,7 @@ func UpdateManufacturer(mux *http.ServeMux, db *gorm.DB) {
 							),
 							_components.TopNav(
 								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d", manufacturer.ID), "Equipment", false),
+								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/archive", manufacturer.ID), "Archived Equipment", false),
 								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/update", manufacturer.ID), "Update", true),
 								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/delete", manufacturer.ID), "Delete", false),
 							),
@@ -432,7 +476,7 @@ func PublicCreateTicket(mux *http.ServeMux, db *gorm.DB) {
 									_components.NavLink("View Tickets", _util.URLBuilder("/app/ticket/public/view", "publicSecurityToken", token), false),
 								),
 							),
-							_components.CreateTicketForm(r, token, "/form/ticket/public"),
+							_components.PublicCreateTicketForm(r, token, "/form/ticket/public"),
 						),
 					),
 					_components.BottomSpacer(),

@@ -85,3 +85,8 @@ func ConditionalString(condition bool, option1 string, option2 string) string {
 	}
 	return option2
 }
+
+func RandomInt(min int, max int) int {
+	rand.Seed(time.Now().UnixNano())
+	return rand.Intn(max-min) + min
+}

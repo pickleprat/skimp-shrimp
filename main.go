@@ -46,6 +46,7 @@ func main() {
 	_view.UpdateManufacturer(mux, db)
 	_view.DeleteManufacturer(mux, db)
 	_view.CreateManufacturers(mux, db)
+	_view.EquipmentArchive(mux, db)
 
 	// admin ticket views
 	_view.AdminViewTicket(mux, db)
