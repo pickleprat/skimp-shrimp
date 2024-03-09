@@ -75,7 +75,7 @@ func EquipmentSelectionList(mux *http.ServeMux, db *gorm.DB) {
 				}
                 w.Write([]byte(component))
             },
-            _middleware.Init, _middleware.ParseForm, _middleware.Auth,
+            _middleware.Init, _middleware.ParseForm, _middleware.ComponentAuth,
         )
     })
 }
@@ -98,19 +98,7 @@ func EquipmentByManufacturer(mux *http.ServeMux, db *gorm.DB) {
 				component := _components.EquipmentList("Registered Equipment", equipment)
 				w.Write([]byte(component))
 			},
-			_middleware.Init, _middleware.ParseForm, _middleware.Auth,
-		)
-	})
-}
-
-func Div(mux *http.ServeMux) {
-	mux.HandleFunc("GET /partial/div", func(w http.ResponseWriter, r *http.Request) {
-		_middleware.MiddlewareChain(w, r,
-			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
-				divID := r.URL.Query().Get("id")
-				w.Write([]byte(fmt.Sprintf(`<div id='%s'></div>`, divID)))
-			},
-			_middleware.Init, _middleware.ParseForm,
+			_middleware.Init, _middleware.ParseForm, _middleware.ComponentAuth,
 		)
 	})
 }
@@ -129,7 +117,7 @@ func ManufactuerList(mux *http.ServeMux, db *gorm.DB) {
                 component := _components.ManufacturerList(manufacturers)
                 w.Write([]byte(component))
             },
-            _middleware.Init, _middleware.ParseForm, _middleware.Auth,
+            _middleware.Init, _middleware.ParseForm, _middleware.ComponentAuth,
         )
     })
 }
@@ -171,7 +159,7 @@ func TicketList(mux *http.ServeMux, db *gorm.DB) {
                 component := _components.TicketList(filteredTickets)
                 w.Write([]byte(component))
             },
-            _middleware.Init, _middleware.ParseForm, _middleware.Auth,
+            _middleware.Init, _middleware.ParseForm, _middleware.ComponentAuth,
         )
     })
 }
@@ -205,13 +193,9 @@ func PublicTicketList(mux *http.ServeMux, db *gorm.DB) {
             query.Find(&tickets)
             component := _components.PublicTicketList(tickets)
             w.Write([]byte(component))
-        }, _middleware.Init, _middleware.ParseForm, _middleware.Auth)
+        }, _middleware.Init, _middleware.ParseForm)
     })
 }
-
-
-
-
 
 func ResetEquipmentLink(mux *http.ServeMux, db *gorm.DB) {
 	mux.HandleFunc("GET /partial/resetEquipmentLink/{ticketID}", func(w http.ResponseWriter, r *http.Request) {
@@ -227,10 +211,22 @@ func ResetEquipmentLink(mux *http.ServeMux, db *gorm.DB) {
 				component := _components.EquipmentDetails(equipment, manufacturer)
 				w.Write([]byte(component))
 			},
-			_middleware.Init, _middleware.ParseForm, _middleware.Auth,
+			_middleware.Init, _middleware.ParseForm, _middleware.ComponentAuth,
 		)
 	})
 }
 
+func AuthWarning(mux *http.ServeMux, db *gorm.DB) {
+	mux.HandleFunc("GET /partial/authWarning", func(w http.ResponseWriter, r *http.Request) {
+		_middleware.MiddlewareChain(w, r,
+			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
+				w.Write([]byte(`
+					<p>you are not authorized to access this component</p>
+				`))
+			},
+			_middleware.Init, _middleware.ParseForm,
+		)
+	})
+}
 
 

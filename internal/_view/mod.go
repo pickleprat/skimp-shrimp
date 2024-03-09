@@ -101,6 +101,11 @@ func Login(mux *http.ServeMux, db *gorm.DB) {
 		}
 		_middleware.MiddlewareChain(w, r,
 			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
+				sessionCookie, _ := r.Cookie("SessionToken")
+				if sessionCookie != nil && sessionCookie.Value == os.Getenv("ADMIN_SESSION_TOKEN") {
+					http.Redirect(w, r, "/app", http.StatusSeeOther)
+					return
+				}
 				b := NewViewBuilder("Repairs Log - Login", []string{
 					_components.MainLoader(),
 					_components.Root(
@@ -131,6 +136,11 @@ func AdminHome(mux *http.ServeMux, db *gorm.DB) {
 									_components.NavLink("Home", "/app", true),
 									_components.NavLink("Manufacturers", "/app/manufacturer", false),
 									_components.NavLink("Tickets", "/app/ticket", false),
+									_util.ConditionalString(
+										os.Getenv("GO_ENV") == "dev",
+										_components.NavLink("Public View", _util.URLBuilder("/app/ticket/public", "publicSecurityToken", os.Getenv("PUBLIC_SECURITY_TOKEN")), false),
+										"",
+									),
 									_components.NavLink("Logout", "/logout", false),
 								),
 							),
@@ -563,7 +573,7 @@ func AdminViewTicket(mux *http.ServeMux, db *gorm.DB) {
 									<div class='flex p-6 flex-col gap-6'>
 										<h2 class='text-lg'>Equipment Association</h2>
 										<p class='text-xs'>This ticket is assigned to the equipment shown below. Click the following button to remove the association:</p>
-										<a href='/app/ticket/%d/resetEquipment' class='w-full p-2 bg-white text-center text-black rounded'>Remove Equipment Association</a>
+										<a href='/form/ticket/%d/resetEquipment' class='w-full p-2 bg-white text-center text-black rounded'>Remove Equipment Association</a>
 									</div>
 								`, ticket.ID),
 								"",

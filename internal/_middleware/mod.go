@@ -68,6 +68,19 @@ func Auth(ctx *CustomContext, w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
+func ComponentAuth(ctx *CustomContext, w http.ResponseWriter, r *http.Request) error {
+	cookie, err := r.Cookie("SessionToken")
+	if err != nil {
+		http.Redirect(w, r, "/partial/authWarning", http.StatusSeeOther)
+		return fmt.Errorf("no session token")
+	}
+	if cookie.Value != os.Getenv("ADMIN_SESSION_TOKEN") {
+		http.Redirect(w, r, "/partial/authWarning", http.StatusSeeOther)
+		return fmt.Errorf("invalid session token")
+	}
+	return nil
+}
+
 func IncludePNG(ctx *CustomContext, w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Content-Type", "image/png")
 	return nil

@@ -1,4 +1,4 @@
-package _api
+package _form
 
 import (
 	"cfasuite/internal/_middleware"
@@ -373,7 +373,7 @@ func UpdateTicket(mux *http.ServeMux, db *gorm.DB) {
 }
 
 func DeleteTicket(mux *http.ServeMux, db *gorm.DB) {
-	mux.HandleFunc("POST /app/ticket/{id}/delete", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("POST /form/ticket/{id}/delete", func(w http.ResponseWriter, r *http.Request) {
 		_middleware.MiddlewareChain(w, r,
 			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 				id := r.PathValue("id")
@@ -394,7 +394,7 @@ func DeleteTicket(mux *http.ServeMux, db *gorm.DB) {
 
 
 func AssignTicket(mux *http.ServeMux, db *gorm.DB) {
-	mux.HandleFunc("POST /app/ticket/{id}/assign", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("POST /form/ticket/{id}/assign", func(w http.ResponseWriter, r *http.Request) {
 		_middleware.MiddlewareChain(w, r,
 			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 				id := r.PathValue("id")
@@ -422,7 +422,7 @@ func AssignTicket(mux *http.ServeMux, db *gorm.DB) {
 }
 
 func TicketResetEquipment(mux *http.ServeMux, db *gorm.DB) {
-	mux.HandleFunc("GET /app/ticket/{id}/resetEquipment", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET /form/ticket/{id}/resetEquipment", func(w http.ResponseWriter, r *http.Request) {
 		_middleware.MiddlewareChain(w, r,
 			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 				id := r.PathValue("id")

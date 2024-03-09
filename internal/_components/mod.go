@@ -17,6 +17,9 @@ func Banner(title string, breadcrumbs string) string {
 			<div id='navbar' class='flex flex-col p-6 h-[115px] z-40 bg-black w-full border-darkgray gap-6'>
 				<div class='flex flex-row justify-between items-center'>
 					<h2 class=''>%s</h2>
+					<div class='h-12 w-12'>
+						<img src='/static/svg/logo-dark.svg' />
+					</div>
 				</div>
 				<div id='nav-menu' class=''>%s</div>
 			</div>
@@ -871,43 +874,6 @@ func TicketViewOptions(ticketFilter string) string {
 	`, ActiveLink("/app/ticket?ticketFilter=new", "New Tickets", isNew), ActiveLink("/app/ticket?ticketFilter=active", "Active Tickets", isActive), ActiveLink("/app/ticket?ticketFilter=complete", "Completed Tickets", isComplete))
 }
 
-func TicketSettings(ticket _model.Ticket, form string) string {
-	resetEquipmentButton := ""
-	assignEquipmentButton := ""
-	publicDetailsButton := ""
-	isAssignmentForm := false
-	isUpdateForm := false
-	isDeleteForm := false
-	isPublicForm := false
-	switch form {
-		case "assign":
-			isAssignmentForm = true
-		case "public":
-			isPublicForm = true
-		case "update":
-			isUpdateForm = true
-		case "delete":
-			isDeleteForm = true
-	}
-	if ticket.EquipmentID == nil {
-		assignEquipmentButton = LinkButton(fmt.Sprintf("/app/ticket/%d?form=assign", ticket.ID), "Assign Equipment", isAssignmentForm)
-	} else {
-		publicDetailsButton = LinkButton(fmt.Sprintf("/app/ticket/%d?form=public", ticket.ID), "Update Public Details", isPublicForm)
-		resetEquipmentButton = LinkButton(fmt.Sprintf("/app/ticket/%d/resetEquipment", ticket.ID), "Reset Equipment Association", false)
-	}
-	return fmt.Sprintf(`
-			<div class='p-6 w-full flex flex-col gap-4 text-xs'>
-				%s%s%s%s%s
-			</div>
-		`,
-		assignEquipmentButton,
-		publicDetailsButton,
-		LinkButton(fmt.Sprintf("/app/ticket/%d?form=update", ticket.ID), "Update Private Details", isUpdateForm),
-		LinkButton(fmt.Sprintf("/app/ticket/%d?form=delete", ticket.ID), "Delete Ticket", isDeleteForm),
-		resetEquipmentButton,
-	)
-		
-}
 
 func TicketDetails(ticket _model.Ticket, err string) string {
     equipmentWarning := ""
@@ -958,7 +924,7 @@ func TicketDetails(ticket _model.Ticket, err string) string {
 
 func DeleteTicketForm(ticket _model.Ticket, err string) string {
 	return fmt.Sprintf(`
-		<form id='delete-ticket-form' hx-indicator='#main-loader' action='/app/ticket/%d/delete' method='POST' class='flex flex-col gap-4 w-full p-6'>
+		<form id='delete-ticket-form' hx-indicator='#main-loader' action='/form/ticket/%d/delete' method='POST' class='flex flex-col gap-4 w-full p-6'>
 			%s%s%s%s
 		</form>
 	`, ticket.ID, FormTitle("Delete Ticket"), FormError(err), FormInputLabel("Type 'yes' to delete", "keyword", "", ""), FormDeleteButton())
@@ -970,7 +936,7 @@ func TicketAssignmentForm(ticket _model.Ticket, manufacturers []_model.Manufactu
 		manufacturerOptions += fmt.Sprintf("<div hx-get='/partial/manufacturer/%d/equipmentSelectionList?ticketID=%d' hx-indicator='#main-loader' hx-target='#equipment-selection-list' hx-swap='outerHTML' class='manufacturer-option border h-fit hover:border-white flex items-center justify-center border-darkgray cursor-pointer bg-black p-2 rounded text-xs' value='%d'>%s</div>", manufacturer.ID, ticket.ID, manufacturer.ID, manufacturer.Name)
 	}
 	return fmt.Sprintf(`
-		<form id='ticket-assignment-form' action='/app/ticket/%d/assign' hx-indicator='#main-loader' method='POST' class='flex flex-col gap-6 w-full p-6'>
+		<form id='ticket-assignment-form' action='/form/ticket/%d/assign' hx-indicator='#main-loader' method='POST' class='flex flex-col gap-6 w-full p-6'>
 			<input id='equipment-id-input' type='hidden' name='equipmentID' value=''/>
 			<div id='manufacturer-selection-list' class='flex flex-col gap-6'>
 				<div class='flex flex-row justify-between items-center'>
