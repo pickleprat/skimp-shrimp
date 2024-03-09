@@ -549,6 +549,11 @@ func AdminViewTicket(mux *http.ServeMux, db *gorm.DB) {
 							_components.TopNav(
 								_components.LinkButton(fmt.Sprintf("/app/ticket/%d", ticket.ID), "Assign Equipment", true),
 								_components.LinkButton(fmt.Sprintf("/app/ticket/%d/update", ticket.ID), "Update", false),
+								_util.ConditionalString(
+									ticket.Owner == "" || ticket.Notes == "" || ticket.EquipmentID == nil,
+									"",
+									_components.LinkButton(fmt.Sprintf("/app/ticket/%d/complete", ticket.ID), "Complete", false),
+								),
 								_components.LinkButton(fmt.Sprintf("/app/ticket/%d/delete", ticket.ID), "Delete", false),
 							),
 							_components.TicketDetails(ticket, ""),
@@ -595,7 +600,7 @@ func AdminCreateTickets(mux *http.ServeMux, db *gorm.DB) {
 							),
                             _components.CreateTicketForm(r, "", "/form/ticket/admin"),
 							_components.TicketSearchForm(),
-                            _components.HxGetLoader("/partial/ticketList?status=new&priority=low"),
+                            _components.HxGetLoader("/partial/ticketList?public=private&priority=all"),
                         ),
                     ),
                     _components.BottomSpacer(),
@@ -631,6 +636,11 @@ func AdminUpdateTicket(mux *http.ServeMux, db *gorm.DB) {
 							_components.TopNav(
 								_components.LinkButton(fmt.Sprintf("/app/ticket/%d", ticket.ID), "Assign Equipment", false),
 								_components.LinkButton(fmt.Sprintf("/app/ticket/%d/update", ticket.ID), "Update", true),
+								_util.ConditionalString(
+									ticket.Owner == "" || ticket.Notes == "" || ticket.EquipmentID == nil,
+									"",
+									_components.LinkButton(fmt.Sprintf("/app/ticket/%d/complete", ticket.ID), "Complete", false),
+								),
 								_components.LinkButton(fmt.Sprintf("/app/ticket/%d/delete", ticket.ID), "Delete", false),
 							),
 							_components.UpdateTicketForm(ticket, r.URL.Query().Get("err"), r.URL.Query().Get("success")),
@@ -669,9 +679,53 @@ func AdminDeleteTicket(mux *http.ServeMux, db *gorm.DB) {
 							_components.TopNav(
 								_components.LinkButton(fmt.Sprintf("/app/ticket/%d", ticket.ID), "Assign Equipment", false),
 								_components.LinkButton(fmt.Sprintf("/app/ticket/%d/update", ticket.ID), "Update", false),
+								_util.ConditionalString(
+									ticket.Owner == "" || ticket.Notes == "" || ticket.EquipmentID == nil,
+									"",
+									_components.LinkButton(fmt.Sprintf("/app/ticket/%d/complete", ticket.ID), "Complete", false),
+								),
 								_components.LinkButton(fmt.Sprintf("/app/ticket/%d/delete", ticket.ID), "Delete", true),
 							),
 							_components.DeleteTicketForm(ticket, r.URL.Query().Get("err")),
+						),
+					),
+					_components.BottomSpacer(),
+				})
+				w.Write(b.Build())
+			},
+			_middleware.Init, _middleware.Auth,
+		)
+	})
+}
+
+func AdminCompleteTicket(mux *http.ServeMux, db *gorm.DB) {
+	mux.HandleFunc("GET /app/ticket/{id}/complete", func(w http.ResponseWriter, r *http.Request) {
+		_middleware.MiddlewareChain(w, r,
+			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
+				var ticket _model.Ticket
+				id := r.PathValue("id")
+				if err := db.First(&ticket, id).Error; err != nil {
+					http.Error(w, err.Error(), http.StatusNotFound)
+					return
+				}
+				b := NewViewBuilder("Repairs Log - Complete Ticket", []string{
+					_components.MainLoader(),
+					_components.Root(
+						_components.CenterContentWrapper(
+							_components.Banner("Repairs Log", 
+								_components.BreadCrumbs(
+									_components.NavLink("Home", "/app", false),
+									_components.NavLink("Tickets", "/app/ticket", false),
+									_components.NavLink("Complete", fmt.Sprintf("/app/ticket/%d/complete", ticket.ID), true),
+								),
+							),
+							_components.TopNav(
+								_components.LinkButton(fmt.Sprintf("/app/ticket/%d", ticket.ID), "Assign Equipment", false),
+								_components.LinkButton(fmt.Sprintf("/app/ticket/%d/update", ticket.ID), "Update", false),
+								_components.LinkButton(fmt.Sprintf("/app/ticket/%d/complete", ticket.ID), "Complete", true),
+								_components.LinkButton(fmt.Sprintf("/app/ticket/%d/delete", ticket.ID), "Delete", false),
+							),
+							_components.CompleteTicketForm(ticket, r.URL.Query().Get("err"), r.URL.Query().Get("success")),
 						),
 					),
 					_components.BottomSpacer(),

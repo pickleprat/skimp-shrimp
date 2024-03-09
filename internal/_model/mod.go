@@ -25,7 +25,6 @@ type Equipment struct {
 type TicketStatus string
 
 const (
-	TicketStatusNew      TicketStatus = "new"
 	TicketStatusActive   TicketStatus = "active"
 	TicketStatusComplete TicketStatus = "complete"
 	TicketStatusOnHold   TicketStatus = "onhold"
@@ -51,4 +50,6 @@ type Ticket struct {
 	Owner       string
 	EquipmentID *uint
 	Equipment   Equipment
+	Cost 	    float64
+	RepairNotes string
 }

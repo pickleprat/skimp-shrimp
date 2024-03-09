@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -294,7 +295,7 @@ func CreateTicketPublic(mux *http.ServeMux, db *gorm.DB) {
 					Problem:  problem,
 					Location: location,
 					Priority: _model.TicketPriorityLow,
-					Status:   _model.TicketStatusNew,
+					Status:   _model.TicketStatusActive,
 					Notes:    "",
 					Owner:    "",
 				}
@@ -324,7 +325,7 @@ func CreateTicketAdmin(mux *http.ServeMux, db *gorm.DB) {
 					Problem:  problem,
 					Location: location,
 					Priority: _model.TicketPriorityLow,
-					Status:   _model.TicketStatusNew,
+					Status:   _model.TicketStatusActive,
 					Notes:    "",
 					Owner:    "",
 				}
@@ -428,11 +429,43 @@ func TicketResetEquipment(mux *http.ServeMux, db *gorm.DB) {
 				var ticket _model.Ticket
 				db.First(&ticket, id)
 				ticket.EquipmentID = nil
-				ticket.Status = _model.TicketStatusNew
+				ticket.Status = _model.TicketStatusActive
 				db.Save(&ticket)
 				http.Redirect(w, r, "/app/ticket/"+id, http.StatusSeeOther)
 			},
 			_middleware.Init, _middleware.Auth,
+		)
+	})
+}
+
+func CompleteTicket(mux *http.ServeMux, db *gorm.DB) {
+	mux.HandleFunc("POST /form/ticket/{id}/complete", func(w http.ResponseWriter, r *http.Request) {
+		_middleware.MiddlewareChain(w, r,
+			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
+				id := r.PathValue("id")
+				cost := r.Form.Get("cost")
+				repairNotes := r.Form.Get("repairNotes")
+				if cost == "" {
+					cost = "0"
+				}
+				costFloat, err := strconv.ParseFloat(cost, 64)
+				if err != nil {
+					http.Redirect(w, r, _util.URLBuilder("/app/ticket/"+id+"/complete", "err", "cost must be a valid number with no symbols or empty"), http.StatusSeeOther)
+					return
+				}
+				if repairNotes == "" {
+					http.Redirect(w, r, _util.URLBuilder("/app/ticket/"+id+"/complete", "err", "repair notes required"), http.StatusSeeOther)
+					return
+				}
+				var ticket _model.Ticket
+				db.First(&ticket, id)
+				ticket.Status = _model.TicketStatusComplete
+				ticket.Cost = costFloat
+				ticket.RepairNotes = repairNotes
+				db.Save(&ticket)
+				http.Redirect(w, r, "/app/ticket", http.StatusSeeOther)
+			},
+			_middleware.Init, _middleware.ParseForm, _middleware.Auth,
 		)
 	})
 }

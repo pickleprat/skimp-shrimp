@@ -53,6 +53,7 @@ func main() {
 	_view.AdminCreateTickets(mux, db)
 	_view.AdminUpdateTicket(mux, db)
 	_view.AdminDeleteTicket(mux, db)
+	_view.AdminCompleteTicket(mux, db)
 
 	_api.Login(mux, db)
 	_api.Logout(mux, db)
@@ -68,6 +69,7 @@ func main() {
 	_api.DeleteTicket(mux, db)
 	_api.AssignTicket(mux, db)
 	_api.TicketResetEquipment(mux, db)
+	_api.CompleteTicket(mux, db)
 
 	// partials
 	_partial.EquipmentSelectionList(mux, db)

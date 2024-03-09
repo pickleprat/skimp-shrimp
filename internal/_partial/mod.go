@@ -29,7 +29,7 @@ func EquipmentSelectionList(mux *http.ServeMux, db *gorm.DB) {
                     // Embed photo as data URI within img tag
                     photoTag := fmt.Sprintf(`<img src="data:image/jpeg;base64,%s" alt="%s" class='w-full'>`, photoBase64, e.Nickname)
                     option := fmt.Sprintf(`
-                        <div value='%d' class='equipment-option border hover:border-white border-darkgray cursor-pointer bg-black p-2 rounded text-sm flex items-center flex-col'>
+                        <div value='%d' class='equipment-option border w-[100px] hover:border-white border-darkgray cursor-pointer bg-black p-2 rounded text-sm flex items-center flex-col'>
                             %s%s
                         </div>`, e.ID, photoTag, e.Nickname)
                     equipmentOptions += option
@@ -49,7 +49,7 @@ func EquipmentSelectionList(mux *http.ServeMux, db *gorm.DB) {
 							<div class='flex flex-row justify-between items-center'>
 								<h2>Assign Equipment</h2>
 							</div>
-							<div class='grid grid-cols-3 md:grid-cols-4 gap-4'>
+							<div class='flex flex-wrap gap-4'>
 								%s
 							</div>
 						</div>
@@ -140,31 +140,41 @@ func TicketList(mux *http.ServeMux, db *gorm.DB) {
         _middleware.MiddlewareChain(w, r,
             func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
                 priority := r.Form.Get("priority")
-                status := r.Form.Get("status")
-                search := strings.ToLower(r.Form.Get("search"))
-                tickets := []_model.Ticket{}
-                query := db
-                if priority != "all" {
-                    query = query.Where("priority = ?", priority)
-                }
-                if status != "all" {
-                    query = query.Where("status = ?", status)
-                }
-                if search != "" {
-                    query = query.Where("LOWER(creator) LIKE ? OR LOWER(item) LIKE ? OR LOWER(problem) LIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%")
-                }
-                // Add this line to order the tickets by creation date, newest first
-                query = query.Order("created_at DESC")
-                
-                query.Find(&tickets)
-                component := _components.TicketList(tickets)
+                publicFilter := r.Form.Get("public")
+                filteredTickets := []_model.Ticket{}
+                query := db.Where("status != ?", _model.TicketStatusComplete)
+
+				
+                if publicFilter == "public" {
+					query = query.Where("owner <> '' AND notes <> '' AND equipment_id IS NOT NULL")
+					} else if publicFilter == "private" {
+						query = query.Where("owner = '' OR notes = '' OR equipment_id IS NULL")
+					}
+					
+				// Apply priority filter
+				if priority != "" && priority != "all" {
+					query = query.Where("priority = ?", priority)
+				}
+                // Order by priority
+                query = query.Order(`
+                    CASE 
+                        WHEN priority = 'urgent' THEN 1
+                        WHEN priority = 'medium' THEN 2
+                        WHEN priority = 'low' THEN 3
+                    END
+                `)
+
+                // Find filtered tickets
+                query.Find(&filteredTickets)
+
+                // Render component
+                component := _components.TicketList(filteredTickets)
                 w.Write([]byte(component))
             },
             _middleware.Init, _middleware.ParseForm, _middleware.Auth,
         )
     })
 }
-
 
 func PublicTicketList(mux *http.ServeMux, db *gorm.DB) {
     mux.HandleFunc("GET /partial/publicTicketList", func(w http.ResponseWriter, r *http.Request) {
@@ -174,7 +184,7 @@ func PublicTicketList(mux *http.ServeMux, db *gorm.DB) {
             priority := r.URL.Query().Get("priority") // Correctly retrieve the priority query parameter
 
             // Base query to ensure all fields are filled out and status is not "complete".
-            query := db.Where("creator <> '' AND item <> '' AND problem <> '' AND location <> '' AND notes <> '' AND owner <> ''").
+            query := db.Where("creator <> '' AND item <> '' AND problem <> '' AND location <> '' AND notes <> '' AND owner <> '' AND equipment_id <> ''").
                 Where("status <> ?", _model.TicketStatusComplete)
 
             // Modify query based on priority.

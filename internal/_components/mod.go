@@ -369,9 +369,9 @@ func CreateEquipmentForm(manufacturer _model.Manufacturer, err string, success s
 		"active", "running", "stuck", "jumping", "sleeping", "flying", "laughing", "dancing", "singing", "eating", 
 		"coding", "swimming", "climbing", "hiking", "exploring", "reading", "writing", "thinking", "dreaming", "playing", 
 		"cooking", "traveling", "meditating", "building", "designing", "learning", "teaching", "helping", "creating", 
-		"driving", "skiing", "surfing", "painting", "skating", "sailing", "scuba diving", "juggling", "running", "biking", 
-		"gaming", "gardening", "solving puzzles", "rock climbing", "skydiving", "yoga", "snorkeling", "rafting", "baking",
-		"paragliding", "photography", "volunteering", "doodling", "whale watching", "birdwatching", "stargazing", "rafting",
+		"driving", "skiing", "surfing", "painting", "skating", "sailing", "diving", "juggling", "running", "biking", 
+		"gaming", "gardening", "puzzled", "rock climbing", "skydiving", "yoga", "snorkeling", "rafting", "baking",
+		"paragliding", "photography", "volunteering", "doodling", "watching", "birdwatching", "stargazing", "rafting",
 		"hula hooping", "woodworking", "pottery", "beekeeping", "calligraphy", "pottery", "kayaking", "drumming", "rapping",
 	}
 	potentialNameLast := []string{
@@ -510,7 +510,7 @@ func EquipmentList(title string, equipment []_model.Equipment) string {
 		return fmt.Sprintf(`
 			<div class='flex flex-col p-6 gap-6'>
 				<h2 class='text-lg'>%s</h2>			
-				<div class='grid grid-cols-2 md:grid-cols-3 gap-4'>
+				<div class='flex flex-wrap gap-4'>
 					%s
 				</div>
 			</div>
@@ -627,8 +627,18 @@ func CreateTicketForm(r *http.Request, token string, action string) string {
 func TicketList(tickets []_model.Ticket) string {
     ticketList := ""
     for _, ticket := range tickets {
+		border := ""
+		if ticket.Priority == _model.TicketPriorityLow {
+			border = "border-green hover:border-l-4"
+		}
+		if ticket.Priority == _model.TicketPriorityMedium {
+			border = "border-yellow-500 hover:border-l-4"
+		}
+		if ticket.Priority == _model.TicketPriorityUrgent {
+			border = "border-red hover:border-l-4"
+		}
         ticketList += fmt.Sprintf(`
-            <a href='/app/ticket/%d' class='border border-darkgray rounded p-4 text-xs hover:border-white cursor-pointer'>
+            <a href='/app/ticket/%d' class='border border-darkgray rounded p-4 text-xs %s cursor-pointer'>
                 <div class='flex flex-row justify-between'>
                     <h2 class='font-bold text-lg'>%s</h2>
 					<div class='text-xs'>
@@ -640,7 +650,7 @@ func TicketList(tickets []_model.Ticket) string {
                 <p>Problem: %s</p>
             </a>
 
-        `, ticket.ID, ticket.Creator, ticket.Location, ticket.CreatedAt.Format("01/02/2006"), ticket.Item, ticket.Problem)
+        `, ticket.ID, border, ticket.Creator, ticket.Location, ticket.CreatedAt.Format("01/02/2006"), ticket.Item, ticket.Problem)
     }
     if len(tickets) == 0 {
         return `
@@ -721,89 +731,28 @@ func ActiveLink(href string, text string, isActive bool) string {
 func TicketSearchForm() string {
 	return fmt.Sprintf(`
 		<form action='/partial/ticketList' method='GET' class="p-6 flex flex-col gap-6">
-			<input name='status' id='status-input' type='hidden' value='%s' />
 			<input name='priority' id='priority-input' type='hidden' value='%s' />
+			<input name='public' id='public-input' type='hidden' value='private' />
 			<div class='flex flex-col gap-2'>
 				<p class='text-xs'>Priority Filter</p>
-				<div class='flex flex-wrap gap-2'>
-					<div class='priority-button cursor-pointer px-2 py-1 bg-white text-black rounded border border-darkgray text-xs'>%s</div>
+				<div class='flex flex-wrap gap-2 items-center'>
+					<div class='priority-button cursor-pointer px-2 py-1 bg-white text-black rounded border border-darkgray text-xs'>all</div>
 					<div class='priority-button cursor-pointer px-2 py-1 rounded border border-darkgray text-xs'>%s</div>
 					<div class='priority-button cursor-pointer px-2 py-1 rounded border border-darkgray text-xs'>%s</div>
-					<div class='priority-button cursor-pointer px-2 py-1 rounded border border-darkgray text-xs'>all</div>
+					<div class='priority-button cursor-pointer px-2 py-1 rounded border border-darkgray text-xs'>%s</div>
+					<div id='ticket-list-indicator' class='h-6 w-6 hidden rounded-full border animate-spin border-darkgray border-t-white'></div>
 				</div>
 			</div>
 			<div class='flex flex-col gap-2'>
-				<p class='text-xs'>Status Filter</p>
-				<div class='flex flex-wrap gap-2'>
-					<div class='status-button cursor-pointer px-2 py-1 bg-white text-black rounded border border-darkgray text-xs'>%s</div>
-					<div class='status-button cursor-pointer px-2 py-1 rounded border border-darkgray text-xs'>%s</div>
-					<div class='status-button cursor-pointer px-2 py-1 rounded border border-darkgray text-xs'>%s</div>
-					<div class='status-button cursor-pointer px-2 py-1 rounded border border-darkgray text-xs'>%s</div>
-					<div class='status-button cursor-pointer px-2 py-1 rounded border border-darkgray text-xs'>all</div>
-				</div>
-			</div>
-			<div id='ticket-search' class='flex justify-between bg-black border border-darkgray p-2 rounded-lg'>
-				<div class='h-6 w-6'>
-					<img src="/static/svg/search-dark.svg">
-				</div>
-				<div class='flex flex-row justify-between items-center w-full'>
-					<input name='search' id='ticket-search-input' type="text" class="pl-4 w-full bg-inherit focus:outline-none" placeholder="Search Tickets...">
-					<div id='ticket-list-indicator' class='hidden animate-spin rounded-full border border-darkgray border-t-white h-6 w-6 p-2'></div>
+				<p class='text-xs'>Public Filter</p>
+				<div class='flex flex-wrap gap-2 items-center'>
+					<div class='public-button cursor-pointer px-2 py-1 rounded border border-darkgray text-xs'>all</div>
+					<div class='public-button cursor-pointer px-2 py-1 rounded border border-darkgray text-xs'>public</div>
+					<div class='public-button cursor-pointer px-2 py-1 bg-white text-black rounded border border-darkgray text-xs'>private</div>
 				</div>
 			</div>
 		</form>
 		<script>
-			document.body.addEventListener = function() {};
-			document.body.addEventListener('click', (event) => {
-				if (qs('#ticket-search')) {
-					if (!qs('#ticket-search').contains(event.target)) {
-						qs('#ticket-search').classList.remove('border-lightgray');
-					}
-				}
-			});
-			qs('#ticket-search').addEventListener('click', (event) => {
-				event.stopPropagation();
-				qs('#ticket-search').classList.toggle('border-lightgray');
-			});
-			qs('#ticket-search').addEventListener('input', async (event) => {
-				qs('#ticket-list-indicator').classList.remove('hidden');
-				let status = qs('#status-input').value;
-				let priority = qs('#priority-input').value;
-				let search = event.target.value;
-				let path = "/partial/ticketList?status=" + status + "&priority=" + priority + "&search=" + search;
-				let res = await fetch(path, {
-					method: 'GET',
-				});
-				if (res.status !== 200) {
-				}
-				let html = await res.text();
-				qs('#ticket-list').outerHTML = html;
-				qs('#ticket-list-indicator').classList.add('hidden');
-			})
-			document.querySelectorAll('.status-button').forEach(button => {
-				button.addEventListener('click', async () => {
-					document.querySelectorAll('.status-button').forEach(btn => {
-						btn.classList.remove('bg-white', 'text-black');
-						btn.classList.add('bg-black', 'text-white');
-					});
-					button.classList.remove('bg-black', 'text-white');
-					button.classList.add('bg-white', 'text-black');
-					document.getElementById('status-input').value = button.textContent.trim();
-					qs('#ticket-list-indicator').classList.remove('hidden');
-					let status = qs('#status-input').value;
-					let priority = qs('#priority-input').value;
-					let search = qs('#ticket-search-input').value;
-					let path = "/partial/ticketList?status=" + status + "&priority=" + priority + "&search=" + search;
-					let res = await fetch(path, {
-						method: 'GET',
-					});
-					if (res.status !== 200) {
-					}
-					let html = await res.text();
-					qs('#ticket-list').outerHTML = html;
-					qs('#ticket-list-indicator').classList.add('hidden');
-				});
-			});
 			document.querySelectorAll('.priority-button').forEach(button => {
 				button.addEventListener('click', async () => {
 					document.querySelectorAll('.priority-button').forEach(btn => {
@@ -814,10 +763,32 @@ func TicketSearchForm() string {
 					button.classList.add('bg-white', 'text-black');
 					document.getElementById('priority-input').value = button.textContent.trim();
 					qs('#ticket-list-indicator').classList.remove('hidden');
-					let status = qs('#status-input').value;
 					let priority = qs('#priority-input').value;
-					let search = qs('#ticket-search-input').value;
-					let path = "/partial/ticketList?status=" + status + "&priority=" + priority + "&search=" + search;
+					let publicFilter = qs('#public-input').value;
+					let path = "/partial/ticketList?priority=" + priority + "&public=" + publicFilter;
+					let res = await fetch(path, {
+						method: 'GET',
+					});
+					if (res.status !== 200) {
+					}
+					let html = await res.text();
+					qs('#ticket-list').outerHTML = html;
+					qs('#ticket-list-indicator').classList.add('hidden');
+				});
+			});
+			document.querySelectorAll('.public-button').forEach(button => {
+				button.addEventListener('click', async () => {
+					document.querySelectorAll('.public-button').forEach(btn => {
+						btn.classList.remove('bg-white', 'text-black');
+						btn.classList.add('bg-black', 'text-white');
+					});
+					button.classList.remove('bg-black', 'text-white');
+					button.classList.add('bg-white', 'text-black');
+					document.getElementById('public-input').value = button.textContent.trim();
+					qs('#ticket-list-indicator').classList.remove('hidden');
+					let priority = qs('#priority-input').value;
+					let publicFilter = qs('#public-input').value;
+					let path = "/partial/ticketList?priority=" + priority + "&public=" + publicFilter;
 					let res = await fetch(path, {
 						method: 'GET',
 					});
@@ -830,15 +801,10 @@ func TicketSearchForm() string {
 			});
 		</script>
 	`, 
-		_model.TicketStatusNew,
-		_model.TicketPriorityLow,
+		"all",
 		_model.TicketPriorityLow, 
 		_model.TicketPriorityMedium, 
 		_model.TicketPriorityUrgent, 
-		_model.TicketStatusNew, 
-		_model.TicketStatusActive, 
-		_model.TicketStatusComplete, 
-		_model.TicketStatusOnHold,
 	)
 }
 
@@ -1078,7 +1044,7 @@ func UpdateTicketForm(ticket _model.Ticket, err string, success string) string {
 					%s%s%s%s%s%s
 				</div>
 				<div class='flex flex-col gap-4'>
-					<h3 class='text-gray'>Admin Details</h3>
+					<h3 class='text-gray'>Public Details</h3>
 					%s%s%s%s%s
 				</div>
 			</div>
@@ -1094,8 +1060,18 @@ func UpdateTicketForm(ticket _model.Ticket, err string, success string) string {
 		FormSelectLabel("Location", "location", []string{"Southroads", "Utica"}, ticket.Location),
 		FormInputLabel("Owner", "owner", "text", ticket.Owner),
 		FormSelectLabel("Priority", "priority", []string{string(_model.TicketPriorityLow), string(_model.TicketPriorityMedium), string(_model.TicketPriorityUrgent)}, string(ticket.Priority)),
-		FormSelectLabel("Status", "status", []string{string(_model.TicketStatusNew), string(_model.TicketStatusActive), string(_model.TicketStatusOnHold), string(_model.TicketStatusComplete)}, string(ticket.Status)),
+		FormSelectLabel("Status", "status", []string{string(_model.TicketStatusActive), string(_model.TicketStatusOnHold)}, string(ticket.Status)),
 		FormTextAreaLabel("Notes", "notes", 2, ticket.Notes),
 		FormSubmitButton(),
 	)
+}
+
+func CompleteTicketForm(ticket _model.Ticket, err string, success string) string {
+	return fmt.Sprintf(`
+		<form hx-indicator='#main-loader' action='/form/ticket/%d/complete' method='POST' class='flex flex-col gap-4 w-full p-6'>
+			%s
+			<p class='text-xs text-yellow-500'>warning: completing a ticket will make it private and undeitable</p>
+			%s%s%s%s%s
+		</form>
+	`, ticket.ID, FormTitle("Complete Ticket"), FormError(err), FormSuccess(success), FormInputLabel("Total Cost (leave blank if none)", "cost", "text", ""), FormTextAreaLabel("Repair Notes", "repairNotes", 2, ""), FormSubmitButton())
 }
