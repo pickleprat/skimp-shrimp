@@ -63,16 +63,8 @@ func CreateManufacturer(mux *http.ServeMux, db *gorm.DB) {
 				name := r.Form.Get("name")
 				phone := r.Form.Get("phone")
 				email := r.Form.Get("email")
-				if name == "" || phone == "" || email == "" {
-					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer", "err", "all fields required", "name", name, "phone", phone, "email", email), http.StatusSeeOther)
-					return
-				}
-				if _util.IsValidPhoneNumber(phone) == false {
-					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer", "err", "invalid phone format", "name", name, "phone", phone, "email", email), http.StatusSeeOther)
-					return
-				}
-				if _util.IsValidEmail(email) == false {
-					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer", "err", "invalid email format", "name", name, "phone", phone, "email", email), http.StatusSeeOther)
+				if name == ""  {
+					http.Redirect(w, r, _util.URLBuilder("/app/manufacturer", "err", "name is required", "name", name, "phone", phone, "email", email), http.StatusSeeOther)
 					return
 				}
 				manufacturer := _model.Manufacturer{
@@ -289,10 +281,18 @@ func CreateTicketPublic(mux *http.ServeMux, db *gorm.DB) {
 					http.Redirect(w, r, _util.URLBuilder("/app/ticket/public", "publicSecurityToken", securityToken, "err", "all fields required", "creator", creator, "item", item, "problem", problem, "location", location), http.StatusSeeOther)
 					return
 				}
+				englishItem, err := _util.TranslateToEnglish(item)
+				if err != nil {
+					englishItem = item
+				}
+				englishProblem, err := _util.TranslateToEnglish(problem)
+				if err != nil {
+					englishProblem = problem
+				}
 				ticket := _model.Ticket{
 					Creator:  creator,
-					Item:     item,
-					Problem:  problem,
+					Item:     englishItem,
+					Problem:  englishProblem,
 					Location: location,
 					Priority: _model.TicketPriorityLow,
 					Status:   _model.TicketStatusActive,

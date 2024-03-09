@@ -14,7 +14,7 @@ import (
 func Banner(title string, breadcrumbs string) string {
 	return fmt.Sprintf(`
 		<header>
-			<div id='navbar' class='flex flex-col p-6 h-[115px] z-40 bg-black w-full border-darkgray gap-6'>
+			<div id='navbar' class='flex flex-col p-6 h-[125px] z-40 bg-black w-full border-darkgray gap-6'>
 				<div class='flex flex-row justify-between items-center'>
 					<h2 class=''>%s</h2>
 					<div class='h-12 w-12'>

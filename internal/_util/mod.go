@@ -2,8 +2,14 @@ package _util
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"io/ioutil"
 	"math/rand"
+	"net/http"
+	"net/url"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -89,4 +95,42 @@ func ConditionalString(condition bool, option1 string, option2 string) string {
 func RandomInt(min int, max int) int {
 	rand.Seed(time.Now().UnixNano())
 	return rand.Intn(max-min) + min
+}
+
+type TranslationResponse struct {
+	Translations []struct {
+		DetectedSourceLanguage string `json:"detected_source_language"`
+		Text                   string `json:"text"`
+	} `json:"translations"`
+}
+
+func TranslateToEnglish(input string) (string, error) {
+    data := url.Values{
+        "text":        {input},
+        "target_lang": {"EN"},
+    }
+    u, _ := url.ParseRequestURI(os.Getenv("TRANSLATION_API_URL"))
+    u.Path = os.Getenv("TRANSLATION_API_RESOURCE")
+    urlStr := u.String()
+    req, err := http.NewRequest(http.MethodPost, urlStr, strings.NewReader(data.Encode()))
+    if err != nil {
+        return "", err
+    }
+    key := os.Getenv("TRANSLATION_API_KEY")
+    authHeader := fmt.Sprintf("DeepL-Auth-Key %s", key)
+    req.Header.Set("Authorization", authHeader)
+    req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        return "", err
+    }
+    defer resp.Body.Close()
+    body, err := ioutil.ReadAll(resp.Body)
+    if err != nil {
+        return "", err
+    }
+	var result TranslationResponse
+	err = json.Unmarshal(body, &result)
+    return result.Translations[0].Text, nil
 }
