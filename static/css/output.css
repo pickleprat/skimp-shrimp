@@ -1069,6 +1069,18 @@ video {
   transition-duration: 150ms;
 }
 
+.\[startFilter\:endFilter\] {
+  start-filter: endFilter;
+}
+
+.\[startFilterUint\:endFilter\] {
+  start-filter-uint: endFilter;
+}
+
+.\[startFilterUint\:endFilterUint\] {
+  start-filter-uint: endFilterUint;
+}
+
 .hover\:border-2:hover {
   border-width: 2px;
 }

@@ -27,6 +27,21 @@ func main() {
 	db.AutoMigrate(&_model.Manufacturer{})
 	db.AutoMigrate(&_model.Equipment{})
 	db.AutoMigrate(&_model.Ticket{})
+	// _model.CreateTickets(
+	// 	db,
+	// 	100,
+	// 	"admin",
+	// 	"laptop",
+	// 	"broken screen",
+	// 	"Southroads",
+	// 	"urgent",
+	// 	"complete",
+	// 	"none",
+	// 	"admin",
+	// 	1,
+	// 	100.00,
+	// 	"none",
+	// )
 	
 	// setting up server and serving static files
 	mux := http.NewServeMux()
@@ -77,6 +92,7 @@ func main() {
 	_partial.ResetEquipmentLink(mux, db)
 	_partial.PublicTicketList(mux, db)
 	_partial.AuthWarning(mux, db)
+	_partial.CompletedTicketList(mux, db)
 
 	// serving
 	fmt.Println("Server is running on port " + os.Getenv("PORT"))

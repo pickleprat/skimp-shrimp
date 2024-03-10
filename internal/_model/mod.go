@@ -1,6 +1,11 @@
 package _model
 
-import "gorm.io/gorm"
+import (
+	"math/rand"
+	"time"
+
+	"gorm.io/gorm"
+)
 
 type Manufacturer struct {
 	gorm.Model
@@ -52,4 +57,27 @@ type Ticket struct {
 	Equipment   Equipment
 	Cost 	    float64
 	RepairNotes string
+}
+
+func CreateTickets(db *gorm.DB, count int, creator, item, problem, location string, priority TicketPriority, status TicketStatus, notes, owner string, equipmentID uint, cost float64, repairNotes string) error {
+	rand.Seed(time.Now().UnixNano())
+	for i := 0; i < count; i++ {
+		ticket := Ticket{
+			Creator:     creator,
+			Item:        item,
+			Problem:     problem,
+			Location:    location,
+			Priority:    priority,
+			Status:      status,
+			Notes:       notes,
+			Owner:       owner,
+			EquipmentID: &equipmentID,
+			Cost:        cost,
+			RepairNotes: repairNotes,
+		}
+		if err := db.Create(&ticket).Error; err != nil {
+			return err
+		}
+	}
+	return nil
 }

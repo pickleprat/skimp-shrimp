@@ -640,8 +640,14 @@ func TicketList(tickets []_model.Ticket) string {
 		if ticket.Priority == _model.TicketPriorityUrgent {
 			border = "border-red hover:border-l-4"
 		}
+		var href string
+		if ticket.Owner != "" && ticket.Notes != "" && ticket.EquipmentID != nil {
+			href = fmt.Sprintf("/app/ticket/%d/complete", ticket.ID)
+		} else {
+			href = fmt.Sprintf("/app/ticket/%d", ticket.ID)
+		}
         ticketList += fmt.Sprintf(`
-            <a href='/app/ticket/%d' class='border border-darkgray rounded p-4 text-xs %s cursor-pointer'>
+            <a href='%s' class='border border-darkgray rounded p-4 text-xs %s cursor-pointer'>
                 <div class='flex flex-row justify-between'>
                     <h2 class='font-bold text-lg'>%s</h2>
 					<div class='text-xs'>
@@ -653,7 +659,7 @@ func TicketList(tickets []_model.Ticket) string {
                 <p>Problem: %s</p>
             </a>
 
-        `, ticket.ID, border, ticket.Creator, ticket.Location, ticket.CreatedAt.Format("01/02/2006"), ticket.Item, ticket.Problem)
+        `, href, border, ticket.Creator, ticket.Location, ticket.CreatedAt.Format("01/02/2006"), ticket.Item, ticket.Problem)
     }
     if len(tickets) == 0 {
         return `
@@ -713,6 +719,35 @@ func PublicTicketList(tickets []_model.Ticket) string {
         return fmt.Sprintf(`
             <div id='ticket-list' class='w-full flex flex-col p-6 gap-6'>
                 %s
+            </div>
+        `, ticketList)
+    }
+}
+
+func TicketListComplete(tickets []_model.Ticket) string {
+	ticketList := ""
+    for _, ticket := range tickets {
+		cost := fmt.Sprintf("$%.2f", ticket.Cost)
+        ticketList += fmt.Sprintf(`
+            <div  class='border border-darkgray rounded p-4 text-xs cursor-pointer flex w-fit'>
+                <p>%s</p>
+            </div>
+
+        `, cost)
+    }
+    if len(tickets) == 0 {
+        return `
+            <div id='ticket-list' class='p-6 w-full'>
+                <p>No tickets found!</p>
+            </div>
+        `
+    } else {
+        return fmt.Sprintf(`
+            <div id='ticket-list' class='w-full flex flex-col p-6 gap-6'>
+				<h2 class='text-lg'>Completed Tickets</h2>
+				<div class='flex flex-wrap gap-6'>
+	                %s
+				</div>
             </div>
         `, ticketList)
     }

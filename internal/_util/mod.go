@@ -134,3 +134,5 @@ func TranslateToEnglish(input string) (string, error) {
 	err = json.Unmarshal(body, &result)
     return result.Translations[0].Text, nil
 }
+
+

@@ -233,3 +233,19 @@ func AuthWarning(mux *http.ServeMux, db *gorm.DB) {
 }
 
 
+func CompletedTicketList(mux *http.ServeMux, db *gorm.DB) {
+	mux.HandleFunc("GET /partial/completeTicketList/{equipmentID}", func(w http.ResponseWriter, r *http.Request) {
+		_middleware.MiddlewareChain(w, r,
+			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
+				equipmentID := r.PathValue("equipmentID")
+				tickets := []_model.Ticket{}
+				db.Where("status = ? AND equipment_id = ?", _model.TicketStatusComplete, equipmentID).Find(&tickets)
+				component := _components.TicketListComplete(tickets)
+				w.Write([]byte(component))
+			},
+			_middleware.Init, _middleware.ParseForm, _middleware.ComponentAuth,
+		)
+	})
+}
+
+

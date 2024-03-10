@@ -446,6 +446,7 @@ func UpdateEquipment(mux *http.ServeMux, db *gorm.DB) {
                             ),
                             _components.EquipmentDetails(equipment, manufacturer),
                             _components.UpdateEquipmentForm(equipment, r.URL.Query().Get("err"), r.URL.Query().Get("success")),
+							_components.HxGetLoader(fmt.Sprintf("/partial/completeTicketList/%s", equipmentID)),
                         ),
                     ),
                     _components.BottomSpacer(),
