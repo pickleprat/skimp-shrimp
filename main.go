@@ -27,21 +27,6 @@ func main() {
 	db.AutoMigrate(&_model.Manufacturer{})
 	db.AutoMigrate(&_model.Equipment{})
 	db.AutoMigrate(&_model.Ticket{})
-	// _model.CreateTickets(
-	// 	db,
-	// 	100,
-	// 	"admin",
-	// 	"laptop",
-	// 	"broken screen",
-	// 	"Southroads",
-	// 	"urgent",
-	// 	"complete",
-	// 	"none",
-	// 	"admin",
-	// 	1,
-	// 	100.00,
-	// 	"none",
-	// )
 	
 	// setting up server and serving static files
 	mux := http.NewServeMux()
