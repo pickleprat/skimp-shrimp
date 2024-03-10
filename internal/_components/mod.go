@@ -1006,11 +1006,11 @@ func UpdateTicketForm(ticket _model.Ticket, err string, success string) string {
 					%s
 				</div>
 				<div class='flex flex-col gap-4'>
-					<h3 class='text-gray'>Creation Details</h3>
+					<h3 class='text-gray'>Public Details</h3>
 					%s%s%s%s%s%s
 				</div>
 				<div class='flex flex-col gap-4'>
-					<h3 class='text-gray'>Public Details</h3>
+					<h3 class='text-gray'>Creation Details</h3>
 					%s%s%s%s%s
 				</div>
 			</div>
@@ -1020,14 +1020,14 @@ func UpdateTicketForm(ticket _model.Ticket, err string, success string) string {
 		FormTitle("Update Ticket Details"),
 		FormError(err),
 		FormSuccess(success),
-		FormInputLabel("Creator", "creator", "text", ticket.Creator),
-		FormInputLabel("Item Description", "item", "text", ticket.Item),
-		FormTextAreaLabel("Problem", "problem", 2, ticket.Problem),
-		FormSelectLabel("Location", "location", []string{"Southroads", "Utica"}, ticket.Location),
 		FormInputLabel("Owner", "owner", "text", ticket.Owner),
 		FormSelectLabel("Priority", "priority", []string{string(_model.TicketPriorityLow), string(_model.TicketPriorityMedium), string(_model.TicketPriorityUrgent)}, string(ticket.Priority)),
 		FormSelectLabel("Status", "status", []string{string(_model.TicketStatusActive), string(_model.TicketStatusOnHold)}, string(ticket.Status)),
 		FormTextAreaLabel("Notes", "notes", 2, ticket.Notes),
+		FormInputLabel("Creator", "creator", "text", ticket.Creator),
+		FormInputLabel("Item Description", "item", "text", ticket.Item),
+		FormTextAreaLabel("Problem", "problem", 2, ticket.Problem),
+		FormSelectLabel("Location", "location", []string{"Southroads", "Utica"}, ticket.Location),
 		FormSubmitButton(),
 	)
 }

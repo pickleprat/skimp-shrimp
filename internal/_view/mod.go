@@ -5,6 +5,7 @@ import (
 	"cfasuite/internal/_middleware"
 	"cfasuite/internal/_model"
 	"cfasuite/internal/_util"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -225,246 +226,282 @@ func CreateManufacturers(mux *http.ServeMux, db *gorm.DB) {
 }
 
 func Manufacturer(mux *http.ServeMux, db *gorm.DB) {
-	mux.HandleFunc("GET /app/manufacturer/{id}", func(w http.ResponseWriter, r *http.Request) {
-		_middleware.MiddlewareChain(w, r,
-			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
-				id := r.PathValue("id")
-				var manufacturer _model.Manufacturer
-				var equipment []_model.Equipment
-				db.First(&manufacturer, id)
-				db.Where("manufacturer_id = ?", manufacturer.ID).Find(&equipment)
-				b := NewViewBuilder("Repairs Log - " + manufacturer.Name, []string{
-					_components.MainLoader(),
-					_components.Root(
-						_components.CenterContentWrapper(
-							_components.Banner("Repairs Log", 
-								_components.BreadCrumbs(
-									_components.NavLink("Home", "/app", false),
-									_components.NavLink("Manufacturers", "/app/manufacturer", false),
-									_components.NavLink("Equipment", fmt.Sprintf("/app/manufacturer/%d", manufacturer.ID), true),
-								),
-							),
-							_components.TopNav(
-								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d", manufacturer.ID), "Equipment", true),
-								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/archive", manufacturer.ID), "Archived Equipment", false),
-								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/update", manufacturer.ID), "Update", false),
-								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/delete", manufacturer.ID), "Delete", false),
-							),
-							_components.ManufacturerDetails(manufacturer),
-							_components.CreateEquipmentForm(
-								manufacturer, 
-								r.URL.Query().Get("err"), 
-								r.URL.Query().Get("success"),
-								r.URL.Query().Get("submitRedirect"),
-								r.URL.Query().Get("nickname"),
-								r.URL.Query().Get("serialNumber"),
-								r.URL.Query().Get("modelNumber"),
-							),
-							_components.HxGetLoader(
-								fmt.Sprintf("/partial/manufacturer/%d/equipment", manufacturer.ID),
-							),
-						),
-					),
-					_components.BottomSpacer(),
-				})
-				w.Write(b.Build())
-			},
-			_middleware.Init, _middleware.Auth,
-		)
-	})
+    mux.HandleFunc("GET /app/manufacturer/{id}", func(w http.ResponseWriter, r *http.Request) {
+        _middleware.MiddlewareChain(w, r,
+            func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
+                id := r.PathValue("id")
+                var manufacturer _model.Manufacturer
+                var equipment []_model.Equipment
+                
+                // Check if the manufacturer exists in the database
+                if err := db.First(&manufacturer, id).Error; err != nil {
+                    if errors.Is(err, gorm.ErrRecordNotFound) {
+                        http.Error(w, "Manufacturer not found", http.StatusBadRequest)
+                        return
+                    }
+                    // Handle other database errors
+                    http.Error(w, "Internal server error", http.StatusInternalServerError)
+                    return
+                }
+                db.Where("manufacturer_id = ?", manufacturer.ID).Find(&equipment)
+                b := NewViewBuilder("Repairs Log - " + manufacturer.Name, []string{
+                    _components.MainLoader(),
+                    _components.Root(
+                        _components.CenterContentWrapper(
+                            _components.Banner("Repairs Log", 
+                                _components.BreadCrumbs(
+                                    _components.NavLink("Home", "/app", false),
+                                    _components.NavLink("Manufacturers", "/app/manufacturer", false),
+                                    _components.NavLink("Equipment", fmt.Sprintf("/app/manufacturer/%d", manufacturer.ID), true),
+                                ),
+                            ),
+                            _components.TopNav(
+                                _components.LinkButton(fmt.Sprintf("/app/manufacturer/%d", manufacturer.ID), "Equipment", true),
+                                _components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/archive", manufacturer.ID), "Archived Equipment", false),
+                                _components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/update", manufacturer.ID), "Update", false),
+                                _components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/delete", manufacturer.ID), "Delete", false),
+                            ),
+                            _components.ManufacturerDetails(manufacturer),
+                            _components.CreateEquipmentForm(
+                                manufacturer, 
+                                r.URL.Query().Get("err"), 
+                                r.URL.Query().Get("success"),
+                                r.URL.Query().Get("submitRedirect"),
+                                r.URL.Query().Get("nickname"),
+                                r.URL.Query().Get("serialNumber"),
+                                r.URL.Query().Get("modelNumber"),
+                            ),
+                            _components.HxGetLoader(
+                                fmt.Sprintf("/partial/manufacturer/%d/equipment", manufacturer.ID),
+                            ),
+                        ),
+                    ),
+                    _components.BottomSpacer(),
+                })
+                w.Write(b.Build())
+            },
+            _middleware.Init, _middleware.Auth,
+        )
+    })
 }
+
 
 func EquipmentArchive(mux *http.ServeMux, db *gorm.DB) {
-	mux.HandleFunc("GET /app/manufacturer/{id}/archive", func(w http.ResponseWriter, r *http.Request) {
-		_middleware.MiddlewareChain(w, r,
-			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
-				id := r.PathValue("id")
-				var manufacturer _model.Manufacturer
-				var equipment []_model.Equipment
-				db.First(&manufacturer, id)
-				db.Where("manufacturer_id = ?", manufacturer.ID).Find(&equipment)
-				b := NewViewBuilder("Repairs Log - " + manufacturer.Name, []string{
-					_components.MainLoader(),
-					_components.Root(
-						_components.CenterContentWrapper(
-							_components.Banner("Repairs Log", 
-								_components.BreadCrumbs(
-									_components.NavLink("Home", "/app", false),
-									_components.NavLink("Manufacturers", "/app/manufacturer", false),
-									_components.NavLink("Equipment Archive", fmt.Sprintf("/app/manufacturer/%d/archive", manufacturer.ID), true),
-								),
-							),
-							_components.TopNav(
-								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d", manufacturer.ID), "Equipment", false),
-								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/archive", manufacturer.ID), "Archived Equipment", true),
-								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/update", manufacturer.ID), "Update", false),
-								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/delete", manufacturer.ID), "Delete", false),
-							),
-							_components.ManufacturerDetails(manufacturer),
-							_components.HxGetLoader(
-								fmt.Sprintf("/partial/manufacturer/%d/equipment?archived=true", manufacturer.ID),
-							),
-						),
-					),
-					_components.BottomSpacer(),
-				})
-				w.Write(b.Build())
-			},
-			_middleware.Init, _middleware.Auth,
-		)
-	})
+    mux.HandleFunc("GET /app/manufacturer/{id}/archive", func(w http.ResponseWriter, r *http.Request) {
+        _middleware.MiddlewareChain(w, r,
+            func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
+                id := r.PathValue("id")
+                var manufacturer _model.Manufacturer
+                var equipment []_model.Equipment
+                if err := db.First(&manufacturer, id).Error; err != nil {
+                    http.Error(w, "Manufacturer not found", http.StatusBadRequest)
+                    return
+                }
+                db.Where("manufacturer_id = ?", manufacturer.ID).Find(&equipment)
+                b := NewViewBuilder("Repairs Log - " + manufacturer.Name, []string{
+                    _components.MainLoader(),
+                    _components.Root(
+                        _components.CenterContentWrapper(
+                            _components.Banner("Repairs Log", 
+                                _components.BreadCrumbs(
+                                    _components.NavLink("Home", "/app", false),
+                                    _components.NavLink("Manufacturers", "/app/manufacturer", false),
+                                    _components.NavLink("Equipment Archive", fmt.Sprintf("/app/manufacturer/%d/archive", manufacturer.ID), true),
+                                ),
+                            ),
+                            _components.TopNav(
+                                _components.LinkButton(fmt.Sprintf("/app/manufacturer/%d", manufacturer.ID), "Equipment", false),
+                                _components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/archive", manufacturer.ID), "Archived Equipment", true),
+                                _components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/update", manufacturer.ID), "Update", false),
+                                _components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/delete", manufacturer.ID), "Delete", false),
+                            ),
+                            _components.ManufacturerDetails(manufacturer),
+                            _components.HxGetLoader(
+                                fmt.Sprintf("/partial/manufacturer/%d/equipment?archived=true", manufacturer.ID),
+                            ),
+                        ),
+                    ),
+                    _components.BottomSpacer(),
+                })
+                w.Write(b.Build())
+            },
+            _middleware.Init, _middleware.Auth,
+        )
+    })
 }
+
 
 func DeleteManufacturer(mux *http.ServeMux, db *gorm.DB) {
-	mux.HandleFunc("GET /app/manufacturer/{id}/delete", func(w http.ResponseWriter, r *http.Request) {
-		_middleware.MiddlewareChain(w, r,
-			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
-				id := r.PathValue("id")
-				var manufacturer _model.Manufacturer
-				db.First(&manufacturer, id)
-				b := NewViewBuilder("Repairs Log - " + manufacturer.Name, []string{
-					_components.MainLoader(),
-					_components.Root(
-						_components.CenterContentWrapper(
-							_components.Banner("Repairs Log",
-								_components.BreadCrumbs(
-									_components.NavLink("Home", "/app", false),
-									_components.NavLink("Manufacturers", "/app/manufacturer", false),
-									_components.NavLink("Delete", fmt.Sprintf("/app/manufacturer/%d/delete", manufacturer.ID), true),
-								),
-							),
-							_components.TopNav(
-								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d", manufacturer.ID), "Equipment", false),
-								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/archive", manufacturer.ID), "Archived Equipment", false),
-								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/update", manufacturer.ID), "Update", false),
-								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/delete", manufacturer.ID), "Delete", true),
-							),
-							_components.ManufacturerDetails(manufacturer),
-							_components.DeleteManufacturerForm(manufacturer, r.URL.Query().Get("err")),
-						),
-					),
-					_components.BottomSpacer(),
-				})
-				w.Write(b.Build())
-			},
-			_middleware.Init, _middleware.Auth,
-		)
-	})
+    mux.HandleFunc("GET /app/manufacturer/{id}/delete", func(w http.ResponseWriter, r *http.Request) {
+        _middleware.MiddlewareChain(w, r,
+            func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
+                id := r.PathValue("id")
+                var manufacturer _model.Manufacturer
+                if err := db.First(&manufacturer, id).Error; err != nil {
+                    http.Error(w, "Manufacturer not found", http.StatusBadRequest)
+                    return
+                }
+                b := NewViewBuilder("Repairs Log - " + manufacturer.Name, []string{
+                    _components.MainLoader(),
+                    _components.Root(
+                        _components.CenterContentWrapper(
+                            _components.Banner("Repairs Log",
+                                _components.BreadCrumbs(
+                                    _components.NavLink("Home", "/app", false),
+                                    _components.NavLink("Manufacturers", "/app/manufacturer", false),
+                                    _components.NavLink("Delete", fmt.Sprintf("/app/manufacturer/%d/delete", manufacturer.ID), true),
+                                ),
+                            ),
+                            _components.TopNav(
+                                _components.LinkButton(fmt.Sprintf("/app/manufacturer/%d", manufacturer.ID), "Equipment", false),
+                                _components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/archive", manufacturer.ID), "Archived Equipment", false),
+                                _components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/update", manufacturer.ID), "Update", false),
+                                _components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/delete", manufacturer.ID), "Delete", true),
+                            ),
+                            _components.ManufacturerDetails(manufacturer),
+                            _components.DeleteManufacturerForm(manufacturer, r.URL.Query().Get("err")),
+                        ),
+                    ),
+                    _components.BottomSpacer(),
+                })
+                w.Write(b.Build())
+            },
+            _middleware.Init, _middleware.Auth,
+        )
+    })
 }
+
 
 func UpdateManufacturer(mux *http.ServeMux, db *gorm.DB) {
-	mux.HandleFunc("GET /app/manufacturer/{id}/update", func(w http.ResponseWriter, r *http.Request) {
-		_middleware.MiddlewareChain(w, r,
-			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
-				id := r.PathValue("id")
-				var manufacturer _model.Manufacturer
-				db.First(&manufacturer, id)
-				b := NewViewBuilder("Repairs Log - " + manufacturer.Name, []string{
-					_components.MainLoader(),
-					_components.Root(
-						_components.CenterContentWrapper(
-							_components.Banner("Repairs Log", 
-								_components.BreadCrumbs(
-									_components.NavLink("Home", "/app", false),
-									_components.NavLink("Manufacturers", "/app/manufacturer", false),
-									_components.NavLink("Update", fmt.Sprintf("/app/manufacturer/%d/update", manufacturer.ID), true),
-								),
-							),
-							_components.TopNav(
-								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d", manufacturer.ID), "Equipment", false),
-								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/archive", manufacturer.ID), "Archived Equipment", false),
-								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/update", manufacturer.ID), "Update", true),
-								_components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/delete", manufacturer.ID), "Delete", false),
-							),
-							_components.ManufacturerDetails(manufacturer),
-							_components.UpdateManufacturerForm(manufacturer, r.URL.Query().Get("err"), r.URL.Query().Get("success")),
-						),
-					),
-					_components.BottomSpacer(),
-				})
-				w.Write(b.Build())
-			},
-			_middleware.Init, _middleware.Auth,
-		)
-	})
+    mux.HandleFunc("GET /app/manufacturer/{id}/update", func(w http.ResponseWriter, r *http.Request) {
+        _middleware.MiddlewareChain(w, r,
+            func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
+                id := r.PathValue("id")
+                var manufacturer _model.Manufacturer
+                if err := db.First(&manufacturer, id).Error; err != nil {
+                    http.Error(w, "Manufacturer not found", http.StatusBadRequest)
+                    return
+                }
+                b := NewViewBuilder("Repairs Log - " + manufacturer.Name, []string{
+                    _components.MainLoader(),
+                    _components.Root(
+                        _components.CenterContentWrapper(
+                            _components.Banner("Repairs Log", 
+                                _components.BreadCrumbs(
+                                    _components.NavLink("Home", "/app", false),
+                                    _components.NavLink("Manufacturers", "/app/manufacturer", false),
+                                    _components.NavLink("Update", fmt.Sprintf("/app/manufacturer/%d/update", manufacturer.ID), true),
+                                ),
+                            ),
+                            _components.TopNav(
+                                _components.LinkButton(fmt.Sprintf("/app/manufacturer/%d", manufacturer.ID), "Equipment", false),
+                                _components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/archive", manufacturer.ID), "Archived Equipment", false),
+                                _components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/update", manufacturer.ID), "Update", true),
+                                _components.LinkButton(fmt.Sprintf("/app/manufacturer/%d/delete", manufacturer.ID), "Delete", false),
+                            ),
+                            _components.ManufacturerDetails(manufacturer),
+                            _components.UpdateManufacturerForm(manufacturer, r.URL.Query().Get("err"), r.URL.Query().Get("success")),
+                        ),
+                    ),
+                    _components.BottomSpacer(),
+                })
+                w.Write(b.Build())
+            },
+            _middleware.Init, _middleware.Auth,
+        )
+    })
 }
+
 
 func UpdateEquipment(mux *http.ServeMux, db *gorm.DB) {
-	mux.HandleFunc("GET /app/equipment/{equipmentID}", func(w http.ResponseWriter, r *http.Request) {
-		_middleware.MiddlewareChain(w, r,
-			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
-				equipmentID := r.PathValue("equipmentID")
-				var equipment _model.Equipment
-				var manufacturer _model.Manufacturer
-				db.First(&equipment, equipmentID)
-				db.First(&manufacturer, equipment.ManufacturerID)
-				b := NewViewBuilder(fmt.Sprintf("Repairs Log - %s", equipment.Nickname), []string{
-					_components.MainLoader(),
-					_components.Root(
-						_components.CenterContentWrapper(
-							_components.Banner("Repairs Log",
-								_components.BreadCrumbs(
-									_components.NavLink("Home", "/app", false),
-									_components.NavLink("Manufacturers", "/app/manufacturer", false),
-									_components.NavLink("Equipment", fmt.Sprintf("/app/manufacturer/%d", manufacturer.ID), false),
-									_components.NavLink("Update", fmt.Sprintf("/app/equipment/%d", equipment.ID), true),
-								),
-							),
-							_components.TopNav(
-								_components.LinkButton(fmt.Sprintf("/app/equipment/%s", equipmentID), "Update", true),
-								_components.LinkButton(fmt.Sprintf("/app/equipment/%s/delete", equipmentID), "Delete", false),
-							),
-							_components.EquipmentDetails(equipment, manufacturer),
-							_components.UpdateEquipmentForm(equipment, r.URL.Query().Get("err"), r.URL.Query().Get("success")),
-						),
-					),
-					_components.BottomSpacer(),
-				})
-				w.Write(b.Build())
-			},
-			_middleware.Init, _middleware.Auth,
-		)
-	})
+    mux.HandleFunc("GET /app/equipment/{equipmentID}", func(w http.ResponseWriter, r *http.Request) {
+        _middleware.MiddlewareChain(w, r,
+            func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
+                equipmentID := r.PathValue("equipmentID")
+                var equipment _model.Equipment
+                var manufacturer _model.Manufacturer
+                if err := db.First(&equipment, equipmentID).Error; err != nil {
+                    http.Error(w, "Equipment not found", http.StatusBadRequest)
+                    return
+                }
+                if err := db.First(&manufacturer, equipment.ManufacturerID).Error; err != nil {
+                    http.Error(w, "Manufacturer not found", http.StatusInternalServerError)
+                    return
+                }
+                b := NewViewBuilder(fmt.Sprintf("Repairs Log - %s", equipment.Nickname), []string{
+                    _components.MainLoader(),
+                    _components.Root(
+                        _components.CenterContentWrapper(
+                            _components.Banner("Repairs Log",
+                                _components.BreadCrumbs(
+                                    _components.NavLink("Home", "/app", false),
+                                    _components.NavLink("Manufacturers", "/app/manufacturer", false),
+                                    _components.NavLink("Equipment", fmt.Sprintf("/app/manufacturer/%d", manufacturer.ID), false),
+                                    _components.NavLink("Update", fmt.Sprintf("/app/equipment/%d", equipment.ID), true),
+                                ),
+                            ),
+                            _components.TopNav(
+                                _components.LinkButton(fmt.Sprintf("/app/equipment/%s", equipmentID), "Update", true),
+                                _components.LinkButton(fmt.Sprintf("/app/equipment/%s/delete", equipmentID), "Delete", false),
+                            ),
+                            _components.EquipmentDetails(equipment, manufacturer),
+                            _components.UpdateEquipmentForm(equipment, r.URL.Query().Get("err"), r.URL.Query().Get("success")),
+                        ),
+                    ),
+                    _components.BottomSpacer(),
+                })
+                w.Write(b.Build())
+            },
+            _middleware.Init, _middleware.Auth,
+        )
+    })
 }
+
 
 func DeleteEquipment(mux *http.ServeMux, db *gorm.DB) {
-	mux.HandleFunc("GET /app/equipment/{equipmentID}/delete", func(w http.ResponseWriter, r *http.Request) {
-		_middleware.MiddlewareChain(w, r,
-			func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
-				equipmentID := r.PathValue("equipmentID")
-				var equipment _model.Equipment
-				var manufacturer _model.Manufacturer
-				db.First(&equipment, equipmentID)
-				db.First(&manufacturer, equipment.ManufacturerID)
-				b := NewViewBuilder(fmt.Sprintf("Repairs Log - %s", equipment.Nickname), []string{
-					_components.MainLoader(),
-					_components.Root(
-						_components.CenterContentWrapper(
-							_components.Banner("Repairs Log", 
-								_components.BreadCrumbs(
-									_components.NavLink("Home", "/app", false),
-									_components.NavLink("Manufacturers", "/app/manufacturer", false),
-									_components.NavLink("Equipment", fmt.Sprintf("/app/manufacturer/%d", manufacturer.ID), false),
-									_components.NavLink("Delete", fmt.Sprintf("/app/equipment/%d/delete", equipment.ID), true),
-								),
-							),
-							_components.TopNav(
-								_components.LinkButton(fmt.Sprintf("/app/equipment/%s", equipmentID), "Update", false),
-								_components.LinkButton(fmt.Sprintf("/app/equipment/%s/delete", equipmentID), "Delete", true),
-							),
-							_components.EquipmentDetails(equipment, manufacturer),
-							_components.DeleteEquipmentForm(equipment, r.URL.Query().Get("err"), r.URL.Query().Get("success")),
-						),
-					),
-					_components.BottomSpacer(),
-				})
-				w.Write(b.Build())
-			},
-			_middleware.Init, _middleware.Auth,
-		)
-	})
-
+    mux.HandleFunc("GET /app/equipment/{equipmentID}/delete", func(w http.ResponseWriter, r *http.Request) {
+        _middleware.MiddlewareChain(w, r,
+            func(customContext *_middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
+                equipmentID := r.PathValue("equipmentID")
+                var equipment _model.Equipment
+                var manufacturer _model.Manufacturer
+                if err := db.First(&equipment, equipmentID).Error; err != nil {
+                    http.Error(w, "Equipment not found", http.StatusBadRequest)
+                    return
+                }
+                if err := db.First(&manufacturer, equipment.ManufacturerID).Error; err != nil {
+                    http.Error(w, "Manufacturer not found", http.StatusInternalServerError)
+                    return
+                }
+                b := NewViewBuilder(fmt.Sprintf("Repairs Log - %s", equipment.Nickname), []string{
+                    _components.MainLoader(),
+                    _components.Root(
+                        _components.CenterContentWrapper(
+                            _components.Banner("Repairs Log", 
+                                _components.BreadCrumbs(
+                                    _components.NavLink("Home", "/app", false),
+                                    _components.NavLink("Manufacturers", "/app/manufacturer", false),
+                                    _components.NavLink("Equipment", fmt.Sprintf("/app/manufacturer/%d", manufacturer.ID), false),
+                                    _components.NavLink("Delete", fmt.Sprintf("/app/equipment/%d/delete", equipment.ID), true),
+                                ),
+                            ),
+                            _components.TopNav(
+                                _components.LinkButton(fmt.Sprintf("/app/equipment/%s", equipmentID), "Update", false),
+                                _components.LinkButton(fmt.Sprintf("/app/equipment/%s/delete", equipmentID), "Delete", true),
+                            ),
+                            _components.EquipmentDetails(equipment, manufacturer),
+                            _components.DeleteEquipmentForm(equipment, r.URL.Query().Get("err"), r.URL.Query().Get("success")),
+                        ),
+                    ),
+                    _components.BottomSpacer(),
+                })
+                w.Write(b.Build())
+            },
+            _middleware.Init, _middleware.Auth,
+        )
+    })
 }
+
 
 
 func PublicCreateTicket(mux *http.ServeMux, db *gorm.DB) {
@@ -538,7 +575,11 @@ func AdminViewTicket(mux *http.ServeMux, db *gorm.DB) {
 				var ticket _model.Ticket
 				id := r.PathValue("id")
 				if err := db.First(&ticket, id).Error; err != nil {
-					http.Error(w, err.Error(), http.StatusNotFound)
+					if errors.Is(err, gorm.ErrRecordNotFound) {
+						http.Error(w, "Ticket not found", http.StatusBadRequest)
+						return
+					}
+					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
 				}
 				var manufacturers []_model.Manufacturer
@@ -594,6 +635,7 @@ func AdminViewTicket(mux *http.ServeMux, db *gorm.DB) {
 	})
 }
 
+
 func AdminCreateTickets(mux *http.ServeMux, db *gorm.DB) {
     mux.HandleFunc("GET /app/ticket", func(w http.ResponseWriter, r *http.Request) {
         _middleware.MiddlewareChain(w, r,
@@ -629,7 +671,11 @@ func AdminUpdateTicket(mux *http.ServeMux, db *gorm.DB) {
 				var ticket _model.Ticket
 				id := r.PathValue("id")
 				if err := db.First(&ticket, id).Error; err != nil {
-					http.Error(w, err.Error(), http.StatusNotFound)
+					if errors.Is(err, gorm.ErrRecordNotFound) {
+						http.Error(w, "Ticket not found", http.StatusBadRequest)
+						return
+					}
+					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
 				}
 				b := NewViewBuilder("Repairs Log - Update Ticket", []string{
@@ -665,6 +711,7 @@ func AdminUpdateTicket(mux *http.ServeMux, db *gorm.DB) {
 	})
 }
 
+
 func AdminDeleteTicket(mux *http.ServeMux, db *gorm.DB) {
 	mux.HandleFunc("GET /app/ticket/{id}/delete", func(w http.ResponseWriter, r *http.Request) {
 		_middleware.MiddlewareChain(w, r,
@@ -672,7 +719,11 @@ func AdminDeleteTicket(mux *http.ServeMux, db *gorm.DB) {
 				var ticket _model.Ticket
 				id := r.PathValue("id")
 				if err := db.First(&ticket, id).Error; err != nil {
-					http.Error(w, err.Error(), http.StatusNotFound)
+					if errors.Is(err, gorm.ErrRecordNotFound) {
+						http.Error(w, "Ticket not found", http.StatusBadRequest)
+						return
+					}
+					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
 				}
 				b := NewViewBuilder("Repairs Log - Delete Ticket", []string{
@@ -708,6 +759,7 @@ func AdminDeleteTicket(mux *http.ServeMux, db *gorm.DB) {
 	})
 }
 
+
 func AdminCompleteTicket(mux *http.ServeMux, db *gorm.DB) {
 	mux.HandleFunc("GET /app/ticket/{id}/complete", func(w http.ResponseWriter, r *http.Request) {
 		_middleware.MiddlewareChain(w, r,
@@ -715,7 +767,11 @@ func AdminCompleteTicket(mux *http.ServeMux, db *gorm.DB) {
 				var ticket _model.Ticket
 				id := r.PathValue("id")
 				if err := db.First(&ticket, id).Error; err != nil {
-					http.Error(w, err.Error(), http.StatusNotFound)
+					if errors.Is(err, gorm.ErrRecordNotFound) {
+						http.Error(w, "Ticket not found", http.StatusBadRequest)
+						return
+					}
+					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
 				}
 				b := NewViewBuilder("Repairs Log - Complete Ticket", []string{
@@ -746,3 +802,4 @@ func AdminCompleteTicket(mux *http.ServeMux, db *gorm.DB) {
 		)
 	})
 }
+

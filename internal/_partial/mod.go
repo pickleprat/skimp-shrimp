@@ -132,18 +132,18 @@ func TicketList(mux *http.ServeMux, db *gorm.DB) {
                 filteredTickets := []_model.Ticket{}
                 query := db.Where("status != ?", _model.TicketStatusComplete)
 
-				
                 if publicFilter == "public" {
-					query = query.Where("owner <> '' AND notes <> '' AND equipment_id IS NOT NULL")
-					} else if publicFilter == "private" {
-						query = query.Where("owner = '' OR notes = '' OR equipment_id IS NULL")
-					}
-					
-				// Apply priority filter
-				if priority != "" && priority != "all" {
-					query = query.Where("priority = ?", priority)
-				}
-                // Order by priority
+                    query = query.Where("owner <> '' AND notes <> '' AND equipment_id IS NOT NULL")
+                } else if publicFilter == "private" {
+                    query = query.Where("owner = '' OR notes = '' OR equipment_id IS NULL")
+                }
+
+                // Apply priority filter
+                if priority != "" && priority != "all" {
+                    query = query.Where("priority = ?", priority)
+                }
+
+                // Order by priority first
                 query = query.Order(`
                     CASE 
                         WHEN priority = 'urgent' THEN 1
@@ -151,6 +151,9 @@ func TicketList(mux *http.ServeMux, db *gorm.DB) {
                         WHEN priority = 'low' THEN 3
                     END
                 `)
+
+                // Then order by creation date
+                query = query.Order("created_at DESC")
 
                 // Find filtered tickets
                 query.Find(&filteredTickets)
@@ -189,7 +192,7 @@ func PublicTicketList(mux *http.ServeMux, db *gorm.DB) {
                 WHEN priority = 'low' THEN 3
                 END
             `)
-
+			query = query.Order("created_at DESC")
             query.Find(&tickets)
             component := _components.PublicTicketList(tickets)
             w.Write([]byte(component))
